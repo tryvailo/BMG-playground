@@ -1,0 +1,46 @@
+{
+  "HomePage": {
+    "title": "Hello"
+  },
+  "Playground": {
+    "title": "Dashboard Playground",
+    "description": "Test your queries and see how they would appear in the dashboard before adding them to your project.",
+    "configuration": "Configuration",
+    "configurationDescription": "Enter your API keys and test parameters to simulate a dashboard view",
+    "openAiApiKey": "OpenAI API Key",
+    "openAiApiKeyDescription": "Your OpenAI API key for GPT models",
+    "perplexityApiKey": "Perplexity API Key",
+    "perplexityApiKeyDescription": "Your Perplexity AI API key",
+    "projectDomain": "Project Domain",
+    "projectDomainDescription": "Your clinic or medical facility domain",
+    "locationCity": "Location (City)",
+    "locationCityDescription": "City for location-based searches",
+    "keywordQuery": "Keyword/Query",
+    "keywordQueryDescription": "The medical service or query to test (e.g., \"dental implants\", \"best cardiologist\")",
+    "runningSimulation": "Running Simulation...",
+    "simulateDashboard": "Simulate Dashboard",
+    "dashboardPreview": "Dashboard Preview",
+    "simulatedDashboardView": "Simulated dashboard view based on your test query",
+    "runningLiveAudit": "Running live audit and analysis...",
+    "runSimulationToSee": "Run a simulation to see the dashboard preview",
+    "liveAuditInProgress": "Live Audit in Progress",
+    "runningComprehensiveAnalysis": "Running comprehensive analysis of your domain and query...",
+    "simulationPreview": "This is a simulation preview. Results are not saved to your project.",
+    "serviceAnalysis": "Service Analysis",
+    "readyToSimulate": "Ready to Simulate",
+    "fillInConfiguration": "Fill in the configuration above and click \"Simulate Dashboard\" to see results",
+    "simulationCompleted": "Dashboard simulation completed successfully!",
+    "invalidApiKeys": "Invalid API keys. Please check your OpenAI and Perplexity API keys.",
+    "failedToRunSimulation": "Failed to run simulation: {errorMessage}",
+    "calculatedServices": "Calculated {count} service(s)",
+    "validation": {
+      "openAiApiKeyRequired": "OpenAI API key is required",
+      "perplexityApiKeyRequired": "Perplexity API key is required",
+      "domainRequired": "Domain is required",
+      "domainInvalid": "Please enter a valid domain (e.g., mayoclinic.org)",
+      "cityRequired": "City is required",
+      "keywordQueryRequired": "Keyword/Query is required"
+    }
+  }
+}
+

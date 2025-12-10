@@ -1,0 +1,46 @@
+{
+  "HomePage": {
+    "title": "Привіт"
+  },
+  "Playground": {
+    "title": "Ігровий майданчик дашборду",
+    "description": "Тестуйте свої запити та переглядайте, як вони відображатимуться в дашборді перед додаванням до вашого проекту.",
+    "configuration": "Конфігурація",
+    "configurationDescription": "Введіть свої API ключі та тестові параметри для симуляції перегляду дашборду",
+    "openAiApiKey": "OpenAI API ключ",
+    "openAiApiKeyDescription": "Ваш OpenAI API ключ для моделей GPT",
+    "perplexityApiKey": "Perplexity API ключ",
+    "perplexityApiKeyDescription": "Ваш Perplexity AI API ключ",
+    "projectDomain": "Домен проекту",
+    "projectDomainDescription": "Домен вашої клініки або медичного закладу",
+    "locationCity": "Місцезнаходження (Місто)",
+    "locationCityDescription": "Місто для пошуку за місцезнаходженням",
+    "keywordQuery": "Ключове слово/Запит",
+    "keywordQueryDescription": "Медична послуга або запит для тестування (наприклад, \"імплантація зубів\", \"найкращий кардіолог\")",
+    "runningSimulation": "Запуск симуляції...",
+    "simulateDashboard": "Симулювати дашборд",
+    "dashboardPreview": "Попередній перегляд дашборду",
+    "simulatedDashboardView": "Симульований перегляд дашборду на основі вашого тестового запиту",
+    "runningLiveAudit": "Запуск живого аудиту та аналізу...",
+    "runSimulationToSee": "Запустіть симуляцію, щоб побачити попередній перегляд дашборду",
+    "liveAuditInProgress": "Триває живий аудит",
+    "runningComprehensiveAnalysis": "Запуск комплексного аналізу вашого домену та запиту...",
+    "simulationPreview": "Це попередній перегляд симуляції. Результати не зберігаються у вашому проекті.",
+    "serviceAnalysis": "Аналіз послуг",
+    "readyToSimulate": "Готово до симуляції",
+    "fillInConfiguration": "Заповніть конфігурацію вище та натисніть \"Симулювати дашборд\", щоб побачити результати",
+    "simulationCompleted": "Симуляція дашборду успішно завершена!",
+    "invalidApiKeys": "Недійсні API ключі. Будь ласка, перевірте свої OpenAI та Perplexity API ключі.",
+    "failedToRunSimulation": "Не вдалося запустити симуляцію: {errorMessage}",
+    "calculatedServices": "Розраховано {count} послуг(и)",
+    "validation": {
+      "openAiApiKeyRequired": "Потрібен OpenAI API ключ",
+      "perplexityApiKeyRequired": "Потрібен Perplexity API ключ",
+      "domainRequired": "Потрібен домен",
+      "domainInvalid": "Будь ласка, введіть дійсний домен (наприклад, mayoclinic.org)",
+      "cityRequired": "Потрібне місто",
+      "keywordQueryRequired": "Потрібне ключове слово/Запит"
+    }
+  }
+}
+
