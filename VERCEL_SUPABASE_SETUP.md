@@ -11,21 +11,55 @@
 
 Добавьте следующие переменные в **Settings → Environment Variables** вашего проекта Vercel:
 
-### 1. NEXT_PUBLIC_SUPABASE_URL
+### Базовые настройки приложения (ОБЯЗАТЕЛЬНО)
+
+#### 1. NEXT_PUBLIC_PRODUCT_NAME
+```
+BoostMyGEO
+```
+- **Environment**: Production, Preview, Development
+- **Важно**: Название вашего продукта
+
+#### 2. NEXT_PUBLIC_SITE_TITLE
+```
+BoostMyGEO - AI Visibility Dashboard for Medical Clinics
+```
+- **Environment**: Production, Preview, Development
+- **Важно**: Заголовок сайта (используется в мета-тегах)
+
+#### 3. NEXT_PUBLIC_SITE_DESCRIPTION
+```
+BoostMyGEO helps medical clinics monitor and improve their AI visibility, track keyword rankings, and optimize their online presence.
+```
+- **Environment**: Production, Preview, Development
+- **Важно**: Описание сайта (используется в мета-тегах)
+
+#### 4. NEXT_PUBLIC_SITE_URL
+```
+https://your-app-name.vercel.app
+```
+- **Environment**: Production, Preview, Development
+- **⚠️ ВАЖНО**: Замените `your-app-name` на реальное имя вашего проекта Vercel
+- **⚠️ ВАЖНО**: URL должен начинаться с `https://` (не `http://`)
+- **Пример**: `https://bmg-playground.vercel.app`
+
+### Supabase (ОБЯЗАТЕЛЬНО)
+
+#### 5. NEXT_PUBLIC_SUPABASE_URL
 ```
 https://evwjxpoclynilpkirdil.supabase.co
 ```
 - **Environment**: Production, Preview, Development
 - **Важно**: Это публичная переменная (NEXT_PUBLIC_*)
 
-### 2. NEXT_PUBLIC_SUPABASE_ANON_KEY
+#### 6. NEXT_PUBLIC_SUPABASE_ANON_KEY
 ```
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2d2p4cG9jbHluaWxwa2lyZGlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzOTAyMjQsImV4cCI6MjA4MDk2NjIyNH0.QiWPINVdTUNCBpizQ2ZhlAahbqzaRxoDEtvqwm0hMlM
 ```
 - **Environment**: Production, Preview, Development
 - **Важно**: Это публичная переменная (NEXT_PUBLIC_*)
 
-### 3. SUPABASE_SERVICE_ROLE_KEY
+#### 7. SUPABASE_SERVICE_ROLE_KEY
 ```
 re_BTKigtXp_BmbbCm2o7Qi6fbPnVn8ezBQR
 ```
