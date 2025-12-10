@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { enhanceRouteHandler } from '@kit/next/routes';
 
-import { generateMockHistory, MOCK_COMPETITORS, pieData } from '../[locale]/home/_components/dashboard-data';
+import { generateMockHistory, MOCK_COMPETITORS, pieData } from '../../[locale]/home/_components/dashboard-data';
 
 /**
  * GET /api/dashboard
