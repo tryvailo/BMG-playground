@@ -9,7 +9,7 @@
 
 Перейдите в ваш проект Vercel → **Settings** → **Environment Variables** и добавьте:
 
-### ✅ ОБЯЗАТЕЛЬНЫЕ (7 переменных):
+### ✅ ОБЯЗАТЕЛЬНЫЕ (9 переменных):
 
 1. **NEXT_PUBLIC_PRODUCT_NAME**
    ```
@@ -43,7 +43,13 @@
    eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2d2p4cG9jbHluaWxwa2lyZGlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzOTAyMjQsImV4cCI6MjA4MDk2NjIyNH0.QiWPINVdTUNCBpizQ2ZhlAahbqzaRxoDEtvqwm0hMlM
    ```
 
-7. **SUPABASE_SERVICE_ROLE_KEY**
+7. **NEXT_PUBLIC_AUTH_PASSWORD**
+   ```
+   true
+   ```
+   ⚠️ **КРИТИЧЕСКИ ВАЖНО**: Без этой переменной регистрация через email НЕ БУДЕТ РАБОТАТЬ!
+
+8. **SUPABASE_SERVICE_ROLE_KEY**
    ```
    re_BTKigtXp_BmbbCm2o7Qi6fbPnVn8ezBQR
    ```

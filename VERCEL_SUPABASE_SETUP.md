@@ -43,23 +43,42 @@ https://your-app-name.vercel.app
 - **⚠️ ВАЖНО**: URL должен начинаться с `https://` (не `http://`)
 - **Пример**: `https://bmg-playground.vercel.app`
 
+### Аутентификация (ОБЯЗАТЕЛЬНО для регистрации через email)
+
+#### 5. NEXT_PUBLIC_AUTH_PASSWORD
+```
+true
+```
+- **Environment**: Production, Preview, Development
+- **⚠️ КРИТИЧЕСКИ ВАЖНО**: Без этой переменной регистрация через email НЕ БУДЕТ РАБОТАТЬ!
+- **Описание**: Включает регистрацию и вход по email/паролю
+- **Значение**: Должно быть именно `true` (строка, не boolean)
+
+#### 6. NEXT_PUBLIC_AUTH_MAGIC_LINK (опционально, но рекомендуется)
+```
+true
+```
+- **Environment**: Production, Preview, Development
+- **Описание**: Включает вход по magic link (ссылка в email без пароля)
+- **Значение**: Должно быть именно `true` (строка, не boolean)
+
 ### Supabase (ОБЯЗАТЕЛЬНО)
 
-#### 5. NEXT_PUBLIC_SUPABASE_URL
+#### 7. NEXT_PUBLIC_SUPABASE_URL
 ```
 https://evwjxpoclynilpkirdil.supabase.co
 ```
 - **Environment**: Production, Preview, Development
 - **Важно**: Это публичная переменная (NEXT_PUBLIC_*)
 
-#### 6. NEXT_PUBLIC_SUPABASE_ANON_KEY
+#### 8. NEXT_PUBLIC_SUPABASE_ANON_KEY
 ```
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2d2p4cG9jbHluaWxwa2lyZGlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzOTAyMjQsImV4cCI6MjA4MDk2NjIyNH0.QiWPINVdTUNCBpizQ2ZhlAahbqzaRxoDEtvqwm0hMlM
 ```
 - **Environment**: Production, Preview, Development
 - **Важно**: Это публичная переменная (NEXT_PUBLIC_*)
 
-#### 7. SUPABASE_SERVICE_ROLE_KEY
+#### 9. SUPABASE_SERVICE_ROLE_KEY
 ```
 re_BTKigtXp_BmbbCm2o7Qi6fbPnVn8ezBQR
 ```
@@ -92,14 +111,6 @@ re_BTKigtXp_BmbbCm2o7Qi6fbPnVn8ezBQR
 4. Дашборд `/home` должен быть доступен после входа
 
 ## 🔐 Дополнительные настройки (опционально)
-
-Если хотите включить дополнительные функции аутентификации, добавьте:
-
-### NEXT_PUBLIC_AUTH_PASSWORD
-```
-true
-```
-- Включает вход по email/password
 
 ### NEXT_PUBLIC_AUTH_MAGIC_LINK
 ```
