@@ -1,6 +1,7 @@
 'use server';
 
 import type { EphemeralAuditResult } from '../ephemeral-audit';
+import type { DuplicateAnalysisResult } from '~/lib/utils/duplicate-analyzer';
 
 /*
  * -------------------------------------------------------
@@ -142,7 +143,7 @@ function parseJsonResponse(content: string): TechAuditAnalysis {
 /**
  * Format audit data for AI analysis
  */
-function formatAuditDataForAI(audit: EphemeralAuditResult): string {
+function formatAuditDataForAI(audit: EphemeralAuditResult, duplicateAnalysis?: DuplicateAnalysisResult | null): string {
   const parts: string[] = [];
 
   // Performance
@@ -218,6 +219,27 @@ function formatAuditDataForAI(audit: EphemeralAuditResult): string {
   parts.push(`Trailing Slash: ${audit.duplicates.trailingSlash}`);
   parts.push(`HTTP → HTTPS: ${audit.duplicates.httpRedirect}`);
 
+  // Deep Content Analysis (Duplicate Content)
+  if (duplicateAnalysis) {
+    parts.push('\n## Deep Content Analysis - Duplicate Content');
+    parts.push(`Pages Scanned: ${duplicateAnalysis.pagesScanned}`);
+    parts.push(`Duplicates Found: ${duplicateAnalysis.duplicatesFound}`);
+    if (duplicateAnalysis.duplicatesFound > 0) {
+      parts.push(`\nDuplicate Pairs (showing top 5):`);
+      duplicateAnalysis.results.slice(0, 5).forEach((dup, idx) => {
+        parts.push(`  ${idx + 1}. "${dup.titleA || dup.urlA}" ↔ "${dup.titleB || dup.urlB}" (${dup.similarity}% similarity)`);
+      });
+      if (duplicateAnalysis.duplicatesFound > 5) {
+        parts.push(`  ... and ${duplicateAnalysis.duplicatesFound - 5} more duplicate pairs`);
+      }
+    } else {
+      parts.push('No duplicate content detected - excellent!');
+    }
+  } else {
+    parts.push('\n## Deep Content Analysis - Duplicate Content');
+    parts.push('Not available (Firecrawl API key not provided or analysis skipped)');
+  }
+
   return parts.join('\n');
 }
 
@@ -240,11 +262,13 @@ function formatAuditDataForAI(audit: EphemeralAuditResult): string {
  * 
  * @param audit - Complete EphemeralAuditResult to analyze
  * @param openaiKey - Optional OpenAI API key (uses OPENAI_API_KEY env var if not provided)
+ * @param duplicateAnalysis - Optional duplicate content analysis results
  * @returns AI analysis result
  */
 export async function analyzeTechAudit(
   audit: EphemeralAuditResult,
   openaiKey?: string,
+  duplicateAnalysis?: DuplicateAnalysisResult | null,
 ): Promise<TechAuditAnalysis> {
   const client = createOpenAIClient(openaiKey);
 
@@ -258,21 +282,24 @@ Analyze the technical audit data considering:
 5. Meta tags and SEO elements
 6. Images accessibility
 7. External links health
-8. Duplicate prevention
-9. PageSpeed opportunities
+8. Duplicate prevention (URL duplicates)
+9. Deep content analysis (duplicate content across pages) - CRITICAL for SEO
+10. PageSpeed opportunities
+
+IMPORTANT: If duplicate content is found, this is a critical SEO issue that must be addressed. Include specific recommendations about consolidating or rewriting duplicate content pages.
 
 Provide a comprehensive analysis that helps improve the website's technical SEO and performance.`;
 
-  const auditData = formatAuditDataForAI(audit);
+  const auditData = formatAuditDataForAI(audit, duplicateAnalysis);
 
   const userPrompt = `Analyze the following technical audit data and provide a JSON response with:
 
 - overallScore: A number from 0-100 representing the overall technical health of the website
 - summary: A concise 2-3 sentence verdict describing the website's technical status and main areas of concern
-- criticalIssues: An array of 3-5 critical problems that need immediate attention (e.g., "Mobile performance score is 45/100, indicating severe performance issues")
-- priorityRecommendations: An array of 5-7 actionable recommendations prioritized by impact (e.g., "Optimize images to reduce LCP from 9642ms to under 2500ms")
-- strengths: An array of 3-5 things the website is doing well (e.g., "HTTPS is properly configured", "Schema markup includes Medical Organization")
-- quickWins: An array of 2-4 easy fixes that can improve the score quickly (e.g., "Add missing alt tags to 32 images", "Fix 3 broken external links")
+- criticalIssues: An array of 3-5 critical problems that need immediate attention (e.g., "Mobile performance score is 45/100, indicating severe performance issues", "Found 12 duplicate content pairs - this can cause SEO penalties")
+- priorityRecommendations: An array of 5-7 actionable recommendations prioritized by impact. MUST include recommendations about duplicate content if found (e.g., "Optimize images to reduce LCP from 9642ms to under 2500ms", "Consolidate or rewrite 12 duplicate content pages to avoid SEO penalties")
+- strengths: An array of 3-5 things the website is doing well (e.g., "HTTPS is properly configured", "Schema markup includes Medical Organization", "No duplicate content detected across scanned pages")
+- quickWins: An array of 2-4 easy fixes that can improve the score quickly (e.g., "Add missing alt tags to 32 images", "Fix 3 broken external links", "Rewrite duplicate content on pages with >95% similarity")
 
 Technical Audit Data:
 ${auditData}

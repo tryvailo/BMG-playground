@@ -51,8 +51,8 @@ export function VisibilityMonitor() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Visibility Monitor</h1>
-          <p className="text-slate-500">Track your brand's presence across AI models.</p>
+          <h1 className="text-2xl font-bold text-foreground">Visibility Monitor</h1>
+          <p className="text-muted-foreground">Track your brand's presence across AI models.</p>
         </div>
         <button 
           onClick={handleRunScan}
@@ -71,23 +71,23 @@ export function VisibilityMonitor() {
         onDrop={handleDrop}
         className={`
           border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer bg-white
-          ${isDragging ? 'border-emerald-500 bg-emerald-50' : 'border-slate-300 hover:border-emerald-400'}
+          ${isDragging ? 'border-emerald-500 bg-emerald-50' : 'border-border hover:border-emerald-400'}
         `}
       >
         <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
           <UploadCloud size={24} />
         </div>
-        <h3 className="text-lg font-medium text-slate-900">Upload Keywords CSV</h3>
-        <p className="text-slate-500 mt-1 max-w-md mx-auto">
+        <h3 className="text-lg font-medium text-foreground">Upload Keywords CSV</h3>
+        <p className="text-muted-foreground mt-1 max-w-md mx-auto">
           Drag and drop your list of medical services or keywords here. We support .csv and .xlsx files up to 5MB.
         </p>
-        <p className="text-xs text-slate-400 mt-4">or click to browse files</p>
+        <p className="text-xs text-muted-foreground mt-4">or click to browse files</p>
       </div>
 
       {/* Results Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-6 border-b border-slate-200 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-slate-800">Recent Scans</h3>
+      <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+        <div className="p-6 border-b border-border flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-foreground">Recent Scans</h3>
           <div className="flex gap-2">
              <span className="text-xs font-medium px-2.5 py-0.5 rounded bg-green-100 text-green-800">ChatGPT</span>
              <span className="text-xs font-medium px-2.5 py-0.5 rounded bg-cyan-100 text-cyan-800">Perplexity</span>
@@ -95,8 +95,8 @@ export function VisibilityMonitor() {
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left text-slate-500">
-            <thead className="text-xs text-slate-700 uppercase bg-slate-50">
+          <table className="w-full text-sm text-left text-muted-foreground">
+            <thead className="text-xs text-foreground uppercase bg-muted">
               <tr>
                 <th className="px-6 py-3">Keyword / Prompt</th>
                 <th className="px-6 py-3">Source</th>
@@ -109,8 +109,8 @@ export function VisibilityMonitor() {
             </thead>
             <tbody>
               {results.map((row) => (
-                <tr key={row.id} className="bg-white border-b hover:bg-slate-50">
-                  <td className="px-6 py-4 font-medium text-slate-900">{row.keyword}</td>
+                <tr key={row.id} className="bg-card border-b hover:bg-muted">
+                  <td className="px-6 py-4 font-medium text-foreground">{row.keyword}</td>
                   <td className="px-6 py-4">
                     <span className={`
                         px-2 py-1 rounded text-xs font-semibold
@@ -134,17 +134,17 @@ export function VisibilityMonitor() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="w-full bg-slate-200 rounded-full h-2.5 max-w-[80px]">
+                    <div className="w-full bg-muted rounded-full h-2.5 max-w-[80px]">
                       <div 
                         className={`h-2.5 rounded-full ${row.aivScore > 70 ? 'bg-green-500' : row.aivScore > 40 ? 'bg-yellow-400' : 'bg-red-500'}`} 
                         style={{ width: `${row.aivScore}%` }}
                       ></div>
                     </div>
-                    <span className="text-xs text-slate-500 mt-1 inline-block">{row.aivScore}/100</span>
+                    <span className="text-xs text-muted-foreground mt-1 inline-block">{row.aivScore}/100</span>
                   </td>
                   <td className="px-6 py-4">{row.rank > 0 ? `#${row.rank}` : '-'}</td>
-                  <td className="px-6 py-4 text-slate-600">{row.topCompetitor}</td>
-                  <td className="px-6 py-4 text-slate-400">{row.date}</td>
+                  <td className="px-6 py-4 text-muted-foreground">{row.topCompetitor}</td>
+                  <td className="px-6 py-4 text-muted-foreground">{row.date}</td>
                 </tr>
               ))}
             </tbody>

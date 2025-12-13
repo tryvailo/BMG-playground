@@ -41,7 +41,7 @@ function LandingPage() {
               </h1>
               
               <p className="text-xl text-slate-600 mb-10 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-                Patients are asking AI for medical advice. BoostMyGEO helps you rank #1 in ChatGPT, Perplexity, and Gemini search results.
+                Patients are asking AI for medical advice. ClinicBoost.AI helps you rank #1 in ChatGPT, Perplexity, and Gemini search results.
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
@@ -159,7 +159,7 @@ function LandingPage() {
       <section id="how-it-works" className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">How BoostMyGEO Works</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">How ClinicBoost.AI Works</h2>
             <p className="text-lg text-slate-600">
               Get started in minutes. Monitor your AI visibility, optimize your content, and dominate AI search results.
             </p>
@@ -238,7 +238,7 @@ function LandingPage() {
                <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-indigo-600 rounded-full blur-3xl opacity-50"></div>
                
                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                 <Bot size={20} className="text-indigo-300" /> BoostMyGEO (New Era)
+                 <Bot size={20} className="text-indigo-300" /> ClinicBoost.AI (New Era)
                </h3>
                <ul className="space-y-4 relative z-10">
                  <li className="flex items-center gap-3 text-indigo-100">

@@ -48,7 +48,7 @@ function PageWithSidebar(props: PageProps) {
 
         <div
           className={
-            'bg-background flex flex-1 flex-col overflow-y-auto px-4 lg:px-0'
+            'bg-background flex flex-1 flex-col h-full min-h-full overflow-y-auto px-4 lg:px-0'
           }
         >
           {Children}
@@ -102,7 +102,7 @@ function PageWithHeader(props: PageProps) {
           {MobileNavigation}
         </div>
 
-        <div className={'container flex flex-1 flex-col'}>{Children}</div>
+        <div className={'container flex flex-1 flex-col h-full min-h-full'}>{Children}</div>
       </div>
     </div>
   );
@@ -113,7 +113,7 @@ export function PageBody(
     className?: string;
   }>,
 ) {
-  const className = cn('flex w-full flex-1 flex-col lg:px-4', props.className);
+  const className = cn('flex w-full flex-1 flex-col h-full min-h-full lg:px-4', props.className);
 
   return <div className={className}>{props.children}</div>;
 }

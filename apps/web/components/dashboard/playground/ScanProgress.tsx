@@ -82,7 +82,7 @@ export function ScanProgress({ isFinished }: ScanProgressProps) {
               ) : isCurrent ? (
                 <Loader2 className="h-5 w-5 animate-spin text-emerald-600 dark:text-emerald-400" />
               ) : (
-                <Circle className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                <Circle className="h-5 w-5 text-muted-foreground" />
               )}
             </div>
 
@@ -91,10 +91,10 @@ export function ScanProgress({ isFinished }: ScanProgressProps) {
               className={cn(
                 'text-sm transition-colors duration-300',
                 isCompleted
-                  ? 'text-slate-600 dark:text-slate-400 line-through'
+                  ? 'text-muted-foreground line-through'
                   : isCurrent
-                    ? 'font-semibold text-slate-900 dark:text-slate-100'
-                    : 'text-slate-500 dark:text-slate-500',
+                    ? 'font-semibold text-foreground'
+                    : 'text-muted-foreground',
               )}
             >
               {step}

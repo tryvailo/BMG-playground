@@ -15,21 +15,21 @@
 
 #### 1. NEXT_PUBLIC_PRODUCT_NAME
 ```
-BoostMyGEO
+ClinicBoost.AI
 ```
 - **Environment**: Production, Preview, Development
 - **Важно**: Название вашего продукта
 
 #### 2. NEXT_PUBLIC_SITE_TITLE
 ```
-BoostMyGEO - AI Visibility Dashboard for Medical Clinics
+ClinicBoost.AI - AI Visibility Dashboard for Medical Clinics
 ```
 - **Environment**: Production, Preview, Development
 - **Важно**: Заголовок сайта (используется в мета-тегах)
 
 #### 3. NEXT_PUBLIC_SITE_DESCRIPTION
 ```
-BoostMyGEO helps medical clinics monitor and improve their AI visibility, track keyword rankings, and optimize their online presence.
+ClinicBoost.AI helps medical clinics monitor and improve their AI visibility, track keyword rankings, and optimize their online presence.
 ```
 - **Environment**: Production, Preview, Development
 - **Важно**: Описание сайта (используется в мета-тегах)

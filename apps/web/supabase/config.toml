@@ -56,8 +56,8 @@ enable_signup = true
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
-# Disabled for local development to make testing easier
-enable_confirmations = false
+# Enabled to test email confirmation in Mailpit
+enable_confirmations = true
 
 # Use an external OAuth provider. The full list of providers are: `apple`, `azure`, `bitbucket`,
 # `discord`, `facebook`, `github`, `gitlab`, `google`, `keycloak`, `linkedin`, `notion`, `twitch`,
@@ -83,7 +83,7 @@ redirect_uri = ""
 url = ""
 
 [auth.email.template.invite]
-subject = "You are invited to Makerkit"
+subject = "You are invited to ClinicBoost.AI"
 content_path = "./supabase/templates/invite-user.html"
 
 [auth.email.template.confirmation]
@@ -99,7 +99,7 @@ subject = "Confirm your email change"
 content_path = "./supabase/templates/change-email-address.html"
 
 [auth.email.template.magic_link]
-subject = "Sign in to Makerkit"
+subject = "Sign in to ClinicBoost.AI"
 content_path = "./supabase/templates/magic-link.html"
 
 [analytics]

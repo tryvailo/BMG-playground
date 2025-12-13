@@ -77,12 +77,12 @@ export function LLMLogsViewer({ logs }: LLMLogsViewerProps) {
               className={`border rounded-lg overflow-hidden ${
                 hasError
                   ? 'border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/20'
-                  : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50'
+                  : 'border-border bg-muted/50'
               }`}
             >
               {/* Log Header */}
               <div
-                className="p-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="p-4 cursor-pointer hover:bg-accent transition-colors"
                 onClick={() => toggleLog(index)}
               >
                 <div className="flex items-center justify-between">
@@ -93,7 +93,7 @@ export function LLMLogsViewer({ logs }: LLMLogsViewerProps) {
                     <Badge className={getRoleColor(log.role)}>
                       {log.role === 'scanner' ? 'Scanner' : 'Parser'}
                     </Badge>
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    <span className="text-sm font-medium text-foreground">
                       {log.model}
                     </span>
                     {hasError && (
@@ -102,16 +102,16 @@ export function LLMLogsViewer({ logs }: LLMLogsViewerProps) {
                       </Badge>
                     )}
                     {log.responseBody?.usage && (
-                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                      <span className="text-xs text-muted-foreground">
                         {log.responseBody.usage.total_tokens} tokens
                       </span>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
                     {isExpanded ? (
-                      <ChevronUp className="h-4 w-4 text-slate-500" />
+                      <ChevronUp className="h-4 w-4 text-muted-foreground" />
                     ) : (
-                      <ChevronDown className="h-4 w-4 text-slate-500" />
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
                     )}
                   </div>
                 </div>
@@ -119,7 +119,7 @@ export function LLMLogsViewer({ logs }: LLMLogsViewerProps) {
 
               {/* Expanded Content */}
               {isExpanded && (
-                <div className="border-t border-slate-200 dark:border-slate-700 p-4 space-y-4 bg-white dark:bg-slate-950">
+                <div className="border-t border-border p-4 space-y-4 bg-card">
                   {/* Error Message */}
                   {hasError && (
                     <div className="p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded text-sm text-red-800 dark:text-red-300">
@@ -130,7 +130,7 @@ export function LLMLogsViewer({ logs }: LLMLogsViewerProps) {
                   {/* Request Section */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                      <h4 className="text-sm font-semibold text-foreground">
                         Request
                       </h4>
                       <Button
@@ -155,8 +155,8 @@ export function LLMLogsViewer({ logs }: LLMLogsViewerProps) {
                         )}
                       </Button>
                     </div>
-                    <div className="bg-slate-900 dark:bg-slate-800 rounded p-3 overflow-x-auto">
-                      <pre className="text-xs text-slate-100 font-mono whitespace-pre-wrap break-words">
+                    <div className="bg-muted rounded p-3 overflow-x-auto">
+                      <pre className="text-xs text-foreground font-mono whitespace-pre-wrap break-words">
                         {formatJSON(log.requestBody)}
                       </pre>
                     </div>
@@ -165,7 +165,7 @@ export function LLMLogsViewer({ logs }: LLMLogsViewerProps) {
                   {/* Prompt Section */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                      <h4 className="text-sm font-semibold text-foreground">
                         Prompt
                       </h4>
                       <Button
@@ -190,8 +190,8 @@ export function LLMLogsViewer({ logs }: LLMLogsViewerProps) {
                         )}
                       </Button>
                     </div>
-                    <div className="bg-slate-900 dark:bg-slate-800 rounded p-3 overflow-x-auto max-h-60 overflow-y-auto">
-                      <pre className="text-xs text-slate-100 font-mono whitespace-pre-wrap break-words">
+                    <div className="bg-muted rounded p-3 overflow-x-auto max-h-60 overflow-y-auto">
+                      <pre className="text-xs text-foreground font-mono whitespace-pre-wrap break-words">
                         {log.prompt}
                       </pre>
                     </div>
@@ -201,7 +201,7 @@ export function LLMLogsViewer({ logs }: LLMLogsViewerProps) {
                   {log.responseBody ? (
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                        <h4 className="text-sm font-semibold text-foreground">
                           Response
                         </h4>
                         <Button
@@ -227,7 +227,7 @@ export function LLMLogsViewer({ logs }: LLMLogsViewerProps) {
                         </Button>
                       </div>
                       {log.responseBody.usage && (
-                        <div className="mb-2 text-xs text-slate-600 dark:text-slate-400">
+                        <div className="mb-2 text-xs text-muted-foreground">
                           <span className="mr-3">
                             Prompt: {log.responseBody.usage.prompt_tokens} tokens
                           </span>
@@ -237,8 +237,8 @@ export function LLMLogsViewer({ logs }: LLMLogsViewerProps) {
                           <span>Total: {log.responseBody.usage.total_tokens} tokens</span>
                         </div>
                       )}
-                      <div className="bg-slate-900 dark:bg-slate-800 rounded p-3 overflow-x-auto max-h-96 overflow-y-auto">
-                        <pre className="text-xs text-slate-100 font-mono whitespace-pre-wrap break-words">
+                      <div className="bg-muted rounded p-3 overflow-x-auto max-h-96 overflow-y-auto">
+                        <pre className="text-xs text-foreground font-mono whitespace-pre-wrap break-words">
                           {log.responseBody.content}
                         </pre>
                       </div>

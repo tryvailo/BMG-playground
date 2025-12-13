@@ -3,6 +3,9 @@
 import { enhanceAction } from '@kit/next/actions';
 import { z } from 'zod';
 import { performEphemeralTechAudit, type EphemeralAuditResult } from '~/lib/modules/audit/ephemeral-audit';
+import { analyzeTechAudit } from '~/lib/modules/audit/utils/tech-audit-analyzer';
+import type { TechAuditAnalysis } from '~/lib/modules/audit/utils/tech-audit-analyzer';
+import type { DuplicateAnalysisResult } from '~/lib/utils/duplicate-analyzer';
 
 /**
  * Playground Tech Audit Input Schema
@@ -60,6 +63,47 @@ export const runPlaygroundTechAudit = enhanceAction(
   {
     auth: false, // Playground actions don't require authentication
     schema: TechAuditInputSchema,
+  },
+);
+
+/**
+ * AI Analysis Input Schema
+ */
+const AIAnalysisInputSchema = z.object({
+  audit: z.any(), // EphemeralAuditResult - using any to avoid circular dependencies
+  apiKeyOpenAI: z.string().optional(),
+  duplicateAnalysis: z.any().optional().nullable(), // DuplicateAnalysisResult
+});
+
+type AIAnalysisInput = z.infer<typeof AIAnalysisInputSchema>;
+
+/**
+ * Run AI analysis on technical audit results
+ * 
+ * @param input - Audit result, OpenAI key, and optional duplicate analysis
+ * @returns AI analysis result
+ */
+export const runAIAnalysis = enhanceAction(
+  async (input: AIAnalysisInput, user?: undefined): Promise<TechAuditAnalysis> => {
+    const { audit, apiKeyOpenAI, duplicateAnalysis } = input;
+
+    console.log('[AIAnalysis] Starting AI analysis...');
+    console.log('[AIAnalysis] OpenAI key provided:', !!apiKeyOpenAI);
+    console.log('[AIAnalysis] Duplicate analysis provided:', !!duplicateAnalysis);
+
+    const result = await analyzeTechAudit(
+      audit as EphemeralAuditResult,
+      apiKeyOpenAI?.trim(),
+      duplicateAnalysis as DuplicateAnalysisResult | null | undefined,
+    );
+
+    console.log('[AIAnalysis] Analysis completed. Overall score:', result.overallScore);
+
+    return result;
+  },
+  {
+    auth: false, // Playground actions don't require authentication
+    schema: AIAnalysisInputSchema,
   },
 );
 

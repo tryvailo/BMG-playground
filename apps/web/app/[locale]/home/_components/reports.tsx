@@ -53,8 +53,8 @@ export function Reports() {
     <div className="space-y-6 relative">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Reports & Exports</h1>
-          <p className="text-slate-500">Download detailed insights and historical data.</p>
+          <h1 className="text-2xl font-bold text-foreground">Reports & Exports</h1>
+          <p className="text-muted-foreground">Download detailed insights and historical data.</p>
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
@@ -66,20 +66,20 @@ export function Reports() {
       </div>
 
       {/* Filters Toolbar */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex gap-3 overflow-x-auto">
-        <button className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-sm font-medium transition-colors">
+      <div className="bg-card p-4 rounded-xl shadow-sm border border-border flex gap-3 overflow-x-auto">
+        <button className="flex items-center gap-2 px-3 py-1.5 bg-muted hover:bg-muted/80 text-foreground rounded-md text-sm font-medium transition-colors">
           <Filter size={14} /> All Types
         </button>
-        <button className="flex items-center gap-2 px-3 py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-md text-sm font-medium transition-colors">
+        <button className="flex items-center gap-2 px-3 py-1.5 border border-border hover:bg-muted text-muted-foreground rounded-md text-sm font-medium transition-colors">
           <Calendar size={14} /> Last 30 Days
         </button>
       </div>
 
       {/* Reports Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left text-slate-500">
-            <thead className="text-xs text-slate-700 uppercase bg-slate-50">
+          <table className="w-full text-sm text-left text-muted-foreground">
+            <thead className="text-xs text-foreground uppercase bg-muted">
               <tr>
                 <th className="px-6 py-3">Report Name</th>
                 <th className="px-6 py-3">Type</th>
@@ -91,7 +91,7 @@ export function Reports() {
             </thead>
             <tbody>
               {reports.map((report) => (
-                <tr key={report.id} className="bg-white border-b hover:bg-slate-50 transition-colors">
+                <tr key={report.id} className="bg-card border-b hover:bg-muted transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className={`p-2 rounded-lg ${
@@ -102,7 +102,7 @@ export function Reports() {
                       }`}>
                         <FileText size={18} />
                       </div>
-                      <span className="font-medium text-slate-900">{report.name}</span>
+                      <span className="font-medium text-foreground">{report.name}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">{report.type}</td>
@@ -124,14 +124,14 @@ export function Reports() {
                     <div className="flex items-center justify-end gap-2">
                       <button 
                         disabled={report.status !== 'Ready'}
-                        className="p-2 text-slate-400 hover:text-emerald-600 disabled:opacity-30 hover:bg-slate-100 rounded-lg transition-colors"
+                        className="p-2 text-muted-foreground hover:text-emerald-600 disabled:opacity-30 hover:bg-muted rounded-lg transition-colors"
                         title="Download"
                       >
                         <Download size={18} />
                       </button>
                       <button 
                         onClick={() => handleDelete(report.id)}
-                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         title="Delete"
                       >
                         <Trash2 size={18} />
@@ -142,7 +142,7 @@ export function Reports() {
               ))}
               {reports.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
                     No reports found. Create one to get started.
                   </td>
                 </tr>
@@ -156,26 +156,26 @@ export function Reports() {
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div>
-          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-            <h2 className="text-xl font-bold text-slate-900 mb-4">Generate New Report</h2>
+          <div className="relative bg-card rounded-xl shadow-xl w-full max-w-md p-6">
+            <h2 className="text-xl font-bold text-foreground mb-4">Generate New Report</h2>
             <form onSubmit={handleGenerate} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Report Name (Optional)</label>
+                <label className="block text-sm font-medium text-foreground mb-1">Report Name (Optional)</label>
                 <input 
                   type="text"
                   value={reportName}
                   onChange={(e) => setReportName(e.target.value)}
                   placeholder="e.g., November Audit"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Report Type</label>
+                <label className="block text-sm font-medium text-foreground mb-1">Report Type</label>
                 <select 
                   value={newReportType}
                   onChange={(e) => setNewReportType(e.target.value as ReportType)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 >
                   <option value="Weekly Summary">Weekly Summary</option>
                   <option value="Competitor Analysis">Competitor Analysis</option>
@@ -188,7 +188,7 @@ export function Reports() {
                 <button 
                   type="button" 
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium"
+                  className="flex-1 px-4 py-2 border border-border text-foreground rounded-lg hover:bg-muted font-medium"
                 >
                   Cancel
                 </button>

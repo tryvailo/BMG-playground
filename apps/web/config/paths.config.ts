@@ -11,7 +11,13 @@ const PathsSchema = z.object({
   }),
   app: z.object({
     home: z.string().min(1),
+    servicesManagement: z.string().min(1),
     profileSettings: z.string().min(1),
+    techAudit: z.string().min(1),
+    contentOptimization: z.string().min(1),
+    eeatAssessment: z.string().min(1),
+    localIndicators: z.string().min(1),
+    configuration: z.string().min(1),
   }),
   marketing: z.object({
     pricing: z.string().min(1),
@@ -30,7 +36,13 @@ const pathsConfigRaw = {
   },
   app: {
     home: '/home',
+    servicesManagement: '/home/services-management',
     profileSettings: '/home/settings',
+    techAudit: '/home/tech-audit',
+    contentOptimization: '/home/content-optimization',
+    eeatAssessment: '/home/eeat-assessment',
+    localIndicators: '/home/local-indicators',
+    configuration: '/home/configuration',
   },
   marketing: {
     pricing: '/pricing',

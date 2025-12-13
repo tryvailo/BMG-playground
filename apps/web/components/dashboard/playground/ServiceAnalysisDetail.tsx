@@ -56,14 +56,14 @@ export function ServiceAnalysisDetail({
 
   const renderCompetitorUrls = (competitors: Array<{ url?: string }>): React.ReactNode => {
     const urls = competitors.filter((c) => c.url).map((c) => c.url!);
-    if (urls.length === 0) return <span className="text-slate-400 text-xs">—</span>;
+    if (urls.length === 0) return <span className="text-muted-foreground text-xs">—</span>;
     if (urls.length === 1) {
       return (
         <a
           href={urls[0]}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-600 dark:text-blue-400 hover:underline text-xs flex items-center gap-1"
+          className="text-primary hover:underline text-xs flex items-center gap-1"
         >
           <span className="max-w-[120px] truncate">{truncateText(urls[0], 20)}</span>
           <ExternalLink className="h-3 w-3 flex-shrink-0" />
@@ -71,7 +71,7 @@ export function ServiceAnalysisDetail({
       );
     }
     return (
-      <div className="text-xs text-slate-600 dark:text-slate-400">
+      <div className="text-xs text-muted-foreground">
         {urls.length} URLs
       </div>
     );
@@ -133,8 +133,8 @@ export function ServiceAnalysisDetail({
     <div className="mt-8 space-y-6">
       {/* Section Title */}
       <div className="flex items-center gap-3">
-        <Target className="h-6 w-6 text-slate-600 dark:text-slate-400" />
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+        <Target className="h-6 w-6 text-muted-foreground" />
+        <h2 className="text-2xl font-bold text-foreground">
           Service Analysis Detail
         </h2>
       </div>
@@ -153,47 +153,47 @@ export function ServiceAnalysisDetail({
         <CardContent className="space-y-4">
           {/* Final AIV Score */}
           <div className="text-center py-6 border-b">
-            <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
+            <p className="text-sm font-medium text-muted-foreground mb-2">
               Final AIV Score
             </p>
             <div className="flex items-center justify-center gap-3">
-              <span className="text-5xl font-bold text-slate-900 dark:text-slate-100">
+              <span className="text-5xl font-bold text-foreground">
                 {aivScoreResult.finalScore.toFixed(1)}
               </span>
-              <span className="text-2xl text-slate-500 dark:text-slate-400">/ 100</span>
+              <span className="text-2xl text-muted-foreground">/ 100</span>
             </div>
           </div>
 
           {/* Formula Breakdown */}
           <div className="space-y-3">
-            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
+            <p className="text-sm font-semibold text-foreground mb-3">
               Formula Breakdown:
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                  <span className="text-xs font-medium text-primary">
                     Visibility Weight (30%)
                   </span>
                   <Badge variant="info" className="text-xs">
                     +{aivScoreResult.visibilityPart.toFixed(2)}
                   </Badge>
                 </div>
-                <p className="text-xs text-blue-600 dark:text-blue-400">
+                <p className="text-xs text-primary/80">
                   {foundUrl ? 'Visible' : 'Not Visible'}
                 </p>
               </div>
 
-              <div className="p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
+              <div className="p-3 bg-muted rounded-lg border border-border">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
+                  <span className="text-xs font-medium text-foreground">
                     Position Weight (25%)
                   </span>
                   <Badge variant="secondary" className="text-xs">
                     +{aivScoreResult.positionPart.toFixed(2)}
                   </Badge>
                 </div>
-                <p className="text-xs text-purple-600 dark:text-purple-400">
+                <p className="text-xs text-muted-foreground">
                   {position ? `Rank #${position}` : 'N/A'}
                 </p>
               </div>
@@ -248,7 +248,7 @@ export function ServiceAnalysisDetail({
                         key={index}
                         className={
                           isOur
-                            ? 'bg-blue-50 dark:bg-blue-950/20 font-semibold'
+                            ? 'bg-primary/10 font-semibold'
                             : ''
                         }
                       >
@@ -262,7 +262,7 @@ export function ServiceAnalysisDetail({
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <span className={isOur ? 'text-blue-700 dark:text-blue-400' : ''}>
+                            <span className={isOur ? 'text-primary' : ''}>
                               {competitor.name}
                             </span>
                             {isOur && (
@@ -274,7 +274,7 @@ export function ServiceAnalysisDetail({
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
-                            <TrendingUp className="h-3 w-3 text-slate-400" />
+                            <TrendingUp className="h-3 w-3 text-muted-foreground" />
                             <span className="font-medium">{estScore.toFixed(0)}</span>
                           </div>
                         </TableCell>
@@ -311,45 +311,45 @@ export function ServiceAnalysisDetail({
           <div className="rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50 dark:bg-slate-900">
-                  <TableHead className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <TableRow className="bg-muted">
+                  <TableHead className="text-xs font-semibold text-foreground">
                     Service
                   </TableHead>
-                  <TableHead className="text-xs font-semibold text-slate-700 dark:text-slate-300 max-w-[150px]">
+                  <TableHead className="text-xs font-semibold text-foreground max-w-[150px]">
                     Page
                   </TableHead>
-                  <TableHead className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <TableHead className="text-xs font-semibold text-foreground">
                     Country
                   </TableHead>
-                  <TableHead className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <TableHead className="text-xs font-semibold text-foreground">
                     City
                   </TableHead>
-                  <TableHead className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <TableHead className="text-xs font-semibold text-foreground">
                     Visibility
                   </TableHead>
-                  <TableHead className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <TableHead className="text-xs font-semibold text-foreground">
                     Found URL
                   </TableHead>
-                  <TableHead className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <TableHead className="text-xs font-semibold text-foreground">
                     Position
                   </TableHead>
-                  <TableHead className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <TableHead className="text-xs font-semibold text-foreground">
                     Total Results
                   </TableHead>
-                  <TableHead className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <TableHead className="text-xs font-semibold text-foreground">
                     AIV Score
                   </TableHead>
-                  <TableHead className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <TableHead className="text-xs font-semibold text-foreground">
                     Competitors
                   </TableHead>
-                  <TableHead className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <TableHead className="text-xs font-semibold text-foreground">
                     Comp. URLs
                   </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <TableRow className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
-                  <TableCell className="text-xs font-medium text-slate-900 dark:text-slate-100">
+                <TableRow className="hover:bg-muted/50">
+                  <TableCell className="text-xs font-medium text-foreground">
                     {query}
                   </TableCell>
                   <TableCell className="text-xs max-w-[150px]">
@@ -358,19 +358,19 @@ export function ServiceAnalysisDetail({
                         href={finalTargetPage}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 dark:text-blue-400 hover:underline truncate block"
+                        className="text-primary hover:underline truncate block"
                         title={finalTargetPage}
                       >
                         {truncateText(finalTargetPage, 25)}
                       </a>
                     ) : (
-                      <span className="text-slate-400">—</span>
+                      <span className="text-muted-foreground">—</span>
                     )}
                   </TableCell>
-                  <TableCell className="text-xs text-slate-600 dark:text-slate-400">
+                  <TableCell className="text-xs text-muted-foreground">
                     {country}
                   </TableCell>
-                  <TableCell className="text-xs text-slate-600 dark:text-slate-400">
+                  <TableCell className="text-xs text-muted-foreground">
                     {city}
                   </TableCell>
                   <TableCell className="text-xs">
@@ -390,20 +390,20 @@ export function ServiceAnalysisDetail({
                         href={foundUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 dark:text-blue-400 hover:underline truncate block flex items-center gap-1"
+                        className="text-primary hover:underline truncate block flex items-center gap-1"
                         title={foundUrl}
                       >
                         <span className="truncate">{truncateText(foundUrl, 20)}</span>
                         <ExternalLink className="h-3 w-3 flex-shrink-0" />
                       </a>
                     ) : (
-                      <span className="text-slate-400">—</span>
+                      <span className="text-muted-foreground">—</span>
                     )}
                   </TableCell>
-                  <TableCell className="text-xs text-slate-600 dark:text-slate-400">
+                  <TableCell className="text-xs text-muted-foreground">
                     {position !== null ? `#${position}` : '—'}
                   </TableCell>
-                  <TableCell className="text-xs text-slate-600 dark:text-slate-400">
+                  <TableCell className="text-xs text-muted-foreground">
                     {totalResults}
                   </TableCell>
                   <TableCell className="text-xs">
@@ -420,7 +420,7 @@ export function ServiceAnalysisDetail({
                       {aivScoreResult.finalScore.toFixed(1)}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-xs text-slate-600 dark:text-slate-400 max-w-[200px]">
+                  <TableCell className="text-xs text-muted-foreground max-w-[200px]">
                     <div className="truncate" title={competitors.map((c) => c.name).join(', ')}>
                       {renderCompetitors(competitors)}
                     </div>
@@ -444,18 +444,18 @@ export function ServiceAnalysisDetail({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
             <div className="flex items-start gap-3">
               <div className="flex-shrink-0 mt-0.5">
-                <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
-                  <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                  <AlertCircle className="h-4 w-4 text-primary" />
                 </div>
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-2">
+                <p className="text-sm font-medium text-foreground mb-2">
                   Recommendations
                 </p>
-                <p className="text-sm text-blue-800 dark:text-blue-200 leading-relaxed whitespace-pre-line">
+                <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-line">
                   {recommendationText ||
                     (foundUrl
                       ? `Your service ranked #${position} out of ${totalResults} results. To improve your ranking, focus on enhancing your E-E-A-T signals, local presence, and technical optimization.`

@@ -50,7 +50,7 @@ export function DashboardFilters({ filters, onFiltersChange }: DashboardFiltersP
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-4 p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800">
+    <div className="flex flex-wrap items-center gap-4 p-4 bg-muted rounded-lg border border-border">
       {/* Date Range Picker */}
       <Popover>
         <PopoverTrigger asChild>

@@ -22,6 +22,9 @@ import type { DuplicateAnalysisResult, DuplicateResult } from '~/lib/utils/dupli
 interface DuplicateCheckSectionProps {
   targetUrl: string;
   apiKeyFirecrawl?: string;
+  initialData?: DuplicateAnalysisResult | null;
+  initialStatus?: Status;
+  initialError?: string | null;
 }
 
 type Status = 'idle' | 'scanning' | 'complete' | 'error';
@@ -59,17 +62,17 @@ function DuplicatePairCard({ duplicate }: DuplicatePairCardProps) {
     )}>
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors py-3">
+          <CardHeader className="cursor-pointer hover:bg-accent/50 transition-colors py-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 {getStatusIcon()}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">
+                    <span className="text-sm font-medium text-foreground truncate">
                       {duplicate.titleA || duplicate.urlA}
                     </span>
-                    <span className="text-xs text-slate-400 dark:text-slate-500">↔</span>
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">
+                    <span className="text-xs text-muted-foreground">↔</span>
+                    <span className="text-sm font-medium text-foreground truncate">
                       {duplicate.titleB || duplicate.urlB}
                     </span>
                   </div>
@@ -81,7 +84,7 @@ function DuplicatePairCard({ duplicate }: DuplicatePairCardProps) {
                   {duplicate.similarity}%
                 </Badge>
                 <ChevronDown className={cn(
-                  'h-4 w-4 text-slate-400 dark:text-slate-500 transition-transform shrink-0',
+                  'h-4 w-4 text-muted-foreground transition-transform shrink-0',
                   isOpen && 'rotate-180'
                 )} />
               </div>
@@ -92,7 +95,7 @@ function DuplicatePairCard({ duplicate }: DuplicatePairCardProps) {
           <CardContent className="pt-0 pb-4 space-y-3">
             {/* Page A Details */}
             <div className="space-y-1">
-              <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+              <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                 <span>Page A</span>
               </div>
               <a
@@ -101,15 +104,15 @@ function DuplicatePairCard({ duplicate }: DuplicatePairCardProps) {
                 rel="noopener noreferrer"
                 className="block group"
               >
-                <div className="flex items-start gap-2 p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                <div className="flex items-start gap-2 p-2 rounded-md hover:bg-accent transition-colors">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-medium text-blue-600 dark:text-blue-400 group-hover:underline truncate">
+                      <span className="text-sm font-medium text-primary group-hover:underline truncate">
                         {duplicate.titleA || 'Untitled'}
                       </span>
-                      <ExternalLink className="h-3 w-3 text-blue-600 dark:text-blue-400 shrink-0" />
+                      <ExternalLink className="h-3 w-3 text-primary shrink-0" />
                     </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                    <p className="text-xs text-muted-foreground truncate mt-0.5">
                       {duplicate.urlA}
                     </p>
                   </div>
@@ -119,7 +122,7 @@ function DuplicatePairCard({ duplicate }: DuplicatePairCardProps) {
 
             {/* Page B Details */}
             <div className="space-y-1">
-              <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+              <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                 <span>Page B</span>
               </div>
               <a
@@ -128,15 +131,15 @@ function DuplicatePairCard({ duplicate }: DuplicatePairCardProps) {
                 rel="noopener noreferrer"
                 className="block group"
               >
-                <div className="flex items-start gap-2 p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                <div className="flex items-start gap-2 p-2 rounded-md hover:bg-accent transition-colors">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-medium text-blue-600 dark:text-blue-400 group-hover:underline truncate">
+                      <span className="text-sm font-medium text-primary group-hover:underline truncate">
                         {duplicate.titleB || 'Untitled'}
                       </span>
-                      <ExternalLink className="h-3 w-3 text-blue-600 dark:text-blue-400 shrink-0" />
+                      <ExternalLink className="h-3 w-3 text-primary shrink-0" />
                     </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                    <p className="text-xs text-muted-foreground truncate mt-0.5">
                       {duplicate.urlB}
                     </p>
                   </div>
@@ -145,9 +148,9 @@ function DuplicatePairCard({ duplicate }: DuplicatePairCardProps) {
             </div>
 
             {/* Similarity Info */}
-            <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
+            <div className="pt-2 border-t border-border">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-500 dark:text-slate-400">
+                <span className="text-muted-foreground">
                   Similarity Score:
                 </span>
                 <span className={cn(
@@ -170,11 +173,30 @@ function DuplicatePairCard({ duplicate }: DuplicatePairCardProps) {
   );
 }
 
-export function DuplicateCheckSection({ targetUrl, apiKeyFirecrawl }: DuplicateCheckSectionProps) {
-  const [status, setStatus] = useState<Status>('idle');
-  const [data, setData] = useState<DuplicateAnalysisResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
+export function DuplicateCheckSection({ 
+  targetUrl, 
+  apiKeyFirecrawl,
+  initialData = null,
+  initialStatus = 'idle',
+  initialError = null,
+}: DuplicateCheckSectionProps) {
+  const [status, setStatus] = useState<Status>(initialStatus);
+  const [data, setData] = useState<DuplicateAnalysisResult | null>(initialData);
+  const [error, setError] = useState<string | null>(initialError);
   const [isPending, startTransition] = useTransition();
+
+  // Update state when initial props change
+  React.useEffect(() => {
+    if (initialData !== undefined) {
+      setData(initialData);
+    }
+    if (initialStatus !== undefined) {
+      setStatus(initialStatus);
+    }
+    if (initialError !== undefined) {
+      setError(initialError);
+    }
+  }, [initialData, initialStatus, initialError]);
 
   const handleStartScan = () => {
     if (!targetUrl || !targetUrl.trim()) {
@@ -264,7 +286,7 @@ export function DuplicateCheckSection({ targetUrl, apiKeyFirecrawl }: DuplicateC
               <Search className="mr-2 h-4 w-4" />
               Start Deep Scan (30-60s)
             </Button>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
+            <p className="text-sm text-muted-foreground">
               ⏱️ Requires waiting. The scan will crawl your website and analyze content similarity.
             </p>
           </div>
@@ -278,10 +300,10 @@ export function DuplicateCheckSection({ targetUrl, apiKeyFirecrawl }: DuplicateC
               Scanning...
             </Button>
             <div className="space-y-2">
-              <div className="relative h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
-                <div className="absolute h-full w-full animate-pulse bg-blue-500/30" />
+              <div className="relative h-2 w-full overflow-hidden rounded-full bg-muted">
+                <div className="absolute h-full w-full animate-pulse bg-primary/30" />
               </div>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
+              <p className="text-sm text-muted-foreground">
                 Crawling site structure & analyzing content...
               </p>
             </div>
@@ -301,10 +323,10 @@ export function DuplicateCheckSection({ targetUrl, apiKeyFirecrawl }: DuplicateC
               </AlertDescription>
             </Alert>
 
-            <div className="rounded-md bg-slate-50 dark:bg-slate-900 p-4">
+            <div className="rounded-md bg-muted p-4">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-600 dark:text-slate-400">Pages Scanned:</span>
-                <span className="font-semibold text-slate-900 dark:text-slate-100">
+                <span className="text-muted-foreground">Pages Scanned:</span>
+                <span className="font-semibold text-foreground">
                   {data.pagesScanned}
                 </span>
               </div>
@@ -339,7 +361,7 @@ export function DuplicateCheckSection({ targetUrl, apiKeyFirecrawl }: DuplicateC
             </Alert>
 
             <div className="space-y-3">
-              <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+              <h4 className="text-sm font-semibold text-foreground">
                 Duplicate Pairs ({data.duplicatesFound}):
               </h4>
               <div className="space-y-2">

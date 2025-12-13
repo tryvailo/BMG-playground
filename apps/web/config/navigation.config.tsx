@@ -1,4 +1,4 @@
-import { Home, User } from 'lucide-react';
+import { Home, User, Shield, Settings, FileText, MapPin, Briefcase, Cog } from 'lucide-react';
 import { z } from 'zod';
 
 import { NavigationConfigSchema } from '@kit/ui/navigation-schema';
@@ -15,6 +15,42 @@ const routes = [
         label: 'common:routes.home',
         path: pathsConfig.app.home,
         Icon: <Home className={iconClasses} />,
+        end: true,
+      },
+      {
+        label: 'Services Management',
+        path: pathsConfig.app.servicesManagement,
+        Icon: <Briefcase className={iconClasses} />,
+        end: true,
+      },
+      {
+        label: 'Technical Audit',
+        path: pathsConfig.app.techAudit,
+        Icon: <Settings className={iconClasses} />,
+        end: true,
+      },
+      {
+        label: 'Content Optimization',
+        path: pathsConfig.app.contentOptimization,
+        Icon: <FileText className={iconClasses} />,
+        end: true,
+      },
+      {
+        label: 'E-E-A-T Assessment',
+        path: pathsConfig.app.eeatAssessment,
+        Icon: <Shield className={iconClasses} />,
+        end: true,
+      },
+      {
+        label: 'Local Indicators',
+        path: pathsConfig.app.localIndicators,
+        Icon: <MapPin className={iconClasses} />,
+        end: true,
+      },
+      {
+        label: 'Configuration',
+        path: pathsConfig.app.configuration,
+        Icon: <Cog className={iconClasses} />,
         end: true,
       },
     ],

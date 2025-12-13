@@ -88,7 +88,7 @@ grant execute on function kit.user_has_organization_access(uuid) to authenticate
  */
 create table if not exists public.projects (
   id uuid not null default extensions.uuid_generate_v4(),
-  organization_id uuid not null references public.organizations(id) on delete cascade,
+  organization_id uuid not null references public.accounts(id) on delete cascade,
   domain text not null,
   name text not null,
   settings jsonb default '{}'::jsonb not null,

@@ -542,25 +542,51 @@ async function scanServiceVisibility(
 
   const allCompetitors = new Set<string>();
 
-  // Try parsing both responses
+  // Try parsing both responses with error handling
   if (openaiText) {
-    const parseResult = await parseAiResponseWithClient(openaiText, domain, apiKeyOpenAI, llmLogs);
-    openaiParsed = parseResult.parsed;
-    llmLogs.push(...parseResult.logs);
-    if (openaiParsed.domainPresent && openaiParsed.rank) {
-      bestParsedResult = openaiParsed;
+    try {
+      const parseResult = await parseAiResponseWithClient(openaiText, domain, apiKeyOpenAI, llmLogs);
+      openaiParsed = parseResult.parsed;
+      llmLogs.push(...parseResult.logs);
+      if (openaiParsed.domainPresent && openaiParsed.rank) {
+        bestParsedResult = openaiParsed;
+      }
+      openaiParsed.competitors.forEach((c) => allCompetitors.add(c));
+    } catch (error) {
+      console.error('[scanServiceVisibility] Error parsing OpenAI response:', error);
+      llmLogs.push({
+        provider: 'openai',
+        model: OPENAI_MODELS.GPT4O_MINI,
+        role: 'parser',
+        prompt: `Parse response for domain: ${domain}`,
+        requestBody: { text: openaiText.substring(0, 100) + '...' },
+        responseBody: null,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
-    openaiParsed.competitors.forEach((c) => allCompetitors.add(c));
   }
 
   if (perplexityText) {
-    const parseResult = await parseAiResponseWithClient(perplexityText, domain, apiKeyOpenAI, llmLogs);
-    perplexityParsed = parseResult.parsed;
-    llmLogs.push(...parseResult.logs);
-    if (!bestParsedResult || (perplexityParsed.domainPresent && perplexityParsed.rank && (!bestParsedResult.rank || perplexityParsed.rank < bestParsedResult.rank))) {
-      bestParsedResult = perplexityParsed;
+    try {
+      const parseResult = await parseAiResponseWithClient(perplexityText, domain, apiKeyOpenAI, llmLogs);
+      perplexityParsed = parseResult.parsed;
+      llmLogs.push(...parseResult.logs);
+      if (!bestParsedResult || (perplexityParsed.domainPresent && perplexityParsed.rank && (!bestParsedResult.rank || perplexityParsed.rank < bestParsedResult.rank))) {
+        bestParsedResult = perplexityParsed;
+      }
+      perplexityParsed.competitors.forEach((c) => allCompetitors.add(c));
+    } catch (error) {
+      console.error('[scanServiceVisibility] Error parsing Perplexity response:', error);
+      llmLogs.push({
+        provider: 'perplexity',
+        model: PERPLEXITY_MODELS.ONLINE_FAST,
+        role: 'parser',
+        prompt: `Parse response for domain: ${domain}`,
+        requestBody: { text: perplexityText.substring(0, 100) + '...' },
+        responseBody: null,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
-    perplexityParsed.competitors.forEach((c) => allCompetitors.add(c));
   }
 
   // If no domain found in either response, use the first available parsed result
@@ -570,7 +596,28 @@ async function scanServiceVisibility(
     } else if (perplexityParsed) {
       bestParsedResult = perplexityParsed;
     } else {
-      throw new Error('Both AI scans failed to return responses');
+      // Provide more detailed error message
+      const hasOpenAIText = !!openaiText;
+      const hasPerplexityText = !!perplexityText;
+      const openaiError = openaiResponse.status === 'rejected' 
+        ? (openaiResponse.reason instanceof Error ? openaiResponse.reason.message : String(openaiResponse.reason))
+        : null;
+      const perplexityError = perplexityResponse.status === 'rejected'
+        ? (perplexityResponse.reason instanceof Error ? perplexityResponse.reason.message : String(perplexityResponse.reason))
+        : null;
+      
+      let errorMessage = 'Both AI scans failed to return responses. ';
+      if (hasOpenAIText && hasPerplexityText) {
+        errorMessage += 'Both scans returned text but parsing failed.';
+      } else if (hasOpenAIText) {
+        errorMessage += `OpenAI returned text but parsing failed. Perplexity error: ${perplexityError || 'No response'}.`;
+      } else if (hasPerplexityText) {
+        errorMessage += `Perplexity returned text but parsing failed. OpenAI error: ${openaiError || 'No response'}.`;
+      } else {
+        errorMessage += `OpenAI error: ${openaiError || 'No response'}. Perplexity error: ${perplexityError || 'No response'}.`;
+      }
+      
+      throw new Error(errorMessage);
     }
   }
 
@@ -1085,17 +1132,46 @@ function adaptEphemeralToTechAudit(
  */
 export const runLiveDashboardTest = enhanceAction(
   async (input: PlaygroundInput, user?: undefined): Promise<DashboardData & { serviceAnalysis: ServiceAnalysisData; techAudit: null }> => {
-    const { apiKeyOpenAI, apiKeyPerplexity, domain, query, city } = input;
-
     try {
+      console.log('[runLiveDashboardTest] Starting with input:', {
+        domain: input.domain,
+        query: input.query,
+        city: input.city,
+        hasOpenAIKey: !!input.apiKeyOpenAI,
+        hasPerplexityKey: !!input.apiKeyPerplexity,
+      });
+
+      // Validate input parameters
+      if (!input.domain || !input.domain.trim()) {
+        throw new Error('Domain is required');
+      }
+      if (!input.query || !input.query.trim()) {
+        throw new Error('Query is required');
+      }
+      if (!input.city || !input.city.trim()) {
+        throw new Error('City is required');
+      }
+      if (!input.apiKeyOpenAI || !input.apiKeyOpenAI.trim()) {
+        throw new Error('OpenAI API key is required');
+      }
+      if (!input.apiKeyPerplexity || !input.apiKeyPerplexity.trim()) {
+        throw new Error('Perplexity API key is required');
+      }
+
+      const { apiKeyOpenAI, apiKeyPerplexity, domain, query, city } = input;
+
       // Normalize domain URL for tech audit
       const normalizedDomain = domain.startsWith('http://') || domain.startsWith('https://')
         ? domain
         : `https://${domain}`;
 
+      console.log('[runLiveDashboardTest] Normalized domain:', normalizedDomain);
+
       // Step 1: Run service visibility scan only
       // Technical audit is now run separately via "Run Technical Audit" button
-      const visibilityResult = await scanServiceVisibility(query, city, domain, apiKeyOpenAI, apiKeyPerplexity);
+      console.log('[runLiveDashboardTest] Starting service visibility scan...');
+      const visibilityResult = await scanServiceVisibility(query.trim(), city.trim(), domain.trim(), apiKeyOpenAI.trim(), apiKeyPerplexity.trim());
+      console.log('[runLiveDashboardTest] Service visibility scan completed');
 
       // Step 2: Create ScanResult with E-E-A-T/Local scores
       // The score will be calculated inside mapLiveScanToDashboard using the refined formula
@@ -1121,18 +1197,30 @@ export const runLiveDashboardTest = enhanceAction(
       const dashboardData = mapLiveScanToDashboard(scanResult, domain, mockTechAuditResult);
 
       // Step 4: Extract detailed competitor information
+      console.log('[runLiveDashboardTest] Extracting competitor details...');
       const bestResponseText = visibilityResult.bestAiEngine === 'openai' 
         ? visibilityResult.openaiText 
         : visibilityResult.bestAiEngine === 'perplexity'
         ? visibilityResult.perplexityText
         : visibilityResult.openaiText || visibilityResult.perplexityText;
 
-      const competitorDetails = bestResponseText
-        ? await extractCompetitorDetails(bestResponseText, visibilityResult.competitors, apiKeyOpenAI)
-        : visibilityResult.competitors.map((name, index) => ({
-            rank: index + 1,
-            name,
-          }));
+      let competitorDetails;
+      try {
+        competitorDetails = bestResponseText
+          ? await extractCompetitorDetails(bestResponseText, visibilityResult.competitors, apiKeyOpenAI)
+          : visibilityResult.competitors.map((name, index) => ({
+              rank: index + 1,
+              name,
+            }));
+        console.log('[runLiveDashboardTest] Competitor details extracted:', competitorDetails.length);
+      } catch (error) {
+        console.error('[runLiveDashboardTest] Error extracting competitor details:', error);
+        // Fallback to simple mapping
+        competitorDetails = visibilityResult.competitors.map((name, index) => ({
+          rank: index + 1,
+          name,
+        }));
+      }
 
       // Determine AI engine name
       const aiEngineName = visibilityResult.bestAiEngine === 'openai'
@@ -1173,7 +1261,19 @@ export const runLiveDashboardTest = enhanceAction(
         techAudit: null as unknown as EphemeralAuditResult,
       };
     } catch (error) {
-      console.error('[Playground] Error running live test:', error);
+      console.error('[runLiveDashboardTest] Error running live test:', error);
+      console.error('[runLiveDashboardTest] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      console.error('[runLiveDashboardTest] Error details:', {
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : String(error),
+        input: {
+          domain: input.domain,
+          query: input.query,
+          city: input.city,
+          hasOpenAIKey: !!input.apiKeyOpenAI,
+          hasPerplexityKey: !!input.apiKeyPerplexity,
+        },
+      });
       
       // Улучшенная обработка ошибок
       if (error instanceof OpenAIAPIError) {
@@ -1186,8 +1286,9 @@ export const runLiveDashboardTest = enhanceAction(
         );
       }
       
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(
-        `Failed to run playground test: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to run playground test: ${errorMessage}`,
       );
     }
   },

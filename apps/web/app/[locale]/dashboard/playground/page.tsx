@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Loader2, Play, Circle, Settings, FileText } from 'lucide-react';
+import { Loader2, Play, Circle, Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { Button } from '@kit/ui/button';
@@ -23,15 +23,8 @@ import { Input } from '@kit/ui/input';
 import { DashboardView, type DashboardData } from '~/components/dashboard/DashboardView';
 import { ScanProgress } from '~/components/dashboard/playground/ScanProgress';
 import { ServiceAnalysisDetail } from '~/components/dashboard/playground/ServiceAnalysisDetail';
-import { TechAuditSection } from '~/components/dashboard/playground/TechAuditSection';
 import { DuplicateCheckSection } from '~/components/dashboard/playground/DuplicateCheckSection';
-import { ServicesTable } from '~/components/dashboard/playground/ServicesTable';
-import { ContentAuditSection } from '~/components/features/playground/ContentAuditSection';
-import { performContentAudit } from '~/lib/actions/content-audit';
-import type { ContentAuditResult } from '~/lib/server/services/content/types';
 import { runLiveDashboardTest, type ServiceAnalysisData } from '~/lib/actions/playground-test';
-import { runPlaygroundTechAudit } from '~/lib/actions/tech-audit-playground';
-import type { EphemeralAuditResult } from '~/lib/modules/audit/ephemeral-audit';
 
 /*
  * -------------------------------------------------------
@@ -110,12 +103,8 @@ export default function PlaygroundPage() {
   const t = useTranslations('Playground');
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [serviceAnalysis, setServiceAnalysis] = useState<ServiceAnalysisData | null>(null);
-  const [techAudit, setTechAudit] = useState<EphemeralAuditResult | null>(null);
-  const [contentAudit, setContentAudit] = useState<ContentAuditResult | null>(null);
   const [currentDomain, setCurrentDomain] = useState<string>('');
   const [isPending, setIsPending] = useState(false);
-  const [isPendingTechAudit, setIsPendingTechAudit] = useState(false);
-  const [isPendingContentAudit, setIsPendingContentAudit] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
 
@@ -130,7 +119,7 @@ export default function PlaygroundPage() {
     query: z.string().min(1, t('validation.keywordQueryRequired')),
   }), [t]);
 
-  // Initialize form with empty values (SSR-safe)
+  // Initialize form - will be updated from localStorage in useEffect
   const form = useForm<PlaygroundFormValues>({
     resolver: zodResolver(PlaygroundFormSchema),
     defaultValues: {
@@ -144,9 +133,13 @@ export default function PlaygroundPage() {
     },
   });
 
-  // Load saved values from localStorage only on client side
+  // Load saved values from localStorage on mount (sync with form)
   useEffect(() => {
     setIsMounted(true);
+    
+    // Only load from localStorage on client side
+    if (typeof window === 'undefined') return;
+
     const savedOpenAI = getStoredValue(STORAGE_KEYS.API_KEY_OPENAI);
     const savedPerplexity = getStoredValue(STORAGE_KEYS.API_KEY_PERPLEXITY);
     const savedGooglePageSpeed = getStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_PAGESPEED);
@@ -154,36 +147,64 @@ export default function PlaygroundPage() {
     const savedDomain = getStoredValue(STORAGE_KEYS.DOMAIN);
     const savedCity = getStoredValue(STORAGE_KEYS.CITY);
 
-    if (savedOpenAI || savedPerplexity || savedGooglePageSpeed || savedFirecrawl || savedDomain || savedCity) {
-      form.reset({
-        apiKeyOpenAI: savedOpenAI,
-        apiKeyPerplexity: savedPerplexity,
-        apiKeyGooglePageSpeed: savedGooglePageSpeed,
-        apiKeyFirecrawl: savedFirecrawl,
-        domain: savedDomain,
-        city: savedCity,
-        query: form.getValues('query'), // Keep query as is
-      });
-    }
-  }, [form]);
+    // Reset form with saved values (including empty strings)
+    form.reset({
+      apiKeyOpenAI: savedOpenAI || '',
+      apiKeyPerplexity: savedPerplexity || '',
+      apiKeyGooglePageSpeed: savedGooglePageSpeed || '',
+      apiKeyFirecrawl: savedFirecrawl || '',
+      domain: savedDomain || '',
+      city: savedCity || '',
+      query: '', // Always start with empty query
+    }, {
+      keepDefaultValues: false, // Override defaults with saved values
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Save values to localStorage when form values change (debounced)
+  useEffect(() => {
+    if (!isMounted) return; // Don't save on initial mount
+    
+    let timeoutId: NodeJS.Timeout | null = null;
+    
+    const subscription = form.watch((values) => {
+      // Clear previous timeout
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      
+      // Debounce saves to avoid too many localStorage writes
+      timeoutId = setTimeout(() => {
+        setStoredValue(STORAGE_KEYS.API_KEY_OPENAI, values.apiKeyOpenAI || '');
+        setStoredValue(STORAGE_KEYS.API_KEY_PERPLEXITY, values.apiKeyPerplexity || '');
+        setStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_PAGESPEED, values.apiKeyGooglePageSpeed || '');
+        setStoredValue(STORAGE_KEYS.API_KEY_FIRECRAWL, values.apiKeyFirecrawl || '');
+        setStoredValue(STORAGE_KEYS.DOMAIN, values.domain || '');
+        setStoredValue(STORAGE_KEYS.CITY, values.city || '');
+      }, 500); // 500ms debounce
+    });
+
+    return () => {
+      subscription.unsubscribe();
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [form, isMounted]);
 
   const onSubmit = async (values: PlaygroundFormValues) => {
     setIsPending(true);
     setDashboardData(null);
     setServiceAnalysis(null);
-    setTechAudit(null);
 
-    // Save values to localStorage
-    setStoredValue(STORAGE_KEYS.API_KEY_OPENAI, values.apiKeyOpenAI);
-    setStoredValue(STORAGE_KEYS.API_KEY_PERPLEXITY, values.apiKeyPerplexity);
-    if (values.apiKeyGooglePageSpeed) {
-      setStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_PAGESPEED, values.apiKeyGooglePageSpeed);
-    }
-    if (values.apiKeyFirecrawl) {
-      setStoredValue(STORAGE_KEYS.API_KEY_FIRECRAWL, values.apiKeyFirecrawl);
-    }
-    setStoredValue(STORAGE_KEYS.DOMAIN, values.domain);
-    setStoredValue(STORAGE_KEYS.CITY, values.city);
+    // Save values to localStorage (always save, even if empty)
+    setStoredValue(STORAGE_KEYS.API_KEY_OPENAI, values.apiKeyOpenAI || '');
+    setStoredValue(STORAGE_KEYS.API_KEY_PERPLEXITY, values.apiKeyPerplexity || '');
+    setStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_PAGESPEED, values.apiKeyGooglePageSpeed || '');
+    setStoredValue(STORAGE_KEYS.API_KEY_FIRECRAWL, values.apiKeyFirecrawl || '');
+    setStoredValue(STORAGE_KEYS.DOMAIN, values.domain || '');
+    setStoredValue(STORAGE_KEYS.CITY, values.city || '');
 
     // Scroll smoothly to results area
     setTimeout(() => {
@@ -202,7 +223,6 @@ export default function PlaygroundPage() {
       });
 
       // Extract DashboardData and ServiceAnalysisData
-      // Note: techAudit is now null - it should be run separately
       const { serviceAnalysis: analysis, ...dashboard } = result;
       setDashboardData(dashboard);
       setServiceAnalysis(analysis);
@@ -223,96 +243,39 @@ export default function PlaygroundPage() {
       // Set empty data to show "Not Visible" state
       setDashboardData(emptyDashboardData);
       setServiceAnalysis(null);
-      setTechAudit(null);
     } finally {
       setIsPending(false);
     }
   };
 
-  // Separate handler for technical audit
-  const onRunTechAudit = async () => {
-    const values = form.getValues();
-    
-    if (!values.domain) {
-      toast.error('Please enter a domain first');
-      return;
-    }
 
-    setIsPendingTechAudit(true);
-    setTechAudit(null);
 
-    // Scroll smoothly to results area
-    setTimeout(() => {
-      resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
+  // Separate handler for E-E-A-T audit
 
-    try {
-      const auditResult = await runPlaygroundTechAudit({
-        domain: values.domain,
-        apiKeyOpenAI: values.apiKeyOpenAI,
-        apiKeyGooglePageSpeed: values.apiKeyGooglePageSpeed,
+  // Debug: Check localStorage on mount
+  useEffect(() => {
+    if (isMounted) {
+      const keys = {
+        openai: getStoredValue(STORAGE_KEYS.API_KEY_OPENAI),
+        perplexity: getStoredValue(STORAGE_KEYS.API_KEY_PERPLEXITY),
+        googlePageSpeed: getStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_PAGESPEED),
+        firecrawl: getStoredValue(STORAGE_KEYS.API_KEY_FIRECRAWL),
+        domain: getStoredValue(STORAGE_KEYS.DOMAIN),
+        city: getStoredValue(STORAGE_KEYS.CITY),
+      };
+      console.log('🔑 Saved keys in localStorage:', {
+        'OpenAI': keys.openai ? `${keys.openai.substring(0, 10)}...` : '❌ Not saved',
+        'Perplexity': keys.perplexity ? `${keys.perplexity.substring(0, 10)}...` : '❌ Not saved',
+        'Google PageSpeed': keys.googlePageSpeed ? `${keys.googlePageSpeed.substring(0, 10)}...` : '❌ Not saved',
+        'Firecrawl': keys.firecrawl ? `${keys.firecrawl.substring(0, 10)}...` : '❌ Not saved',
+        'Domain': keys.domain || '❌ Not saved',
+        'City': keys.city || '❌ Not saved',
       });
-
-      setTechAudit(auditResult);
-      setCurrentDomain(values.domain);
-      toast.success('Technical audit completed successfully!');
-    } catch (error) {
-      console.error('[Playground] Tech audit error:', error);
-      
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
-      // Check for API key errors
-      if (errorMessage.includes('API key') || errorMessage.includes('401') || errorMessage.includes('403')) {
-        toast.error('Invalid API keys. Please check your API keys.');
-      } else {
-        toast.error(`Failed to run technical audit: ${errorMessage}`);
-      }
-    } finally {
-      setIsPendingTechAudit(false);
     }
-  };
-
-  // Separate handler for content audit
-  const onRunContentAudit = async () => {
-    const values = form.getValues();
-    
-    if (!values.domain) {
-      toast.error('Please enter a domain first');
-      return;
-    }
-
-    setIsPendingContentAudit(true);
-    setContentAudit(null);
-
-    // Scroll smoothly to results area
-    setTimeout(() => {
-      resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-
-    try {
-      // Normalize URL
-      let normalizedUrl = values.domain.trim();
-      if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
-        normalizedUrl = `https://${normalizedUrl}`;
-      }
-
-      const auditResult = await performContentAudit({ url: normalizedUrl });
-
-      setContentAudit(auditResult);
-      setCurrentDomain(values.domain);
-      toast.success('Content optimization audit completed successfully!');
-    } catch (error) {
-      console.error('[Playground] Content audit error:', error);
-      
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      toast.error(`Failed to run content audit: ${errorMessage}`);
-    } finally {
-      setIsPendingContentAudit(false);
-    }
-  };
+  }, [isMounted]);
 
   return (
-    <div className="container mx-auto p-6 space-y-6 max-w-7xl">
+    <div className="container mx-auto p-6 space-y-6 max-w-7xl h-full min-h-full">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
@@ -501,50 +464,17 @@ export default function PlaygroundPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={isPending || isPendingTechAudit || isPendingContentAudit || !form.watch('domain')?.trim()}
-                  onClick={onRunTechAudit}
+                  disabled={isPending || !form.watch('domain')?.trim()}
                   size="lg"
-                  className="w-full sm:w-auto min-w-[220px] order-3 sm:order-1"
+                  className="w-full sm:w-auto min-w-[220px] order-4 sm:order-1"
                   title={!form.watch('domain')?.trim() ? 'Please enter a domain first' : 'Run technical audit for the domain'}
                 >
-                  {isPendingTechAudit ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Running Technical Audit...
-                    </>
-                  ) : (
-                    <>
-                      <Settings className="mr-2 h-4 w-4" />
-                      Run Technical Audit
-                    </>
-                  )}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={isPending || isPendingTechAudit || isPendingContentAudit || !form.watch('domain')?.trim()}
-                  onClick={onRunContentAudit}
-                  size="lg"
-                  className="w-full sm:w-auto min-w-[220px] order-2 sm:order-2"
-                  title={!form.watch('domain')?.trim() ? 'Please enter a domain first' : 'Run content optimization audit'}
-                >
-                  {isPendingContentAudit ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Analyzing Content...
-                    </>
-                  ) : (
-                    <>
-                      <FileText className="mr-2 h-4 w-4" />
-                      Analyze Content Optimization
-                    </>
-                  )}
                 </Button>
                 <Button 
                   type="submit" 
-                  disabled={isPending || isPendingTechAudit || isPendingContentAudit} 
+                  disabled={isPending} 
                   size="lg"
-                  className="w-full sm:w-auto order-1 sm:order-3"
+                  className="w-full sm:w-auto order-1 sm:order-4"
                 >
                   {isPending ? (
                     <>
@@ -564,18 +494,6 @@ export default function PlaygroundPage() {
         </CardContent>
       </Card>
 
-      {/* Services Management Table */}
-      {isMounted && form.watch('apiKeyOpenAI') && form.watch('apiKeyPerplexity') && form.watch('domain') && (
-        <ServicesTable
-          domain={form.watch('domain')}
-          apiKeyOpenAI={form.watch('apiKeyOpenAI')}
-          apiKeyPerplexity={form.watch('apiKeyPerplexity')}
-          onCalculationsComplete={(results) => {
-            console.log('[Playground] Calculations complete:', results);
-            toast.success(t('calculatedServices', { count: results.length }));
-          }}
-        />
-      )}
 
       {/* Dashboard Preview */}
       <div ref={resultsRef} className="space-y-6">
@@ -652,183 +570,18 @@ export default function PlaygroundPage() {
             )}
 
             {/* Tech Audit Section - Can be shown independently */}
-            {techAudit && (
-              <>
-                {/* Separator */}
-                <div className="relative my-8">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-slate-200 dark:border-slate-700" />
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="bg-white dark:bg-slate-950 px-4 text-slate-500 dark:text-slate-400">
-                      Technical Audit
-                    </span>
-                  </div>
-                </div>
-                <TechAuditSection data={techAudit} />
-              </>
-            )}
 
-            {/* Content Audit Section - Independent (shown separately from Tech Audit) */}
-            {(contentAudit || isPendingContentAudit) && (
-              <>
-                {/* Separator */}
-                <div className="relative my-8">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-slate-200 dark:border-slate-700" />
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="bg-white dark:bg-slate-950 px-4 text-slate-500 dark:text-slate-400">
-                      Content Optimization
-                    </span>
-                  </div>
-                </div>
-                {isPendingContentAudit ? (
-                  <Card className="w-full border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                        Content Optimization Audit in Progress
-                      </CardTitle>
-                      <CardDescription>
-                        Analyzing content structure, text quality, and E-E-A-T signals...
-                      </CardDescription>
-                    </CardHeader>
-                  </Card>
-                ) : contentAudit ? (
-                  <ContentAuditSection 
-                    defaultUrl={(() => {
-                      const domainValue = form.watch('domain')?.trim() || '';
-                      if (domainValue && !domainValue.startsWith('http://') && !domainValue.startsWith('https://')) {
-                        return `https://${domainValue}`;
-                      }
-                      return domainValue;
-                    })()}
-                    result={contentAudit}
-                  />
-                ) : null}
-              </>
-            )}
 
-            {/* Tech Audit Loading State */}
-            {isPendingTechAudit && (
-              <>
-                {/* Separator */}
-                <div className="relative my-8">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-slate-200 dark:border-slate-700" />
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="bg-white dark:bg-slate-950 px-4 text-slate-500 dark:text-slate-400">
-                      Technical Audit
-                    </span>
-                  </div>
-                </div>
-                <Card className="w-full border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      Technical Audit in Progress
-                    </CardTitle>
-                    <CardDescription>
-                      Running comprehensive technical analysis (PageSpeed, HTML parsing, file checks, schema analysis)...
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
-              </>
-            )}
+
           </>
         ) : null}
 
-        {/* Tech Audit Section - Can be shown independently of simulation */}
-        {techAudit && !dashboardData && (
-          <>
-            {/* Separator */}
-            <div className="relative my-8">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200 dark:border-slate-700" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="bg-white dark:bg-slate-950 px-4 text-slate-500 dark:text-slate-400">
-                  Technical Audit
-                </span>
-              </div>
-            </div>
-            <TechAuditSection data={techAudit} />
-          </>
-        )}
 
-        {/* Content Audit Section - Can be shown independently of simulation and tech audit */}
-        {(contentAudit || isPendingContentAudit) && !dashboardData && (
-          <>
-            {/* Separator */}
-            <div className="relative my-8">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200 dark:border-slate-700" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="bg-white dark:bg-slate-950 px-4 text-slate-500 dark:text-slate-400">
-                  Content Optimization
-                </span>
-              </div>
-            </div>
-            {isPendingContentAudit ? (
-              <Card className="w-full border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    Content Optimization Audit in Progress
-                  </CardTitle>
-                  <CardDescription>
-                    Analyzing content structure, text quality, and E-E-A-T signals...
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            ) : contentAudit ? (
-              <ContentAuditSection 
-                defaultUrl={(() => {
-                  const domainValue = form.watch('domain')?.trim() || '';
-                  if (domainValue && !domainValue.startsWith('http://') && !domainValue.startsWith('https://')) {
-                    return `https://${domainValue}`;
-                  }
-                  return domainValue;
-                })()}
-                result={contentAudit}
-              />
-            ) : null}
-          </>
-        )}
 
-        {/* Tech Audit Loading State - Independent */}
-        {isPendingTechAudit && !dashboardData && (
-          <>
-            {/* Separator */}
-            <div className="relative my-8">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200 dark:border-slate-700" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="bg-white dark:bg-slate-950 px-4 text-slate-500 dark:text-slate-400">
-                  Technical Audit
-                </span>
-              </div>
-            </div>
-            <Card className="w-full border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  Technical Audit in Progress
-                </CardTitle>
-                <CardDescription>
-                  Running comprehensive technical analysis (PageSpeed, HTML parsing, file checks, schema analysis)...
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          </>
-        )}
+
 
         {/* Show placeholder only if no data and no pending operations */}
-        {!dashboardData && !techAudit && !contentAudit && !isPending && !isPendingTechAudit && !isPendingContentAudit && (
+        {!dashboardData && !isPending && (
           // Show placeholder in initial state
           <Card>
             <CardContent className="py-12">
@@ -843,7 +596,7 @@ export default function PlaygroundPage() {
         )}
 
         {/* Advanced Audits Section */}
-        {(techAudit || dashboardData) && (
+        {dashboardData && (
           <>
             {/* Separator with "Advanced Audits" header */}
             <div className="relative my-12">

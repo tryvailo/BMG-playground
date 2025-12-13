@@ -6,6 +6,12 @@ import {
   ScatterChart, Scatter, ZAxis, Cell
 } from 'recharts';
 import { ArrowUp, ArrowDown, Target, Share2, Zap, List, Settings, FileText, Shield, MapPin } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@kit/ui/card';
+import { EmptyState, EmptyStateHeading, EmptyStateText } from '@kit/ui/empty-state';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@kit/ui/chart';
+import { Skeleton } from '@kit/ui/skeleton';
+import { cn } from '@kit/ui/utils';
+import { getMetricColorVariant, type MetricColorVariant } from '~/lib/design/metric-colors';
 
 export interface DashboardData {
   metrics: {
@@ -26,6 +32,7 @@ export interface DashboardData {
 
 interface DashboardViewProps {
   data: DashboardData;
+  loading?: boolean;
 }
 
 /**
@@ -49,23 +56,23 @@ const CompetitorScatterTooltip: React.FC<CompetitorScatterTooltipProps> = ({ act
     if (!data) return null;
 
     return (
-      <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-lg">
-        <p className="text-sm font-semibold text-slate-900 mb-2">
+      <div className="bg-card text-card-foreground p-3 rounded-lg border border-border shadow-lg">
+        <p className="text-sm font-semibold mb-2">
           {data.name}
           {data.isCurrent && (
-            <span className="ml-2 text-xs px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded">
+            <span className="ml-2 text-xs px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 rounded">
               Your Clinic
             </span>
           )}
         </p>
         <div className="space-y-1 text-xs">
-          <p className="text-slate-600">
+          <p className="text-muted-foreground">
             <span className="font-medium">Pos:</span>{' '}
-            <span className="text-slate-900">{data.x.toFixed(1)}</span>
+            <span className="text-foreground">{data.x.toFixed(1)}</span>
           </p>
-          <p className="text-slate-600">
+          <p className="text-muted-foreground">
             <span className="font-medium">Score:</span>{' '}
-            <span className="text-slate-900">{data.y.toFixed(1)}</span>
+            <span className="text-foreground">{data.y.toFixed(1)}</span>
           </p>
         </div>
       </div>
@@ -85,44 +92,63 @@ interface KpiCardProps {
 }
 
 const KpiCard: React.FC<KpiCardProps> = ({ title, value, trend, icon: Icon, color, note, subtext }) => {
-  const colors: Record<string, string> = {
-    emerald: 'bg-emerald-100 text-emerald-600',
-    green: 'bg-green-100 text-green-600',
-    cyan: 'bg-cyan-100 text-cyan-600',
-    orange: 'bg-orange-100 text-orange-600',
-    blue: 'bg-blue-100 text-blue-600',
-    purple: 'bg-purple-100 text-purple-600',
+  // Map old color names to new metric color variants
+  const colorMap: Record<string, MetricColorVariant> = {
+    emerald: 'success',
+    green: 'success',
+    cyan: 'cyan',
+    orange: 'warning',
+    blue: 'info',
+    purple: 'purple',
   };
+
+  const variant = colorMap[color] || 'primary';
+  const colors = getMetricColorVariant(variant);
 
   const isPositive = trend >= 0;
   const trendAbs = Math.abs(trend);
-  const trendDisplay = trendAbs > 0 ? `${isPositive ? '+' : ''}${trend.toFixed(1)}` : '0.0';
+  const trendDisplay = trendAbs > 0 ? `${isPositive ? '+' : ''}${trend.toFixed(1)}%` : null;
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-      <div className="flex justify-between items-start">
-        <div>
-          <p className="text-sm font-medium text-slate-500">{title}</p>
-          <h3 className="text-2xl font-bold text-slate-900 mt-2">{value}</h3>
+    <Card className="transition-all duration-200 hover:shadow-md hover:border-primary/20 animate-fade-up">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground">
+          {title}
+        </CardTitle>
+        <div className={cn('p-2 rounded-lg transition-colors', colors.bg)}>
+          <Icon className={cn('h-4 w-4', colors.icon)} />
         </div>
-        <div className={`p-2 rounded-lg ${colors[color] || 'bg-slate-100 text-slate-600'}`}>
-          <Icon size={20} />
-        </div>
-      </div>
-      {trendAbs > 0 && (
-        <div className="flex items-center mt-4 text-sm">
-          {isPositive ? <ArrowUp size={16} className="text-green-500 mr-1" /> : <ArrowDown size={16} className="text-red-500 mr-1" />}
-          <span className={isPositive ? 'text-green-500 font-medium' : 'text-red-500 font-medium'}>{trendDisplay}</span>
-          <span className="text-slate-400 ml-2">vs last month</span>
-        </div>
-      )}
-      {subtext && trendAbs === 0 && (
-        <div className="mt-4 text-sm text-slate-400">
-          {subtext}
-        </div>
-      )}
-      {note && <p className="text-xs text-slate-400 mt-1">{note}</p>}
-    </div>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold tracking-tight text-foreground">{value}</div>
+        {subtext && trendAbs === 0 && (
+          <p className="text-xs text-muted-foreground mt-1">{subtext}</p>
+        )}
+        {trendDisplay && (
+          <div className="flex items-center mt-4 text-xs">
+            {isPositive ? (
+              <ArrowUp className="h-3 w-3 text-emerald-600 dark:text-emerald-400 mr-1" />
+            ) : (
+              <ArrowDown className="h-3 w-3 text-red-600 dark:text-red-400 mr-1" />
+            )}
+            <span
+              className={cn(
+                'font-medium',
+                isPositive
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : 'text-red-600 dark:text-red-400',
+              )}
+            >
+              {trendDisplay}
+            </span>
+            <span className="text-muted-foreground ml-2">vs last month</span>
+          </div>
+        )}
+        {note && !trendDisplay && (
+          <p className="text-xs text-muted-foreground mt-2">{note}</p>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
@@ -132,14 +158,73 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, trend, icon: Icon, colo
  * This component displays KPI cards, trend chart, and competitor scatter plot.
  * It accepts a simple data structure and renders the UI without any data fetching logic.
  */
-export function DashboardView({ data }: DashboardViewProps) {
+export function DashboardView({ data, loading = false }: DashboardViewProps) {
   const { metrics, trend, competitors } = data;
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        {/* Top Row: Main KPIs Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(3)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-8 w-8 rounded-lg" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-24 mb-2" />
+                <Skeleton className="h-3 w-20" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Second Row: Breakdown Metrics Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-8 w-8 rounded-lg" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-20 mb-2" />
+                <Skeleton className="h-3 w-16" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Charts Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <Skeleton className="h-6 w-40" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-72 w-full rounded-lg" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-36" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-72 w-full rounded-lg" />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   if (!metrics) {
     return (
-      <div className="flex items-center justify-center h-64 text-slate-500">
-        Завантаження даних...
-      </div>
+      <EmptyState>
+        <EmptyStateHeading>Завантаження даних...</EmptyStateHeading>
+        <EmptyStateText>Будь ласка, зачекайте поки дані завантажуються</EmptyStateText>
+      </EmptyState>
     );
   }
 
@@ -207,28 +292,38 @@ export function DashboardView({ data }: DashboardViewProps) {
       {/* Charts Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Trend Chart */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <h3 className="text-lg font-semibold text-slate-800 mb-4">AIV Score History</h3>
-          <div className="h-72">
+        <Card className="lg:col-span-2 transition-all duration-200 hover:shadow-md">
+          <CardHeader>
+            <CardTitle>AIV Score History</CardTitle>
+          </CardHeader>
+          <CardContent>
             {trend.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-slate-400">
-                <p>Not enough data for trend analysis</p>
-              </div>
+              <EmptyState className="h-72">
+                <EmptyStateHeading>Not enough data</EmptyStateHeading>
+                <EmptyStateText>Not enough data for trend analysis</EmptyStateText>
+              </EmptyState>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
+              <ChartContainer
+                config={{
+                  score: {
+                    label: 'ClinicAI Score',
+                    color: 'hsl(var(--chart-1))',
+                  },
+                }}
+                className="h-72"
+              >
                 <AreaChart data={trend} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="var(--color-score)" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="var(--color-score)" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
                   <XAxis 
                     dataKey="date" 
                     axisLine={false} 
-                    tickLine={false} 
-                    tick={{fill: '#64748b'}}
+                    tickLine={false}
                     tickFormatter={(value: string) => {
                       const date = new Date(value);
                       return date.toLocaleDateString('en-US', {
@@ -240,113 +335,124 @@ export function DashboardView({ data }: DashboardViewProps) {
                   <YAxis 
                     domain={[0, 100]} 
                     axisLine={false} 
-                    tickLine={false} 
-                    tick={{fill: '#64748b'}} 
+                    tickLine={false}
                   />
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    labelFormatter={(value: string) => {
-                      const date = new Date(value);
-                      return date.toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      });
-                    }}
-                    formatter={(value: number) => [
-                      `${value.toFixed(1)}`,
-                      'ClinicAI Score'
-                    ]}
+                  <ChartTooltip
+                    content={
+                      <ChartTooltipContent
+                        labelFormatter={(value: string) => {
+                          const date = new Date(value);
+                          return date.toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          });
+                        }}
+                        formatter={(value: number) => [
+                          `${value.toFixed(1)}`,
+                          'ClinicAI Score'
+                        ]}
+                      />
+                    }
                   />
                   <Area 
                     type={trend.length === 1 ? 'linear' : 'monotone'}
                     dataKey="score" 
-                    stroke="#10b981" 
+                    stroke="var(--color-score)" 
                     strokeWidth={2} 
                     fillOpacity={1} 
                     fill="url(#colorScore)"
-                    dot={{ fill: '#10b981', r: 4 }}
+                    dot={{ fill: 'var(--color-score)', r: 4 }}
                     activeDot={{ r: 6 }}
                   />
                 </AreaChart>
-              </ResponsiveContainer>
+              </ChartContainer>
             )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Competitor Landscape Scatter Chart */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <h3 className="text-lg font-semibold text-slate-800 mb-4">Competitor Landscape</h3>
-          <div className="h-72">
+        <Card className="transition-all duration-200 hover:shadow-md">
+          <CardHeader>
+            <CardTitle>Competitor Landscape</CardTitle>
+          </CardHeader>
+          <CardContent>
             {competitors.length <= 1 ? (
-              <div className="h-full flex items-center justify-center text-slate-400">
-                <p>No competitors found for comparison</p>
-              </div>
+              <EmptyState className="h-72">
+                <EmptyStateHeading>No competitors</EmptyStateHeading>
+                <EmptyStateText>No competitors found for comparison</EmptyStateText>
+              </EmptyState>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis 
-                    type="number"
-                    dataKey="x"
-                    name="Avg Position"
-                    domain={[10, 1]} // Inverted: 10 (left) -> 1 (right)
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{fill: '#64748b'}}
-                    label={{ 
-                      value: 'Avg Position', 
-                      position: 'insideBottom', 
-                      offset: -5,
-                      style: { textAnchor: 'middle', fill: '#64748b' }
-                    }}
-                  />
-                  <YAxis 
-                    type="number"
-                    dataKey="y"
-                    name="ClinicAI Score"
-                    domain={[0, 100]}
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{fill: '#64748b'}}
-                    label={{ 
-                      value: 'ClinicAI Score', 
-                      angle: -90, 
-                      position: 'insideLeft',
-                      style: { textAnchor: 'middle', fill: '#64748b' }
-                    }}
-                  />
-                  <ZAxis dataKey="z" range={[60, 400]} />
-                  <Tooltip 
-                    content={<CompetitorScatterTooltip />}
-                    cursor={{ strokeDasharray: '3 3' }}
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                  />
-                  <Scatter name="Competitors" data={competitors} fill="#94a3b8">
-                    {competitors.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={entry.isCurrent ? '#10b981' : '#94a3b8'}
+              <>
+                <ChartContainer
+                  config={{
+                    current: {
+                      label: 'Your Clinic',
+                      color: 'hsl(var(--chart-2))',
+                    },
+                    competitor: {
+                      label: 'Competitors',
+                      color: 'hsl(var(--muted-foreground))',
+                    },
+                  }}
+                  className="h-72"
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 20 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
+                      <XAxis 
+                        type="number"
+                        dataKey="x"
+                        name="Avg Position"
+                        domain={[10, 1]} // Inverted: 10 (left) -> 1 (right)
+                        axisLine={false}
+                        tickLine={false}
+                        label={{ 
+                          value: 'Avg Position', 
+                          position: 'insideBottom', 
+                          offset: -5,
+                        }}
                       />
-                    ))}
-                  </Scatter>
-                </ScatterChart>
-              </ResponsiveContainer>
+                      <YAxis 
+                        type="number"
+                        dataKey="y"
+                        name="ClinicAI Score"
+                        domain={[0, 100]}
+                        axisLine={false}
+                        tickLine={false}
+                        label={{ 
+                          value: 'ClinicAI Score', 
+                          angle: -90, 
+                          position: 'insideLeft',
+                        }}
+                      />
+                      <ZAxis dataKey="z" range={[60, 400]} />
+                      <ChartTooltip content={<CompetitorScatterTooltip />} />
+                      <Scatter name="Competitors" data={competitors}>
+                        {competitors.map((entry, index) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={entry.isCurrent ? 'var(--color-current)' : 'var(--color-competitor)'}
+                          />
+                        ))}
+                      </Scatter>
+                    </ScatterChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+                <div className="flex items-center justify-center gap-4 mt-4 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--color-current)' }}></div>
+                    <span>Your Clinic</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--color-competitor)' }}></div>
+                    <span>Competitors</span>
+                  </div>
+                </div>
+              </>
             )}
-          </div>
-          {competitors.length > 1 && (
-            <div className="flex items-center justify-center gap-4 mt-4 text-xs text-slate-500">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
-                <span>Your Clinic</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-slate-400"></div>
-                <span>Competitors</span>
-              </div>
-            </div>
-          )}
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

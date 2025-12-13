@@ -77,10 +77,10 @@ function CircleGauge({ score, label, size = 'md', onClick }: CircleGaugeProps) {
   if (score === null) {
     return (
       <div className="flex flex-col items-center gap-2">
-        <div className={cn('flex items-center justify-center rounded-full border-2 border-slate-300 dark:border-slate-600', sizeClasses[size])}>
-          <span className="text-slate-400 dark:text-slate-500 text-sm">N/A</span>
+        <div className={cn('flex items-center justify-center rounded-full border-2 border-border', sizeClasses[size])}>
+          <span className="text-muted-foreground text-sm">N/A</span>
         </div>
-        <span className="text-sm text-slate-600 dark:text-slate-400 font-medium">{label}</span>
+        <span className="text-sm text-muted-foreground font-medium">{label}</span>
       </div>
     );
   }
@@ -117,7 +117,7 @@ function CircleGauge({ score, label, size = 'md', onClick }: CircleGaugeProps) {
             fill="none"
             stroke="currentColor"
             strokeWidth="8"
-            className="text-slate-200 dark:text-slate-700"
+            className="text-muted"
           />
           {/* Progress circle */}
           <circle
@@ -142,7 +142,7 @@ function CircleGauge({ score, label, size = 'md', onClick }: CircleGaugeProps) {
           </span>
         </div>
       </div>
-      <span className="text-sm text-slate-600 dark:text-slate-400 font-medium">{label}</span>
+      <span className="text-sm text-muted-foreground font-medium">{label}</span>
     </div>
   );
 }
@@ -153,13 +153,13 @@ function CircleGauge({ score, label, size = 'md', onClick }: CircleGaugeProps) {
 function EmptyState({ onRunAudit }: { onRunAudit?: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-      <div className="rounded-full bg-slate-100 dark:bg-slate-800 p-6 mb-4">
-        <FileText className="h-12 w-12 text-slate-400 dark:text-slate-500" />
+      <div className="rounded-full bg-muted p-6 mb-4">
+        <FileText className="h-12 w-12 text-muted-foreground" />
       </div>
-      <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+      <h3 className="text-lg font-semibold text-foreground mb-2">
         No Technical Audit Yet
       </h3>
-      <p className="text-sm text-slate-600 dark:text-slate-400 mb-6 max-w-md">
+      <p className="text-sm text-muted-foreground mb-6 max-w-md">
         Run a technical audit to analyze your site's performance, security, and optimization.
       </p>
       {onRunAudit && (
@@ -228,17 +228,17 @@ function LlmsTxtDetailsDialog({
           {/* Summary */}
           {summary && (
             <div>
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">
+              <h3 className="text-sm font-semibold text-foreground mb-2">
                 Summary
               </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">{summary}</p>
+              <p className="text-sm text-muted-foreground">{summary}</p>
             </div>
           )}
 
           {/* Missing Sections */}
           {missingSections.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">
+              <h3 className="text-sm font-semibold text-foreground mb-3">
                 Missing Sections
               </h3>
               <div className="space-y-2">
@@ -256,14 +256,14 @@ function LlmsTxtDetailsDialog({
           {/* Recommendations */}
           {recommendations.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">
+              <h3 className="text-sm font-semibold text-foreground mb-3">
                 Recommendations
               </h3>
               <ul className="space-y-2">
                 {recommendations.map((recommendation, index) => (
                   <li key={index} className="flex items-start gap-2">
                     <span className="text-emerald-600 dark:text-emerald-400 mt-0.5">•</span>
-                    <span className="text-sm text-slate-600 dark:text-slate-400">
+                    <span className="text-sm text-muted-foreground">
                       {recommendation}
                     </span>
                   </li>
@@ -275,15 +275,15 @@ function LlmsTxtDetailsDialog({
           {/* Raw Content Preview */}
           {contentPreview && (
             <div>
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">
+              <h3 className="text-sm font-semibold text-foreground mb-2">
                 Content Preview
               </h3>
-              <div className="rounded-md bg-slate-100 dark:bg-slate-800 p-4 overflow-x-auto">
-                <pre className="text-xs text-slate-700 dark:text-slate-300 whitespace-pre-wrap break-words">
+              <div className="rounded-md bg-muted p-4 overflow-x-auto">
+                <pre className="text-xs text-foreground whitespace-pre-wrap break-words">
                   {contentPreview}
                 </pre>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+              <p className="text-xs text-muted-foreground mt-2">
                 Showing first 200 characters of llms.txt file
               </p>
             </div>
@@ -292,7 +292,7 @@ function LlmsTxtDetailsDialog({
           {/* Empty State */}
           {!summary && missingSections.length === 0 && recommendations.length === 0 && !contentPreview && (
             <div className="text-center py-8">
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-sm text-muted-foreground">
                 No analysis data available
               </p>
             </div>
@@ -350,11 +350,11 @@ export function TechAuditOverview({ auditData, onRunAudit }: TechAuditOverviewPr
         {/* Status Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+            <h2 className="text-2xl font-bold text-foreground">
               Technical Audit
             </h2>
             <div className="flex items-center gap-3 mt-2">
-              <span className="text-sm text-slate-600 dark:text-slate-400">
+              <span className="text-sm text-muted-foreground">
                 {formatDate(auditData.created_at)}
               </span>
               <StatusBadge status={auditData.status} />
@@ -411,7 +411,7 @@ export function TechAuditOverview({ auditData, onRunAudit }: TechAuditOverviewPr
             {/* llms.txt */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                <span className="text-sm font-medium text-foreground">
                   llms.txt
                 </span>
               </div>
@@ -420,7 +420,7 @@ export function TechAuditOverview({ auditData, onRunAudit }: TechAuditOverviewPr
                   <>
                     <Badge variant="success">Found</Badge>
                     {llmsTxtScore !== null && (
-                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                      <span className="text-xs text-muted-foreground">
                         Score: {Math.round(llmsTxtScore)}
                       </span>
                     )}
@@ -433,7 +433,7 @@ export function TechAuditOverview({ auditData, onRunAudit }: TechAuditOverviewPr
 
             {/* robots.txt */}
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              <span className="text-sm font-medium text-foreground">
                 robots.txt
               </span>
               {auditData.robots_txt_present ? (
@@ -445,7 +445,7 @@ export function TechAuditOverview({ auditData, onRunAudit }: TechAuditOverviewPr
 
             {/* sitemap.xml */}
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              <span className="text-sm font-medium text-foreground">
                 sitemap.xml
               </span>
               {auditData.sitemap_present ? (
@@ -469,8 +469,8 @@ export function TechAuditOverview({ auditData, onRunAudit }: TechAuditOverviewPr
             {/* HTTPS */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Globe className="h-4 w-4 text-slate-500" />
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                <Globe className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-foreground">
                   HTTPS
                 </span>
               </div>
@@ -484,8 +484,8 @@ export function TechAuditOverview({ auditData, onRunAudit }: TechAuditOverviewPr
             {/* Mobile Friendly */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Smartphone className="h-4 w-4 text-slate-500" />
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                <Smartphone className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-foreground">
                   Mobile Friendly
                 </span>
               </div>
@@ -510,8 +510,8 @@ export function TechAuditOverview({ auditData, onRunAudit }: TechAuditOverviewPr
         <CardContent>
           <div className="space-y-3">
             {/* MedicalOrganization */}
-            <div className="flex items-center justify-between py-2 border-b border-slate-200 dark:border-slate-700 last:border-0">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            <div className="flex items-center justify-between py-2 border-b border-border last:border-0">
+              <span className="text-sm font-medium text-foreground">
                 MedicalOrganization
               </span>
               {hasMedicalOrg ? (
@@ -522,8 +522,8 @@ export function TechAuditOverview({ auditData, onRunAudit }: TechAuditOverviewPr
             </div>
 
             {/* Physician */}
-            <div className="flex items-center justify-between py-2 border-b border-slate-200 dark:border-slate-700 last:border-0">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            <div className="flex items-center justify-between py-2 border-b border-border last:border-0">
+              <span className="text-sm font-medium text-foreground">
                 Physician
               </span>
               {hasPhysician ? (
@@ -534,8 +534,8 @@ export function TechAuditOverview({ auditData, onRunAudit }: TechAuditOverviewPr
             </div>
 
             {/* MedicalProcedure */}
-            <div className="flex items-center justify-between py-2 border-b border-slate-200 dark:border-slate-700 last:border-0">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            <div className="flex items-center justify-between py-2 border-b border-border last:border-0">
+              <span className="text-sm font-medium text-foreground">
                 MedicalProcedure
               </span>
               {hasMedicalProcedure ? (
@@ -546,8 +546,8 @@ export function TechAuditOverview({ auditData, onRunAudit }: TechAuditOverviewPr
             </div>
 
             {/* LocalBusiness */}
-            <div className="flex items-center justify-between py-2 border-b border-slate-200 dark:border-slate-700 last:border-0">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            <div className="flex items-center justify-between py-2 border-b border-border last:border-0">
+              <span className="text-sm font-medium text-foreground">
                 LocalBusiness
               </span>
               {hasLocalBusiness ? (
@@ -559,7 +559,7 @@ export function TechAuditOverview({ auditData, onRunAudit }: TechAuditOverviewPr
 
             {/* FAQPage */}
             <div className="flex items-center justify-between py-2">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              <span className="text-sm font-medium text-foreground">
                 FAQPage
               </span>
               {hasFAQPage ? (

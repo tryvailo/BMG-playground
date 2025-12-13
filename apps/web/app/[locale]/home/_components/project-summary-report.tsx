@@ -31,10 +31,10 @@ export function ProjectSummaryReport() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+        <h2 className="text-2xl font-bold text-foreground">
           Project Summary Report
         </h2>
-        <p className="text-slate-600 dark:text-slate-400 mt-1 text-sm">
+        <p className="text-muted-foreground mt-1 text-sm">
           Comprehensive analysis of your project's visibility and performance
         </p>
       </div>
