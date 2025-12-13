@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { CheckCircledIcon } from '@radix-ui/react-icons';
 
@@ -21,6 +22,7 @@ interface EmailPasswordSignUpContainerProps {
 
   onSignUp?: (userId?: string) => unknown;
   emailRedirectTo: string;
+  appHomePath?: string;
 }
 
 export function EmailPasswordSignUpContainer({
@@ -28,8 +30,10 @@ export function EmailPasswordSignUpContainer({
   onSignUp,
   emailRedirectTo,
   displayTermsCheckbox,
+  appHomePath = '/home',
 }: EmailPasswordSignUpContainerProps) {
   const { captchaToken, resetCaptchaToken } = useCaptchaToken();
+  const router = useRouter();
 
   const signUpMutation = useSignUpWithEmailAndPassword();
   const redirecting = useRef(false);
@@ -50,6 +54,20 @@ export function EmailPasswordSignUpContainer({
           captchaToken,
         });
 
+        // If session exists, user is automatically logged in (email confirmation disabled)
+        // Redirect to the app home page
+        if (data.session) {
+          redirecting.current = true;
+          
+          if (onSignUp) {
+            onSignUp(data.user?.id);
+          }
+
+          router.push(appHomePath);
+          return;
+        }
+
+        // If no session, email confirmation is required
         setShowVerifyEmailAlert(true);
 
         if (onSignUp) {
@@ -68,6 +86,7 @@ export function EmailPasswordSignUpContainer({
       onSignUp,
       resetCaptchaToken,
       signUpMutation,
+      router,
     ],
   );
 

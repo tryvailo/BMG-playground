@@ -278,3 +278,4 @@ export type SocialMediaProfile = z.infer<typeof SocialMediaProfileSchema>;
 export type LocalBusinessSchema = z.infer<typeof LocalBusinessSchemaSchema>;
 
 
+
