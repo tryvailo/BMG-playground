@@ -12,15 +12,15 @@ import pathsConfig from '~/config/paths.config';
 
 function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
+    <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900 selection:bg-teal-100 selection:text-teal-900">
       
       {/* --- Hero Section --- */}
       <section className="relative pt-32 pb-20 lg:pt-40 lg:pb-32 overflow-hidden">
         {/* Background Decorations */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full overflow-hidden -z-10">
-          <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-indigo-400/20 blur-[120px]"></div>
-          <div className="absolute bottom-[10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-purple-400/20 blur-[120px]"></div>
-          <div className="absolute top-[20%] right-[10%] w-[300px] h-[300px] rounded-full bg-blue-400/20 blur-[100px]"></div>
+          <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-teal-400/20 blur-[120px]"></div>
+          <div className="absolute bottom-[10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-emerald-400/20 blur-[120px]"></div>
+          <div className="absolute top-[20%] right-[10%] w-[300px] h-[300px] rounded-full bg-cyan-400/20 blur-[100px]"></div>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -28,14 +28,14 @@ function LandingPage() {
             
             {/* Hero Content */}
             <div className="lg:w-1/2 text-center lg:text-left z-10">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-bold uppercase tracking-wide mb-8 animate-fade-in-up">
-                <Zap size={14} className="fill-indigo-700" />
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 border border-teal-100 text-teal-700 text-xs font-bold uppercase tracking-wide mb-8 animate-fade-in-up">
+                <Zap size={14} className="fill-teal-700" />
                 <span>The Future of Medical SEO</span>
               </div>
               
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-slate-900 mb-6 leading-[1.1]">
-                Make Your Clinic <br/>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 animate-gradient-x">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-slate-900 mb-6 leading-[1.1]">
+                Make Your Clinic{' '}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-600 animate-gradient-x whitespace-nowrap inline-block">
                   AI-Recommended
                 </span>
               </h1>
@@ -47,7 +47,7 @@ function LandingPage() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 <Link 
                   href={pathsConfig.auth.signUp}
-                  className="group bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-xl text-lg font-semibold transition-all shadow-xl shadow-indigo-200 hover:-translate-y-1 flex items-center justify-center gap-2"
+                  className="group bg-teal-600 hover:bg-teal-700 text-white px-8 py-4 rounded-xl text-lg font-semibold transition-all shadow-xl shadow-teal-200 hover:-translate-y-1 flex items-center justify-center gap-2"
                 >
                   Check My Visibility
                   <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
@@ -97,10 +97,10 @@ function LandingPage() {
                 <div className="space-y-6">
                   {/* User Query */}
                   <div className="flex gap-4 justify-end">
-                    <div className="bg-indigo-600 text-white p-4 rounded-2xl rounded-tr-sm max-w-[80%] shadow-md">
+                    <div className="bg-teal-600 text-white p-4 rounded-2xl rounded-tr-sm max-w-[80%] shadow-md">
                       <p className="text-sm font-medium">"Where is the best place to get dental implants in New York?"</p>
                     </div>
-                    <div className="w-8 h-8 bg-indigo-200 rounded-full flex-shrink-0"></div>
+                    <div className="w-8 h-8 bg-teal-200 rounded-full flex-shrink-0"></div>
                   </div>
 
                   {/* AI Response with Scanner Overlay */}
@@ -110,16 +110,16 @@ function LandingPage() {
                     </div>
                     <div className="bg-slate-50 p-6 rounded-2xl rounded-tl-sm w-full border border-slate-100 relative overflow-hidden">
                       {/* Scanning Line Animation */}
-                      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-50 animate-scan-down z-10"></div>
+                      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-teal-500 to-transparent opacity-50 animate-scan-down z-10"></div>
                       
                       <p className="text-slate-800 text-sm leading-relaxed mb-4">
-                        Based on patient reviews and advanced technology, <span className="bg-yellow-100 px-1 rounded font-semibold border-b-2 border-yellow-300">Smile Experts NY</span> and <span className="bg-indigo-100 text-indigo-700 px-1 rounded font-bold border-b-2 border-indigo-300">Your Clinic Name</span> are highly recommended.
+                        Based on patient reviews and advanced technology, <span className="bg-yellow-100 px-1 rounded font-semibold border-b-2 border-yellow-300">Smile Experts NY</span> and <span className="bg-teal-100 text-teal-700 px-1 rounded font-bold border-b-2 border-teal-300">Your Clinic Name</span> are highly recommended.
                       </p>
                       
                       <div className="space-y-3">
                         <div className="flex items-center justify-between bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
                           <div className="flex items-center gap-3">
-                            <div className="w-6 h-6 bg-indigo-100 text-indigo-600 rounded flex items-center justify-center text-xs font-bold">1</div>
+                            <div className="w-6 h-6 bg-teal-100 text-teal-600 rounded flex items-center justify-center text-xs font-bold">1</div>
                             <span className="text-sm font-medium">Your Clinic Name</span>
                           </div>
                           <CheckCircle2 size={16} className="text-green-500" />
@@ -146,7 +146,7 @@ function LandingPage() {
           <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-8">Trusted by forward-thinking healthcare providers</p>
           <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-8 opacity-40 grayscale hover:grayscale-0 transition-all duration-500">
             {/* Logos with simple text representation for now */}
-             <h3 className="text-2xl font-bold font-serif text-slate-800">Medi<span className="text-indigo-600">Care</span></h3>
+             <h3 className="text-2xl font-bold font-serif text-slate-800">Medi<span className="text-teal-600">Care</span></h3>
              <h3 className="text-2xl font-bold text-slate-800 italic">DENTAL<span className="text-blue-500">+</span></h3>
              <h3 className="text-xl font-black text-slate-800 tracking-tighter">ORTHO<span className="font-light">PRO</span></h3>
              <h3 className="text-2xl font-semibold text-slate-800">Pure<span className="text-green-600">Skin</span></h3>
@@ -167,8 +167,8 @@ function LandingPage() {
 
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
-              <div className="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <Search size={32} className="text-indigo-600" />
+              <div className="w-16 h-16 bg-teal-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Search size={32} className="text-teal-600" />
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">1. Scan Your Keywords</h3>
               <p className="text-slate-600">
@@ -177,8 +177,8 @@ function LandingPage() {
             </div>
 
             <div className="text-center">
-              <div className="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <Activity size={32} className="text-indigo-600" />
+              <div className="w-16 h-16 bg-teal-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Activity size={32} className="text-teal-600" />
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">2. Get Real-Time Insights</h3>
               <p className="text-slate-600">
@@ -187,8 +187,8 @@ function LandingPage() {
             </div>
 
             <div className="text-center">
-              <div className="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <TrendingUp size={32} className="text-indigo-600" />
+              <div className="w-16 h-16 bg-teal-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <TrendingUp size={32} className="text-teal-600" />
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">3. Optimize & Dominate</h3>
               <p className="text-slate-600">
@@ -233,24 +233,24 @@ function LandingPage() {
             </div>
 
             {/* New Way */}
-            <div className="bg-indigo-900 text-white p-8 rounded-2xl shadow-xl relative overflow-hidden transform md:-translate-y-4 border border-indigo-700">
-               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-400 to-purple-400"></div>
-               <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-indigo-600 rounded-full blur-3xl opacity-50"></div>
+            <div className="bg-teal-900 text-white p-8 rounded-2xl shadow-xl relative overflow-hidden transform md:-translate-y-4 border border-teal-700">
+               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-teal-400 to-emerald-400"></div>
+               <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-teal-600 rounded-full blur-3xl opacity-50"></div>
                
                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                 <Bot size={20} className="text-indigo-300" /> ClinicBoost.AI (New Era)
+                 <Bot size={20} className="text-teal-300" /> ClinicBoost.AI (New Era)
                </h3>
                <ul className="space-y-4 relative z-10">
-                 <li className="flex items-center gap-3 text-indigo-100">
+                 <li className="flex items-center gap-3 text-teal-100">
                    <CheckCircle2 size={18} className="text-green-400" /> Be the distinct AI recommendation
                  </li>
-                 <li className="flex items-center gap-3 text-indigo-100">
+                 <li className="flex items-center gap-3 text-teal-100">
                    <CheckCircle2 size={18} className="text-green-400" /> Optimization for Natural Language
                  </li>
-                 <li className="flex items-center gap-3 text-indigo-100">
+                 <li className="flex items-center gap-3 text-teal-100">
                    <CheckCircle2 size={18} className="text-green-400" /> Track Brand Citations & Sentiment
                  </li>
-                 <li className="flex items-center gap-3 text-indigo-100">
+                 <li className="flex items-center gap-3 text-teal-100">
                    <CheckCircle2 size={18} className="text-green-400" /> Capture high-intent qualified leads
                  </li>
                </ul>
@@ -269,9 +269,9 @@ function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Feature 1: Large */}
-            <div className="md:col-span-2 bg-slate-50 rounded-3xl p-8 border border-slate-100 relative overflow-hidden hover:border-indigo-200 transition-colors group">
+            <div className="md:col-span-2 bg-slate-50 rounded-3xl p-8 border border-slate-100 relative overflow-hidden hover:border-teal-200 transition-colors group">
               <div className="relative z-10 max-w-md">
-                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-indigo-600 shadow-sm mb-6">
+                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-teal-600 shadow-sm mb-6">
                    <Activity size={24} />
                 </div>
                 <h3 className="text-2xl font-bold text-slate-900 mb-3">Real-Time Visibility Monitor</h3>
@@ -285,8 +285,8 @@ function LandingPage() {
                      <div className="w-1/5 h-[40%] bg-slate-100 rounded-t-sm"></div>
                      <div className="w-1/5 h-[60%] bg-slate-200 rounded-t-sm"></div>
                      <div className="w-1/5 h-[50%] bg-slate-100 rounded-t-sm"></div>
-                     <div className="w-1/5 h-[85%] bg-indigo-500 rounded-t-sm"></div>
-                     <div className="w-1/5 h-[95%] bg-indigo-600 rounded-t-sm"></div>
+                     <div className="w-1/5 h-[85%] bg-teal-500 rounded-t-sm"></div>
+                     <div className="w-1/5 h-[95%] bg-teal-600 rounded-t-sm"></div>
                   </div>
               </div>
             </div>
@@ -322,14 +322,14 @@ function LandingPage() {
             </div>
 
             {/* Feature 4: Wide */}
-            <div className="md:col-span-2 bg-indigo-600 rounded-3xl p-8 text-white relative overflow-hidden">
+            <div className="md:col-span-2 bg-teal-600 rounded-3xl p-8 text-white relative overflow-hidden">
                <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
                   <div className="flex-1">
                     <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-white shadow-sm mb-6">
                        <LayoutDashboard size={24} />
                     </div>
                     <h3 className="text-2xl font-bold mb-3">Competitive Intelligence</h3>
-                    <p className="text-indigo-100">
+                    <p className="text-teal-100">
                       See exactly who is being recommended instead of you, and why. Reverse engineer their AI strategy in one click.
                     </p>
                   </div>
@@ -357,8 +357,8 @@ function LandingPage() {
       <section className="py-24 px-4">
         <div className="max-w-5xl mx-auto bg-slate-900 rounded-[2.5rem] overflow-hidden relative text-center px-6 py-20 md:p-24 shadow-2xl">
           {/* Decorative Blobs */}
-          <div className="absolute top-0 left-0 w-64 h-64 bg-indigo-600 rounded-full blur-[100px] opacity-40 -translate-x-1/2 -translate-y-1/2"></div>
-          <div className="absolute bottom-0 right-0 w-64 h-64 bg-purple-600 rounded-full blur-[100px] opacity-40 translate-x-1/2 translate-y-1/2"></div>
+          <div className="absolute top-0 left-0 w-64 h-64 bg-teal-600 rounded-full blur-[100px] opacity-40 -translate-x-1/2 -translate-y-1/2"></div>
+          <div className="absolute bottom-0 right-0 w-64 h-64 bg-emerald-600 rounded-full blur-[100px] opacity-40 translate-x-1/2 translate-y-1/2"></div>
           
           <div className="relative z-10">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-8 tracking-tight">
@@ -370,7 +370,7 @@ function LandingPage() {
             <div className="flex flex-col sm:flex-row justify-center gap-4">
                <Link 
                  href={pathsConfig.auth.signUp}
-                 className="bg-white text-slate-900 px-10 py-4 rounded-xl text-lg font-bold hover:bg-indigo-50 transition-colors shadow-lg hover:scale-105 transform duration-200"
+                 className="bg-white text-slate-900 px-10 py-4 rounded-xl text-lg font-bold hover:bg-teal-50 transition-colors shadow-lg hover:scale-105 transform duration-200"
                >
                  Start Free Trial
                </Link>

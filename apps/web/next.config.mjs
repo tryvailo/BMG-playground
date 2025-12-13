@@ -38,7 +38,7 @@ const config = {
     mdxRs: true,
     reactCompiler: ENABLE_REACT_COMPILER,
     turbo: {
-      resolveExtensions: ['.ts', '.tsx', '.js', '.jsx'],
+      resolveExtensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
     },
     optimizePackageImports: [
       'recharts',
