@@ -91,7 +91,7 @@ async function withCsrfMiddleware(
     await csrfProtect(request, response);
 
     return response;
-  } catch (error) {
+  } catch (_error) {
     // if there is a CSRF error, return a 403 response
     if (error instanceof CsrfError) {
       return NextResponse.json('Invalid CSRF token', {

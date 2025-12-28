@@ -69,7 +69,7 @@ export async function searchClinicMentions(
         snippet: item.snippet,
       };
     });
-  } catch (error) {
+  } catch (_error) {
     console.warn('[GoogleCustomSearch] Failed to search:', error);
     return [];
   }
@@ -97,7 +97,7 @@ export async function searchLocalMentions(
     });
     
     return localResults;
-  } catch (error) {
+  } catch (_error) {
     console.warn('[GoogleCustomSearch] Failed to search local mentions:', error);
     return [];
   }
@@ -183,7 +183,7 @@ export async function checkBacklink(
       anchor_text: linkData.anchor_text,
       link_type: linkData.link_type,
     };
-  } catch (error) {
+  } catch (_error) {
     console.warn('[GoogleCustomSearch] Failed to check backlink:', error);
     return { has_backlink: false };
   }

@@ -29,7 +29,7 @@ function loadEnvFile() {
       }
     }
     console.log('✅ Loaded .env.local file');
-  } catch (error) {
+  } catch (_error) {
     console.warn('⚠️  Could not load .env.local file:', error);
   }
 }

@@ -21,7 +21,7 @@ try {
       }
     }
   });
-} catch (error) {
+} catch (_error) {
   console.warn('Could not load .env.local file');
 }
 

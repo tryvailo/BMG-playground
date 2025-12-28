@@ -58,7 +58,7 @@ async function findPlaceIdByText(
     }
 
     return null;
-  } catch (error) {
+  } catch (_error) {
     console.warn('[GoogleMapsClient] Failed to find place ID:', error);
     return null;
   }
@@ -99,7 +99,7 @@ export async function fetchGoogleMapsRating(
     return {
       fetched: false,
     };
-  } catch (error) {
+  } catch (_error) {
     console.warn('[GoogleMapsClient] Failed to fetch rating:', error);
     return {
       fetched: false,

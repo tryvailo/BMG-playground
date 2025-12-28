@@ -30,7 +30,7 @@ function loadEnvFile() {
       }
     }
     console.log('✅ Loaded .env.local file');
-  } catch (error) {
+  } catch (_error) {
     console.warn('⚠️  Could not load .env.local file:', error);
   }
 }
@@ -56,7 +56,7 @@ async function fetchLlmsTxt(url: string): Promise<string | null> {
 
     const content = await response.text();
     return content;
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Error fetching llms.txt:', error);
     return null;
   }
@@ -136,7 +136,7 @@ async function main() {
         });
         console.log('');
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ Error during AI analysis:', error);
       console.log('⚠️  Continuing with structure analysis only...\n');
     }

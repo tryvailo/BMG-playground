@@ -108,7 +108,7 @@ export const performContentAudit = enhanceAction(
       }
 
       return result;
-    } catch (error) {
+    } catch (_error) {
       console.error('[ContentAudit] Error:', error);
       
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -197,7 +197,7 @@ export const getLatestContentAudit = enhanceAction(
         result: data.audit_result as ContentAuditResult,
         createdAt: data.created_at,
       };
-    } catch (error) {
+    } catch (_error) {
       console.error('[ContentAudit] Error fetching latest audit:', error);
       return null;
     }

@@ -574,7 +574,7 @@ async function scanServiceVisibility(
         bestParsedResult = openaiParsed;
       }
       openaiParsed.competitors.forEach((c) => allCompetitors.add(c));
-    } catch (error) {
+    } catch (_error) {
       console.error('[scanServiceVisibility] Error parsing OpenAI response:', error);
       llmLogs.push({
         provider: 'openai',
@@ -597,7 +597,7 @@ async function scanServiceVisibility(
         bestParsedResult = perplexityParsed;
       }
       perplexityParsed.competitors.forEach((c) => allCompetitors.add(c));
-    } catch (error) {
+    } catch (_error) {
       console.error('[scanServiceVisibility] Error parsing Perplexity response:', error);
       llmLogs.push({
         provider: 'perplexity',
@@ -866,7 +866,7 @@ Important:
       parsed: result,
       logs: parserLogs,
     };
-  } catch (error) {
+  } catch (_error) {
     // Fallback parsing с улучшенной обработкой ошибок
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (error instanceof OpenAIAPIError) {
@@ -987,7 +987,7 @@ Return valid JSON only, no markdown formatting.`;
     }
 
     return [];
-  } catch (error) {
+  } catch (_error) {
     console.error('[Extract Competitors] Error:', error);
     // Fallback: return basic competitor list with sequential ranks
     return competitors.map((name, index) => ({
@@ -1235,7 +1235,7 @@ export const runLiveDashboardTest = enhanceAction(
               name,
             }));
         console.log('[runLiveDashboardTest] Competitor details extracted:', competitorDetails.length);
-      } catch (error) {
+      } catch (_error) {
         console.error('[runLiveDashboardTest] Error extracting competitor details:', error);
         // Fallback to simple mapping
         competitorDetails = visibilityResult.competitors.map((name, index) => ({
@@ -1283,7 +1283,7 @@ export const runLiveDashboardTest = enhanceAction(
       };
       
       return result;
-    } catch (error) {
+    } catch (_error) {
       console.error('[runLiveDashboardTest] Error running live test:', error);
       console.error('[runLiveDashboardTest] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
       console.error('[runLiveDashboardTest] Error details:', {

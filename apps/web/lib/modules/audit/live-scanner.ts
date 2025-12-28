@@ -74,7 +74,7 @@ async function checkLlmsTxt(baseUrl: string): Promise<LlmsTxtCheck> {
         contentPreview,
       };
     }
-  } catch (error) {
+  } catch (_error) {
     // llms.txt doesn't exist or failed to fetch
     // This is not necessarily an error - many sites don't have it
   }
@@ -111,7 +111,7 @@ async function measureTTFB(url: string): Promise<PerformanceCheck> {
       ttfbMs,
       rating: ttfbMs < 600 ? 'Good' : 'Poor',
     };
-  } catch (error) {
+  } catch (_error) {
     // If fetch fails, return poor rating with high TTFB
     return {
       ttfbMs: 9999,
@@ -163,11 +163,11 @@ async function checkMetadataAndSecurity(url: string): Promise<MetadataSecurityCh
       });
       
       result.hasRobotsTxt = robotsResponse.ok;
-    } catch (error) {
+    } catch (_error) {
       // robots.txt doesn't exist or failed to fetch
       result.hasRobotsTxt = false;
     }
-  } catch (error) {
+  } catch (_error) {
     // Failed to fetch or parse HTML
     console.error('Error checking metadata and security:', error);
   }

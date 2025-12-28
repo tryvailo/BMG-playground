@@ -79,14 +79,14 @@ async function checkSchemaDetails() {
           console.log('\n📄 Full JSON:');
           console.log(JSON.stringify(parsed, null, 2));
           
-        } catch (error) {
+        } catch (_error) {
           console.error(`❌ Failed to parse JSON: ${error}`);
           console.log(`Preview: ${content.substring(0, 200)}...`);
         }
       }
     });
 
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Error:', error);
   }
 }

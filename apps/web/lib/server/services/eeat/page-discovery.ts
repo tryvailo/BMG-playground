@@ -47,7 +47,7 @@ export async function discoverPagesFromSitemap(
         // For now, we'll skip nested sitemaps to keep it simple
       }
     });
-  } catch (error) {
+  } catch (_error) {
     console.warn('[PageDiscovery] Failed to fetch sitemap:', error);
   }
 
@@ -89,7 +89,7 @@ export async function discoverPagesFromRobots(
         }
       }
     }
-  } catch (error) {
+  } catch (_error) {
     console.warn('[PageDiscovery] Failed to fetch robots.txt:', error);
   }
 
@@ -222,7 +222,7 @@ export async function discoverPages(
         const internalLinks = discoverInternalLinks($, baseUrl, maxPages);
         internalLinks.forEach((url) => urls.add(url));
       }
-    } catch (error) {
+    } catch (_error) {
       console.warn('[PageDiscovery] Failed to crawl internal links:', error);
     }
   }

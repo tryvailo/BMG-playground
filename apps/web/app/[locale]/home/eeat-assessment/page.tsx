@@ -101,7 +101,7 @@ export default function EEATAssessmentPage() {
           return prevDate;
         });
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('[E-E-A-T Assessment] Error fetching audit data:', error);
     } finally {
       isLoadingRef.current = false;
@@ -170,7 +170,7 @@ export default function EEATAssessmentPage() {
         loadAuditData();
       }, 1000);
       timeoutRef.current.push(refreshTimeout);
-    } catch (error) {
+    } catch (_error) {
       console.error('[E-E-A-T Assessment] Error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast.error(`Failed to run E-E-A-T Assessment: ${errorMessage}`);

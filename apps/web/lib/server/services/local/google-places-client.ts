@@ -140,7 +140,7 @@ export async function fetchPlaceDetails(
     }
 
     return null;
-  } catch (error) {
+  } catch (_error) {
     console.warn('[GooglePlacesClient] Failed to fetch place details:', error);
     return null;
   }

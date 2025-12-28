@@ -88,7 +88,7 @@ export async function analyzePrivacyPolicyContent(
       has_user_rights: hasUserRights,
       has_contact_info: hasContactInfo,
     };
-  } catch (error) {
+  } catch (_error) {
     console.warn('[PrivacyAnalyzer] Failed to analyze privacy policy:', error);
     return null;
   }

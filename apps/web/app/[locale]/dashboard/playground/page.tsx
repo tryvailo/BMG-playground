@@ -228,7 +228,7 @@ export default function PlaygroundPage() {
       setServiceAnalysis(analysis);
       setCurrentDomain(values.domain);
       toast.success(t('simulationCompleted'));
-    } catch (error) {
+    } catch (_error) {
       console.error('[Playground] Error:', error);
       
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';

@@ -106,7 +106,7 @@ function parseJsonResponse(content: string): LlmsTxtAnalysis {
       missing_sections: Array.isArray(parsed.missing_sections) ? parsed.missing_sections : [],
       recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : [],
     };
-  } catch (error) {
+  } catch (_error) {
     // Try to extract JSON from markdown code blocks
     const jsonMatch = content.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/);
     if (jsonMatch) {
@@ -222,7 +222,7 @@ Return only valid JSON in this format:
     }
 
     return parseJsonResponse(responseContent);
-  } catch (error) {
+  } catch (_error) {
     console.error('[LlmsAnalyzer] Error analyzing llms.txt:', error);
     
     // Return a default error response

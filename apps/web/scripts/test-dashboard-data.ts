@@ -120,7 +120,7 @@ async function testDashboardData() {
     console.log(`  - Latest ClinicAI Score: ${latestStats.clinic_ai_score}%`);
     
     return true;
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Error during test:', error);
     return false;
   }

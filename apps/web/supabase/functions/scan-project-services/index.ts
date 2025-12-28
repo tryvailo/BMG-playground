@@ -315,7 +315,7 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },
     );
-  } catch (error) {
+  } catch (_error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Edge function error:', errorMessage);
 
@@ -466,7 +466,7 @@ Important:
     }
 
     return result;
-  } catch (error) {
+  } catch (_error) {
     // Fallback parsing
     const responseTextLower = responseText.toLowerCase();
     const normalizedTarget = normalizeDomain(targetDomain);

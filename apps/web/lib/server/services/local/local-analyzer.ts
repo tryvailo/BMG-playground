@@ -133,7 +133,7 @@ async function findPlaceIdByText(
     }
 
     return null;
-  } catch (error) {
+  } catch (_error) {
     console.warn('[LocalAnalyzer] Failed to find Place ID via Text Search:', error);
     return null;
   }
@@ -330,7 +330,7 @@ async function analyzeGoogleBusinessProfile(
       posts_per_month: 0, // Posts not available through Places API
       last_post_date: undefined,
     };
-  } catch (error) {
+  } catch (_error) {
     console.warn('[LocalAnalyzer] Failed to analyze Google Business Profile:', error);
     return defaultResult;
   }
@@ -467,7 +467,7 @@ async function analyzeReviewResponse(
             return null;
           }),
         ]);
-      } catch (error) {
+      } catch (_error) {
         console.warn('[LocalAnalyzer] Error fetching reviews from DOC.ua/Helsi:', error);
       }
     }
@@ -571,7 +571,7 @@ async function analyzeReviewResponse(
       negative_response_rate_percent: overallNegativeRate,
       platforms,
     };
-  } catch (error) {
+  } catch (_error) {
     console.warn('[LocalAnalyzer] Failed to analyze review response:', error);
     return defaultResult;
   }
@@ -664,7 +664,7 @@ async function analyzeGBPEngagement(
       search_impressions: searchImpressions,
       maps_impressions: mapsImpressions,
     };
-  } catch (error) {
+  } catch (_error) {
     console.warn('[LocalAnalyzer] Failed to analyze GBP engagement:', error);
     return defaultResult;
   }
@@ -804,7 +804,7 @@ async function analyzeLocalBacklinks(
             allBacklinks.push(check.value);
           }
         }
-      } catch (error) {
+      } catch (_error) {
         console.warn('[LocalAnalyzer] Google Custom Search failed:', error);
       }
     }
@@ -851,7 +851,7 @@ async function analyzeLocalBacklinks(
                   };
                 }
                 return null;
-              } catch (error) {
+              } catch (_error) {
                 console.warn(`[LocalAnalyzer] Failed to check known source ${source.domain}:`, error);
                 return null;
               }
@@ -931,14 +931,14 @@ async function analyzeLocalBacklinks(
                         }
                       }
                     }
-                  } catch (error) {
+                  } catch (_error) {
                     // Try next URL pattern
                     continue;
                   }
                 }
                 
                 return null;
-              } catch (error) {
+              } catch (_error) {
                 console.warn(`[LocalAnalyzer] Failed to check known source ${source.domain}:`, error);
                 return null;
               }
@@ -951,7 +951,7 @@ async function analyzeLocalBacklinks(
             }
           }
         }
-      } catch (error) {
+      } catch (_error) {
         console.warn('[LocalAnalyzer] Known sources check failed:', error);
       }
     }
@@ -1019,7 +1019,7 @@ async function analyzeLocalBacklinks(
         type: b.type,
       })),
     };
-  } catch (error) {
+  } catch (_error) {
     console.warn('[LocalAnalyzer] Failed to analyze local backlinks:', error);
     return defaultResult;
   }
@@ -1388,7 +1388,7 @@ export async function analyzeLocalIndicators(
     }
     
     html = await response.text();
-  } catch (error) {
+  } catch (_error) {
     console.error('[LocalAnalyzer] Failed to fetch URL:', error);
     throw new Error(`Failed to fetch URL: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }

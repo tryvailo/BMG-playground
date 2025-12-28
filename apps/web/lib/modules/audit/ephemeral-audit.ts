@@ -286,7 +286,7 @@ async function fetchPageSpeedScore(
     console.log(`[EphemeralAudit] LCP: ${details.lcp}ms, FCP: ${details.fcp}ms, CLS: ${details.cls}, TBT: ${details.tbt}ms`);
 
     return { score, details };
-  } catch (error) {
+  } catch (_error) {
     if (error instanceof Error && error.name === 'TimeoutError') {
       console.error(`[EphemeralAudit] PageSpeed ${strategy} request timed out after 60 seconds`);
     } else {
@@ -309,7 +309,7 @@ async function checkFileExists(fileUrl: string): Promise<boolean> {
       signal: AbortSignal.timeout(5000),
     });
     return response.ok;
-  } catch (error) {
+  } catch (_error) {
     return false;
   }
 }
@@ -378,7 +378,7 @@ async function checkTechnicalDuplicates(
           result.wwwRedirect = 'ok'; // At least one works, assume redirect is configured
         }
       }
-    } catch (error) {
+    } catch (_error) {
       console.warn('[EphemeralAudit] Error checking WWW redirect:', error);
     }
 
@@ -423,7 +423,7 @@ async function checkTechnicalDuplicates(
         // Root path - no trailing slash check needed
         result.trailingSlash = 'ok';
       }
-    } catch (error) {
+    } catch (_error) {
       console.warn('[EphemeralAudit] Error checking trailing slash:', error);
     }
 
@@ -450,12 +450,12 @@ async function checkTechnicalDuplicates(
       } else {
         result.httpRedirect = 'ok'; // Already HTTP, no redirect needed
       }
-    } catch (error) {
+    } catch (_error) {
       console.warn('[EphemeralAudit] Error checking HTTP redirect:', error);
       // If HTTP doesn't respond, assume HTTPS only (ok)
       result.httpRedirect = 'ok';
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('[EphemeralAudit] Error in technical duplicate check:', error);
   }
 
@@ -542,7 +542,7 @@ async function checkAndAnalyzeLlmsTxt(
         recommendations: ['llms.txt file exists. Provide OpenAI API key for quality analysis.'],
       };
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('[EphemeralAudit] Error checking llms.txt:', error);
     if (error instanceof Error) {
       console.error('[EphemeralAudit] Error details:', error.message);
@@ -821,7 +821,7 @@ export async function performEphemeralTechAudit(
       const aiAnalysis = await analyzeTechAudit(auditResult, finalOpenaiKey);
       auditResult.aiAnalysis = aiAnalysis;
       console.log(`[EphemeralAudit] AI analysis completed. Overall score: ${aiAnalysis.overallScore}/100`);
-    } catch (error) {
+    } catch (_error) {
       console.error('[EphemeralAudit] Error performing AI analysis:', error);
       // Continue without AI analysis - it's optional
     }
@@ -838,7 +838,7 @@ export async function performEphemeralTechAudit(
       const aiAnalysis = await analyzeTechAudit(auditResult, finalOpenaiKey);
       auditResult.aiAnalysis = aiAnalysis;
       console.log(`[EphemeralAudit] AI analysis completed. Overall score: ${aiAnalysis.overallScore}/100`);
-    } catch (error) {
+    } catch (_error) {
       console.error('[EphemeralAudit] Error performing AI analysis:', error);
       // Continue without AI analysis - it's optional
     }

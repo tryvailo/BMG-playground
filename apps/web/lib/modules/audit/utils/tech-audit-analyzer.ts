@@ -109,7 +109,7 @@ function parseJsonResponse(content: string): TechAuditAnalysis {
       strengths: Array.isArray(parsed.strengths) ? parsed.strengths : [],
       quickWins: Array.isArray(parsed.quickWins) ? parsed.quickWins : [],
     };
-  } catch (error) {
+  } catch (_error) {
     // Try to extract JSON from markdown code blocks
     const jsonMatch = content.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/);
     if (jsonMatch) {
@@ -338,7 +338,7 @@ Return only valid JSON in this format:
     }
 
     return parseJsonResponse(responseContent);
-  } catch (error) {
+  } catch (_error) {
     console.error('[TechAuditAnalyzer] Error analyzing technical audit:', error);
 
     return {

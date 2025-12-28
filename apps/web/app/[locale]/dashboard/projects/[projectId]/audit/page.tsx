@@ -41,7 +41,7 @@ export default function AuditPage() {
       } else {
         setIsPolling(false);
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('[AuditPage] Error fetching audit data:', error);
       toast.error('Failed to load audit data');
     } finally {
@@ -109,7 +109,7 @@ export default function AuditPage() {
         } else {
           toast.error(result.message);
         }
-      } catch (error) {
+      } catch (_error) {
         console.error('[AuditPage] Error triggering audit:', error);
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         toast.error(`Failed to start audit: ${errorMessage}`);
