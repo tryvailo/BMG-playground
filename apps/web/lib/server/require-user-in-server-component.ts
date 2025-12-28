@@ -3,6 +3,7 @@ import 'server-only';
 import { cache } from 'react';
 
 import { redirect } from '~/lib/navigation';
+import { getLocale } from 'next-intl/server';
 
 import { requireUser } from '@kit/supabase/require-user';
 import { getSupabaseServerClient } from '@kit/supabase/server-client';
@@ -15,10 +16,11 @@ import { getSupabaseServerClient } from '@kit/supabase/server-client';
  */
 export const requireUserInServerComponent = cache(async () => {
   const client = getSupabaseServerClient();
+  const locale = await getLocale();
   const result = await requireUser(client);
 
   if (result.error) {
-    redirect({ href: result.redirectTo });
+    redirect({ href: result.redirectTo, locale });
   }
 
   return result.data;

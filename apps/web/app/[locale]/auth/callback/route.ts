@@ -1,4 +1,4 @@
-import { redirect } from '~/lib/navigation';
+import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 import { createAuthCallbackService } from '@kit/supabase/auth';
@@ -13,5 +13,15 @@ export async function GET(request: NextRequest) {
     redirectPath: pathsConfig.app.home,
   });
 
-  return redirect({ href: nextPath });
+  // Extract locale from pathname if present, otherwise use default
+  const pathname = request.nextUrl.pathname;
+  const localeMatch = pathname.match(/^\/(en|ukr)/);
+  const locale = localeMatch ? localeMatch[1] : 'en';
+  
+  // Ensure nextPath includes locale prefix
+  const redirectPath = nextPath.startsWith(`/${locale}`) 
+    ? nextPath 
+    : `/${locale}${nextPath}`;
+
+  return NextResponse.redirect(new URL(redirectPath, request.nextUrl.origin));
 }

@@ -1,4 +1,5 @@
 import { redirect } from '~/lib/navigation';
+import { getLocale } from 'next-intl/server';
 
 import { MultiFactorChallengeContainer } from '@kit/auth/mfa';
 import { checkRequiresMultiFactorAuthentication } from '@kit/supabase/check-requires-mfa';
@@ -24,24 +25,25 @@ export const generateMetadata = async () => {
 
 async function VerifyPage(props: Props) {
   const client = getSupabaseServerClient();
+  const locale = await getLocale();
 
   const { data } = await client.auth.getClaims();
 
   if (!data?.claims) {
-    redirect({ href: pathsConfig.auth.signIn });
+    redirect({ href: pathsConfig.auth.signIn, locale });
   }
 
   const needsMfa = await checkRequiresMultiFactorAuthentication(client);
 
   if (!needsMfa) {
-    redirect({ href: pathsConfig.auth.signIn });
+    redirect({ href: pathsConfig.auth.signIn, locale });
   }
 
   const nextPath = (await props.searchParams).next;
   const redirectPath = nextPath ?? pathsConfig.app.home;
 
   if (!data?.claims) {
-    redirect({ href: pathsConfig.auth.signIn });
+    redirect({ href: pathsConfig.auth.signIn, locale });
   }
 
   return (

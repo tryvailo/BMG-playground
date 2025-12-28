@@ -147,7 +147,7 @@ export function ServiceTable({
 
   const renderCompetitorUrls = (urls: string[]): React.ReactNode => {
     if (urls.length === 0) return <span className="text-slate-400">—</span>;
-    if (urls.length === 1) {
+    if (urls.length === 1 && urls[0]) {
       return (
         <a
           href={urls[0]}

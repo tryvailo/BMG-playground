@@ -188,7 +188,7 @@ async function BlogPage() {
               <div
                 className="blog-content space-y-4"
                 dangerouslySetInnerHTML={{
-                  __html: markdownToHtml(postContent),
+                  __html: markdownToHtml(postContent || ''),
                 }}
               />
             </div>

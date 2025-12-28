@@ -57,7 +57,7 @@ export function ServiceAnalysisDetail({
   const renderCompetitorUrls = (competitors: Array<{ url?: string }>): React.ReactNode => {
     const urls = competitors.filter((c) => c.url).map((c) => c.url!);
     if (urls.length === 0) return <span className="text-muted-foreground text-xs">—</span>;
-    if (urls.length === 1) {
+    if (urls.length === 1 && urls[0]) {
       return (
         <a
           href={urls[0]}
