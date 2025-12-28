@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { UploadCloud, CheckCircle, AlertCircle, Loader, RefreshCw } from 'lucide-react';
 import { LoadingOverlay } from '@kit/ui/loading-overlay';
 
-import { useVisibilityMonitor, useRunScan, type KeywordScanResult } from './hooks/use-visibility-monitor';
+import { useVisibilityMonitor, useRunScan } from './hooks/use-visibility-monitor';
 
 export function VisibilityMonitor() {
   const [isDragging, setIsDragging] = useState(false);

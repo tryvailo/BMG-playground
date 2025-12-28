@@ -38,14 +38,7 @@ const getStoredValue = (key: string): string => {
   }
 };
 
-const setStoredValue = (key: string, value: string): void => {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(key, value);
-  } catch {
-    // Ignore localStorage errors
-  }
-};
+// setStoredValue removed - not used in this component
 
 /**
  * Technical Audit Page

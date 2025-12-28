@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { FileText, Download, Plus, Trash2, CheckCircle, XCircle, Loader, Calendar, Filter } from 'lucide-react';
 import { LoadingOverlay } from '@kit/ui/loading-overlay';
 
-import { useReports, useCreateReport, useDeleteReport, type Report } from './hooks/use-reports';
+import { useReports, useCreateReport, useDeleteReport } from './hooks/use-reports';
 
 type ReportType = 'Weekly Summary' | 'Competitor Analysis' | 'Technical Audit' | 'Full Export';
 

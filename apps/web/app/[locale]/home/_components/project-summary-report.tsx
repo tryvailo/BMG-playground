@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Skeleton } from '@kit/ui/skeleton';
 import { AIVisibilityDashboard } from './ai-visibility-dashboard';
 import { DashboardFilters } from './dashboard-filters';
 import type { DashboardFilters as DashboardFiltersType } from '~/lib/actions/dashboard.types';
@@ -35,7 +34,7 @@ export function ProjectSummaryReport() {
           Project Summary Report
         </h2>
         <p className="text-muted-foreground mt-1 text-sm">
-          Comprehensive analysis of your project's visibility and performance
+          Comprehensive analysis of your project&apos;s visibility and performance
         </p>
       </div>
 

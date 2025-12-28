@@ -2,10 +2,10 @@
 
 import React, { useState } from 'react';
 import { AlertTriangle, Globe, Cpu, FileText } from 'lucide-react';
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { LoadingOverlay } from '@kit/ui/loading-overlay';
 
-import { useTechAudit, useRunAudit, type AuditResult } from './hooks/use-tech-audit';
+import { useTechAudit, useRunAudit } from './hooks/use-tech-audit';
 
 export function TechAudit() {
   const [url, setUrl] = useState('https://example-clinic.com');

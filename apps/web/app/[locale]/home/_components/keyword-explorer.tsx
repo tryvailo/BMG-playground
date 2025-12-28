@@ -2,10 +2,10 @@
 
 import React, { useState } from 'react';
 import { Search, Plus } from 'lucide-react';
-import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ZAxis } from 'recharts';
+import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ZAxis } from 'recharts';
 import { LoadingOverlay } from '@kit/ui/loading-overlay';
 
-import { useKeywordExplorer, type KeywordOpportunity } from './hooks/use-keyword-explorer';
+import { useKeywordExplorer } from './hooks/use-keyword-explorer';
 
 export function KeywordExplorer() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -82,7 +82,7 @@ export function KeywordExplorer() {
         <div className="bg-gradient-to-br from-emerald-600 to-cyan-600 text-white p-6 rounded-xl shadow-lg flex flex-col justify-center">
             <h3 className="text-xl font-bold mb-2">AI Insight</h3>
             <p className="text-emerald-100 mb-6">
-                Users asking about "recovery time" often switch to "cost" in follow-up prompts. Target long-tail questions about post-op care to capture early intent.
+                Users asking about &quot;recovery time&quot; often switch to &quot;cost&quot; in follow-up prompts. Target long-tail questions about post-op care to capture early intent.
             </p>
             <button className="bg-card text-emerald-900 py-2 px-4 rounded-lg font-semibold hover:bg-emerald-50 transition-colors">
                 Generate Blog Outline

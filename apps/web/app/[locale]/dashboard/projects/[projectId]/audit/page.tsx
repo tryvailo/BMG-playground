@@ -137,7 +137,7 @@ export default function AuditPage() {
             Technical Audit
           </h1>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-            Analyze your site's performance, security, and optimization
+            Analyze your site&apos;s performance, security, and optimization
           </p>
         </div>
         

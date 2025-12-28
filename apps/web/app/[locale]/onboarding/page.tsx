@@ -23,7 +23,7 @@ function extractClinicName(domain: string): string {
     if (!domain) return 'My Clinic';
     
     // Remove protocol and www
-    let cleanDomain = domain
+    const cleanDomain = domain
         .replace(/^https?:\/\//, '')
         .replace(/^www\./, '')
         .toLowerCase();
