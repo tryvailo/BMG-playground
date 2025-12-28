@@ -271,7 +271,10 @@ async function analyzeGoogleBusinessProfile(
   }
 
   try {
-    const placeData = await fetchPlaceDetails(placeId, apiKey);
+    if (!finalPlaceId || typeof finalPlaceId !== 'string') {
+      return defaultResult;
+    }
+    const placeData = await fetchPlaceDetails(finalPlaceId, apiKey);
 
     if (!placeData) {
       return defaultResult;
@@ -609,7 +612,7 @@ async function analyzeGBPEngagement(
     maps_impressions: 0,
   };
 
-  if (!placeId || !apiKey) {
+  if (!placeId || !apiKey || typeof placeId !== 'string') {
     return defaultResult;
   }
 

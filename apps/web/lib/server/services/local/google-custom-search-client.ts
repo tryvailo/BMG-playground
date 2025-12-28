@@ -175,10 +175,13 @@ export async function checkBacklink(
       };
     }
     
+    // TypeScript type narrowing: foundLink is not null here
+    const linkData: { anchor_text?: string; link_type?: 'dofollow' | 'nofollow' } = foundLink;
+    
     return {
       has_backlink: true,
-      anchor_text: foundLink.anchor_text,
-      link_type: foundLink.link_type,
+      anchor_text: linkData.anchor_text,
+      link_type: linkData.link_type,
     };
   } catch (error) {
     console.warn('[GoogleCustomSearch] Failed to check backlink:', error);
