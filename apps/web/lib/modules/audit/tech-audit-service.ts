@@ -211,7 +211,7 @@ async function checkLlmsTxt(baseUrl: string): Promise<{
         },
       };
     }
-    } catch (error) {
+    } catch (_error) {
     // llms.txt doesn't exist - this is not necessarily an error
   }
 
@@ -250,7 +250,7 @@ async function checkRobotsTxt(baseUrl: string): Promise<{
         valid: hasUserAgent,
       };
     }
-    } catch (error) {
+    } catch (_error) {
     // robots.txt doesn't exist
   }
 
@@ -284,7 +284,7 @@ async function checkSitemap(baseUrl: string): Promise<boolean> {
         return true;
       }
     }
-    } catch (error) {
+    } catch (_error) {
     // Sitemap doesn't exist
   }
 

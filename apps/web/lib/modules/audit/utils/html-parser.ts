@@ -364,9 +364,9 @@ function extractLinks($: CheerioAPI, baseUrl: string): string[] {
         seen.add(absoluteUrl);
         links.push(absoluteUrl);
       }
-    } catch (error) {
-      // Invalid URL - skip
-    }
+      } catch (_error) {
+        // Invalid URL - skip
+      }
   });
 
   // Extract from <link> tags (canonical, alternate, etc.)
@@ -380,9 +380,9 @@ function extractLinks($: CheerioAPI, baseUrl: string): string[] {
         seen.add(absoluteUrl);
         links.push(absoluteUrl);
       }
-    } catch (error) {
-      // Invalid URL - skip
-    }
+      } catch (_error) {
+        // Invalid URL - skip
+      }
   });
 
   return links;
@@ -440,7 +440,7 @@ function getDomain(url: string): string | null {
     const urlObj = new URL(url);
     // Remove www. prefix for comparison
     return urlObj.hostname.replace(/^www\./, '');
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }
@@ -538,7 +538,7 @@ async function checkLinksStatus(
         isTrusted,
         rel,
       };
-    } catch (error) {
+    } catch (_error) {
       // If fetch fails, assume it's broken (404 or network error)
       return {
         url,
@@ -600,7 +600,7 @@ export async function parseHtml(html: string, url: string): Promise<PageParseRes
   if (canonicalHref) {
     try {
       canonical = new URL(canonicalHref, url).toString();
-    } catch (error) {
+    } catch (_error) {
       canonical = canonicalHref; // Fallback to raw value
     }
   }
