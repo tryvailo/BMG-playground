@@ -1279,8 +1279,7 @@ export const runLiveDashboardTest = enhanceAction(
       return {
         ...dashboardData,
         serviceAnalysis,
-        // Note: techAudit is not included in DashboardData interface
-        // It should be run separately via "Run Technical Audit" button
+        techAudit: null, // Tech audit is run separately via "Run Technical Audit" button
       };
     } catch (error) {
       console.error('[runLiveDashboardTest] Error running live test:', error);
