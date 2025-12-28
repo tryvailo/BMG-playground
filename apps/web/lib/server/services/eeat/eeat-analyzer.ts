@@ -726,7 +726,7 @@ export async function analyzeEEAT(
 
   // Privacy Policy content analysis
   let privacyPolicyContent = null;
-  let gdprCompliance = checkGDPRCompliance($);
+  const gdprCompliance = checkGDPRCompliance($);
   if (privacyPolicy) {
     // Try to find privacy policy URL
     let privacyUrl: string | undefined;

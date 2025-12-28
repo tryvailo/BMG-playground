@@ -188,7 +188,7 @@ function detectDoctorPages($: CheerioAPI): boolean {
  * Checks for /services/, /napryamki/ links
  */
 function detectServicePages($: CheerioAPI): boolean {
-  let uniqueServiceUrls = new Set<string>();
+  const uniqueServiceUrls = new Set<string>();
 
   $('a[href]').each((_, element) => {
     const href = $(element).attr('href')?.toLowerCase() || '';
@@ -205,7 +205,7 @@ function detectServicePages($: CheerioAPI): boolean {
  * Detect direction pages count
  */
 function detectDirectionPagesCount($: CheerioAPI): number {
-  let uniqueDirectionUrls = new Set<string>();
+  const uniqueDirectionUrls = new Set<string>();
 
   $('a[href]').each((_, element) => {
     const href = $(element).attr('href')?.toLowerCase() || '';
@@ -222,7 +222,7 @@ function detectDirectionPagesCount($: CheerioAPI): number {
  * Count unique service pages
  */
 function countServicePages($: CheerioAPI): number {
-  let uniqueServiceUrls = new Set<string>();
+  const uniqueServiceUrls = new Set<string>();
 
   $('a[href]').each((_, element) => {
     const href = $(element).attr('href')?.toLowerCase() || '';
