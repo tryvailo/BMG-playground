@@ -1,206 +1,155 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
-import { toast } from 'sonner';
-import { Loader2, Circle, Play } from 'lucide-react';
-
-import { Button } from '@kit/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@kit/ui/card';
+import React from 'react';
 import { DashboardView, type DashboardData } from '~/components/dashboard/DashboardView';
-import { runLiveDashboardTest } from '~/lib/actions/playground-test';
-
-/**
- * LocalStorage Keys - Using global configuration keys
- */
-const STORAGE_KEYS = {
-  API_KEY_OPENAI: 'configuration_api_key_openai',
-  API_KEY_PERPLEXITY: 'configuration_api_key_perplexity',
-  API_KEY_GOOGLE_PAGESPEED: 'configuration_api_key_google_pagespeed',
-  API_KEY_FIRECRAWL: 'configuration_api_key_firecrawl',
-  DOMAIN: 'configuration_domain',
-  CITY: 'configuration_city',
-  CLINIC_NAME: 'configuration_clinic_name',
-} as const;
-
-/**
- * Helper functions for localStorage
- */
-const getStoredValue = (key: string): string => {
-  if (typeof window === 'undefined') return '';
-  try {
-    return localStorage.getItem(key) || '';
-  } catch {
-    return '';
-  }
-};
-
-
-/**
- * Empty Dashboard Data
- */
-const emptyDashboardData: DashboardData = {
-  metrics: {
-    clinicAiScore: { value: 0, trend: 0 },
-    serviceVisibility: { value: 0, trend: 0 },
-    avgPosition: { value: 0, trend: 0 },
-    techOptimization: { value: 0, trend: 0 },
-    contentOptimization: { value: 0, trend: 0 },
-    eeatSignal: { value: 0, trend: 0 },
-    localSignal: { value: 0, trend: 0 },
-  },
-  trend: [],
-  competitors: [],
-};
+import { useDashboardData } from './hooks/use-dashboard-data';
 
 interface AIVisibilityDashboardProps {
   projectId?: string;
   filters?: any;
 }
 
+/**
+ * Dashboard Component
+ * 
+ * Automatically loads dashboard data from the database when the component mounts.
+ * Data is fetched from weekly_stats, scans, and related tables.
+ * 
+ * The dashboard displays:
+ * - ClinicAI Score (calculated from Visibility, Tech, Content, E-E-A-T, Local)
+ * - Service Visibility
+ * - Average Position
+ * - Trend chart (ClinicAI Score over time)
+ * - Competitor analysis (scatter plot)
+ */
 export function AIVisibilityDashboard({ projectId, filters }: AIVisibilityDashboardProps = {}) {
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
-  const [isPending, setIsPending] = useState(false);
-  const resultsRef = useRef<HTMLDivElement>(null);
+  // Automatically load data from database using React Query
+  const { data: dashboardData, isLoading, error } = useDashboardData({
+    projectId,
+    filters,
+  });
 
-  const handleGeneratePreview = async () => {
-    setIsPending(true);
-    setDashboardData(null);
-
-    // Get configuration values from localStorage
-    const apiKeyOpenAI = getStoredValue(STORAGE_KEYS.API_KEY_OPENAI);
-    const apiKeyPerplexity = getStoredValue(STORAGE_KEYS.API_KEY_PERPLEXITY);
-    const apiKeyGooglePageSpeed = getStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_PAGESPEED);
-    const apiKeyFirecrawl = getStoredValue(STORAGE_KEYS.API_KEY_FIRECRAWL);
-    const domain = getStoredValue(STORAGE_KEYS.DOMAIN);
-    const city = getStoredValue(STORAGE_KEYS.CITY);
-    const clinicName = getStoredValue(STORAGE_KEYS.CLINIC_NAME);
-
-    // Validate required configuration
-    if (!apiKeyOpenAI || !apiKeyPerplexity) {
-      toast.error('Please configure your API keys in the Configuration page first.');
-      setIsPending(false);
-      return;
-    }
-
-    if (!domain || !city) {
-      toast.error('Please configure your domain and city in the Configuration page first.');
-      setIsPending(false);
-      return;
-    }
-
-    // Generate query from configuration fields
-    // Use clinicName if available, otherwise use domain name
-    const query = clinicName?.trim() || domain?.trim() || '';
-
-    if (!query) {
-      toast.error('Please configure your clinic name or domain in the Configuration page first.');
-      setIsPending(false);
-      return;
-    }
-
-    // Scroll to results
-    setTimeout(() => {
-      resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-
-    try {
-      const result = await runLiveDashboardTest({
-        apiKeyOpenAI,
-        apiKeyPerplexity,
-        apiKeyGooglePageSpeed: apiKeyGooglePageSpeed || undefined,
-        apiKeyFirecrawl: apiKeyFirecrawl || undefined,
-        domain,
-        query,
-        city,
+  // Debug logging
+  React.useEffect(() => {
+    if (dashboardData) {
+      console.log('[Dashboard Component] Data loaded:', {
+        avgAivScore: dashboardData.kpis.avgAivScore,
+        serviceVisibility: dashboardData.kpis.serviceVisibility,
+        historyCount: dashboardData.history.length,
+        competitorsCount: dashboardData.competitors.length,
       });
-
-      // Extract DashboardData (ignore serviceAnalysis as it's only for services section)
-      const { serviceAnalysis: _, ...dashboard } = result;
-      setDashboardData(dashboard);
-      toast.success('Dashboard preview generated successfully!');
-    } catch (error) {
-      console.error('[Dashboard Preview] Error:', error);
-      
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
-      // Check for API key errors
-      if (errorMessage.includes('API key') || errorMessage.includes('401') || errorMessage.includes('403')) {
-        toast.error('Invalid API keys. Please check your API keys.');
-      } else {
-        toast.error(`Failed to generate dashboard preview: ${errorMessage}`);
-      }
-
-      // Set empty data to show "Not Visible" state
-      setDashboardData(emptyDashboardData);
-    } finally {
-      setIsPending(false);
     }
-  };
+    if (error) {
+      console.error('[Dashboard Component] Error:', error);
+    }
+    if (isLoading) {
+      console.log('[Dashboard Component] Loading...');
+    }
+  }, [dashboardData, error, isLoading]);
+
+  // Transform the data from the hook to match DashboardData format
+  const transformedData: DashboardData | null = dashboardData
+    ? {
+        metrics: {
+          clinicAiScore: {
+            value: dashboardData.kpis.avgAivScore,
+            trend: 0, // TODO: Calculate trend from previous period
+          },
+          serviceVisibility: {
+            value: dashboardData.kpis.serviceVisibility,
+            trend: 0, // TODO: Calculate trend from previous period
+          },
+          avgPosition: {
+            value: dashboardData.kpis.avgPosition || 0,
+            trend: 0, // TODO: Calculate trend from previous period
+          },
+          techOptimization: {
+            value: dashboardData.kpis.techOptimization || 0,
+            trend: 0, // TODO: Calculate trend from previous period
+          },
+          contentOptimization: {
+            value: dashboardData.kpis.contentOptimization || 0,
+            trend: 0, // TODO: Calculate trend from previous period
+          },
+          eeatSignal: {
+            value: dashboardData.kpis.eeatSignal || 0,
+            trend: 0, // TODO: Calculate trend from previous period
+          },
+          localSignal: {
+            value: dashboardData.kpis.localSignal || 0,
+            trend: 0, // TODO: Calculate trend from previous period
+          },
+        },
+        trend: dashboardData.history.map((h) => ({
+          date: h.date,
+          score: h.score,
+        })),
+        competitors: dashboardData.competitors.map((c) => ({
+          name: c.name,
+          x: c.x,
+          y: c.y,
+          isCurrent: c.isCurrentProject,
+          z: c.z,
+        })),
+      }
+    : null;
 
   return (
     <div className="space-y-6 h-full min-h-full flex flex-col">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard Preview</h1>
+        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
         <p className="text-muted-foreground">
-          Test your AI visibility with a live query and see the dashboard preview. Configure your API keys and clinic information in the Configuration page.
+          Overview of your AI visibility metrics and performance over time. Data is automatically loaded from your project scans and audits.
         </p>
       </div>
 
-      {/* Generate Button Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Dashboard Preview</CardTitle>
-          <CardDescription>
-            Generate a dashboard preview using your configuration settings. All parameters are taken from the Configuration page.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button
-            onClick={handleGeneratePreview}
-            disabled={isPending}
-            className="w-full lg:w-auto"
-          >
-            {isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Generating Preview...
-              </>
-            ) : (
-              <>
-                <Play className="h-4 w-4 mr-2" />
-                Generate Dashboard Preview
-              </>
-            )}
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Results Section */}
-      <div ref={resultsRef} className="space-y-6">
-        {dashboardData ? (
-          <>
-            {/* Simulation Banner */}
-            <Card className="border-2 border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20">
-              <CardContent className="py-3">
-                <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 text-sm font-medium">
-                  <Circle className="h-4 w-4 fill-current" />
-                  <span>Simulated dashboard view based on your test query</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Dashboard View */}
-            <DashboardView data={dashboardData} />
-          </>
-        ) : isPending ? (
-          <div className="flex items-center justify-center py-12 text-muted-foreground">
-            <div className="text-center">
-              <Loader2 className="h-12 w-12 mx-auto mb-4 animate-spin opacity-50" />
-              <p className="text-sm">Generating dashboard preview...</p>
-            </div>
+      {/* Dashboard View */}
+      {isLoading ? (
+        <DashboardView
+          data={{
+            metrics: {
+              clinicAiScore: { value: 0, trend: 0 },
+              serviceVisibility: { value: 0, trend: 0 },
+              avgPosition: { value: 0, trend: 0 },
+              techOptimization: { value: 0, trend: 0 },
+              contentOptimization: { value: 0, trend: 0 },
+              eeatSignal: { value: 0, trend: 0 },
+              localSignal: { value: 0, trend: 0 },
+            },
+            trend: [],
+            competitors: [],
+          }}
+          loading={true}
+        />
+      ) : error ? (
+        <div className="flex items-center justify-center py-12 text-destructive">
+          <div className="text-center">
+            <p className="text-sm font-medium">Failed to load dashboard data</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {error instanceof Error ? error.message : 'Unknown error occurred'}
+            </p>
           </div>
-        ) : null}
-      </div>
+        </div>
+      ) : transformedData ? (
+        <DashboardView data={transformedData} loading={false} />
+      ) : (
+        <DashboardView
+          data={{
+            metrics: {
+              clinicAiScore: { value: 0, trend: 0 },
+              serviceVisibility: { value: 0, trend: 0 },
+              avgPosition: { value: 0, trend: 0 },
+              techOptimization: { value: 0, trend: 0 },
+              contentOptimization: { value: 0, trend: 0 },
+              eeatSignal: { value: 0, trend: 0 },
+              localSignal: { value: 0, trend: 0 },
+            },
+            trend: [],
+            competitors: [],
+          }}
+          loading={false}
+        />
+      )}
     </div>
   );
 }
