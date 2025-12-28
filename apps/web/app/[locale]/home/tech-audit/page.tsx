@@ -176,13 +176,10 @@ export default function TechAuditPage() {
         apiKeyOpenAI: apiKeyOpenAI || undefined,
         apiKeyGooglePageSpeed: apiKeyGooglePageSpeed || undefined,
       });
-      
-      const promises: [Promise<EphemeralAuditResult>, Promise<DuplicateAnalysisResult | null>] = [
-        auditPromise,
 
       // Add deep content analysis (will use env var if form key is not provided)
       // If env var is also missing, the API will return an error which we'll handle gracefully
-      promises.push(
+      const duplicatePromise: Promise<DuplicateAnalysisResult | null> =
         fetch('/api/duplicate-check', {
           method: 'POST',
           headers: {
@@ -233,17 +230,21 @@ export default function TechAuditPage() {
             return null;
           }
           throw error;
-        })
-      );
+        });
+
+      const promises: [Promise<EphemeralAuditResult>, Promise<DuplicateAnalysisResult | null>] = [
+        auditPromise,
+        duplicatePromise,
+      ];
 
       const results = await Promise.allSettled(promises);
-      const auditResult = results[0];
-      const duplicateAnalysisResult = results[1];
+      const auditResult = results[0] as PromiseSettledResult<EphemeralAuditResult>;
+      const duplicateAnalysisResult = results[1] as PromiseSettledResult<DuplicateAnalysisResult | null>;
 
       // Handle technical audit result
       if (auditResult && auditResult.status === 'fulfilled' && 'value' in auditResult) {
         // Results are already saved to database by runPlaygroundTechAudit
-        setResult(auditResult.value);
+        setResult(auditResult.value as EphemeralAuditResult);
         setAuditDate(new Date().toISOString());
         toast.success('Technical audit completed successfully!');
         
