@@ -155,7 +155,9 @@ async function fetchPageSpeed(
       lcp: audits['largest-contentful-paint']?.numericValue || undefined,
       cls: audits['cumulative-layout-shift']?.numericValue || undefined,
       fcp: audits['first-contentful-paint']?.numericValue || undefined,
-      ttfb: audits['server-response-time']?.numericValue || undefined,
+      ttfb: (audits['server-response-time'] && typeof audits['server-response-time'] === 'object' && 'numericValue' in audits['server-response-time']) 
+        ? (audits['server-response-time'] as { numericValue: number }).numericValue 
+        : undefined,
       tbt: audits['total-blocking-time']?.numericValue || undefined,
       si: audits['speed-index']?.numericValue || undefined,
     };
@@ -558,6 +560,9 @@ export async function runFullTechAudit(projectId: string): Promise<string> {
       throw new Error(`Failed to update audit record: ${updateError.message}`);
     }
 
+    if (!auditId) {
+      throw new Error('Failed to create audit record: auditId is null');
+    }
     return auditId;
   } catch (error) {
     console.error('[TechAudit] Error running full tech audit:', error);

@@ -183,7 +183,10 @@ function extractSchemaTypes(schema: JsonLdSchema, visited = new Set<unknown>()):
       const value = schema[key];
       if (typeof value === 'object' && value !== null) {
         // Recursively extract types from nested objects
-        types.push(...extractSchemaTypes(value, visited));
+        // Type guard to ensure value is JsonLdSchema
+        if (Array.isArray(value) || ('@type' in value || 'type' in value || '@graph' in value || typeof value === 'object')) {
+          types.push(...extractSchemaTypes(value as JsonLdSchema, visited));
+        }
       } else if (Array.isArray(value)) {
         // Check if array contains objects with types
         for (const item of value) {

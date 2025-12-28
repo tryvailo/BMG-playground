@@ -607,9 +607,11 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
                         borderRadius: '8px',
                         padding: '8px 12px',
                       }}
-                      formatter={(value: number | null, name: string) => {
-                        if (value === null) return ['N/A', name];
-                        return [`${formatMetric(value)}`, name];
+                      formatter={(value: any, name: string) => {
+                        if (value === null || value === undefined) return ['N/A', name];
+                        const numValue = typeof value === 'number' ? value : Number(value);
+                        if (isNaN(numValue)) return ['N/A', name];
+                        return [`${formatMetric(numValue)}`, name];
                       }}
                     />
                     <Legend 

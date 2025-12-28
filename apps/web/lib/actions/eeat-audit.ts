@@ -228,7 +228,7 @@ export const runEEATAudit = enhanceAction(
   },
   {
     auth: false, // Playground actions don't require authentication
-    schema: EEATAuditInputSchema,
+    schema: EEATAuditInputSchema as any,
   },
 );
 

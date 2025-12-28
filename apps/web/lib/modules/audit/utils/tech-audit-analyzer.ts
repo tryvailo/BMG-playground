@@ -190,8 +190,8 @@ function formatAuditDataForAI(audit: EphemeralAuditResult, duplicateAnalysis?: D
   parts.push(`Physician: ${audit.schema.hasPhysician ? 'Yes' : 'No'}`);
   parts.push(`Medical Procedure: ${audit.schema.hasMedicalProcedure ? 'Yes' : 'No'}`);
   parts.push(`Local Business: ${audit.schema.hasLocalBusiness ? 'Yes' : 'No'}`);
-  parts.push(`FAQ: ${audit.schema.hasFAQ ? 'Yes' : 'No'}`);
-  parts.push(`Reviews: ${audit.schema.hasReviews ? 'Yes' : 'No'}`);
+  parts.push(`FAQ: ${audit.schema.hasFAQPage ? 'Yes' : 'No'}`);
+  parts.push(`Reviews: ${audit.schema.hasReview ? 'Yes' : 'No'}`);
   parts.push(`Breadcrumb List: ${audit.schema.hasBreadcrumbList ? 'Yes' : 'No'}`);
 
   // Meta Tags

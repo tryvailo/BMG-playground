@@ -145,7 +145,7 @@ export const runDuplicateCheckAction = enhanceAction(
   },
   {
     auth: false, // Allow unauthenticated access (for playground)
-    schema: DuplicateCheckInputSchema,
+    schema: DuplicateCheckInputSchema as any,
   },
 );
 

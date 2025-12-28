@@ -8,6 +8,7 @@ import { generateUserPrompt } from '~/lib/modules/ai/scanner';
 import { calculateClinicAIScore } from '~/lib/modules/analytics/calculator';
 import { mapLiveScanToDashboard, type ScanResult } from '~/lib/modules/ai/simulation-adapter';
 import { performEphemeralTechAudit, type EphemeralAuditResult } from '~/lib/modules/audit/ephemeral-audit';
+import type { TechAuditResult } from '~/lib/modules/audit/live-scanner';
 import type { DashboardData } from '~/components/dashboard/DashboardView';
 
 /*
@@ -1278,8 +1279,8 @@ export const runLiveDashboardTest = enhanceAction(
       return {
         ...dashboardData,
         serviceAnalysis,
-        // techAudit is now null - it should be run separately via "Run Technical Audit" button
-        techAudit: null as unknown as EphemeralAuditResult,
+        // Note: techAudit is not included in DashboardData interface
+        // It should be run separately via "Run Technical Audit" button
       };
     } catch (error) {
       console.error('[runLiveDashboardTest] Error running live test:', error);

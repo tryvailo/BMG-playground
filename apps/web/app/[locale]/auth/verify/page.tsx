@@ -47,13 +47,13 @@ async function VerifyPage(props: Props) {
   }
 
   const userId = data?.claims?.sub;
-  if (!userId) {
+  if (!userId || typeof userId !== 'string') {
     redirect({ href: pathsConfig.auth.signIn, locale });
   }
 
   return (
     <MultiFactorChallengeContainer
-      userId={userId}
+      userId={userId as string}
       paths={{
         redirectPath,
       }}
