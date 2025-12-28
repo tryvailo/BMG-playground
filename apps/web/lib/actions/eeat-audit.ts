@@ -2,6 +2,7 @@
 
 import { enhanceAction } from '@kit/next/actions';
 import { z } from 'zod';
+import { getSupabaseServerAdminClient } from '@kit/supabase/server-admin-client';
 
 import {
   analyzeEEAT,
@@ -169,6 +170,51 @@ export const runEEATAudit = enhanceAction(
         result.recommendations.length,
       );
 
+      // Save audit result to database
+      try {
+        const supabase = getSupabaseServerAdminClient();
+        
+        const insertData = {
+          url: normalizedUrl,
+          audit_result: result,
+          multi_page: multiPage,
+          filter_type: filterType,
+          max_pages: maxPages,
+        };
+        
+        console.log('[EEATAudit] Inserting audit data:', {
+          url: insertData.url,
+          hasResult: !!insertData.audit_result,
+          multiPage: insertData.multi_page,
+          filterType: insertData.filter_type,
+        });
+        
+        const { data: savedData, error: saveError } = await (supabase as any)
+          .from('eeat_audits')
+          .insert(insertData)
+          .select()
+          .single();
+
+        if (saveError) {
+          console.error('[EEATAudit] Failed to save audit to database:', {
+            error: saveError,
+            message: saveError.message,
+            details: saveError.details,
+            hint: saveError.hint,
+          });
+          // Don't throw - saving is optional, audit result is still returned
+        } else {
+          console.log('[EEATAudit] Audit result saved to database successfully:', {
+            id: savedData?.id,
+            url: savedData?.url,
+            createdAt: savedData?.created_at,
+          });
+        }
+      } catch (saveError) {
+        console.error('[EEATAudit] Error saving audit to database:', saveError);
+        // Don't throw - saving is optional
+      }
+
       return result;
     } catch (error) {
       console.error('[EEATAudit] Error:', error);
@@ -183,6 +229,98 @@ export const runEEATAudit = enhanceAction(
   {
     auth: false, // Playground actions don't require authentication
     schema: EEATAuditInputSchema,
+  },
+);
+
+/**
+ * Get Latest E-E-A-T Audit Input Schema
+ */
+const GetLatestEEATAuditSchema = z.object({
+  url: z.string().min(1, 'URL is required'),
+});
+
+/**
+ * Get the most recent E-E-A-T Assessment audit for a URL
+ * 
+ * @param url - URL to get the latest audit for
+ * @returns The latest audit with result and metadata, or null if none exists
+ */
+export const getLatestEEATAudit = enhanceAction(
+  async (params: { url: string }): Promise<{ result: EEATAuditResult; createdAt: string } | null> => {
+    const { url } = params;
+    
+    // Normalize URL (ensure it has protocol)
+    let normalizedUrl = url.trim();
+    if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
+      normalizedUrl = `https://${normalizedUrl}`;
+    }
+
+    try {
+      const supabase = getSupabaseServerAdminClient();
+      
+      console.log('[EEATAudit] Fetching latest audit from database:', { url: normalizedUrl });
+      
+      // Try exact match first
+      let { data, error } = await (supabase as any)
+        .from('eeat_audits')
+        .select('audit_result, created_at, id, url')
+        .eq('url', normalizedUrl)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      // If no exact match, try without protocol (for flexibility)
+      if (!data && !error) {
+        const urlWithoutProtocol = normalizedUrl.replace(/^https?:\/\//, '');
+        const { data: dataAlt, error: errorAlt } = await (supabase as any)
+          .from('eeat_audits')
+          .select('audit_result, created_at, id, url')
+          .or(`url.eq.${normalizedUrl},url.ilike.%${urlWithoutProtocol}%`)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (dataAlt && !errorAlt) {
+          data = dataAlt;
+        }
+        if (errorAlt && !error) {
+          error = errorAlt;
+        }
+      }
+
+      if (error) {
+        console.error('[EEATAudit] Failed to fetch latest audit:', {
+          error,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+        });
+        return null;
+      }
+
+      if (!data || !data.audit_result) {
+        console.log('[EEATAudit] No audit found in database for URL:', normalizedUrl);
+        return null;
+      }
+
+      console.log('[EEATAudit] Found audit in database:', {
+        id: data.id,
+        url: data.url,
+        createdAt: data.created_at,
+      });
+
+      return {
+        result: data.audit_result as EEATAuditResult,
+        createdAt: data.created_at,
+      };
+    } catch (error) {
+      console.error('[EEATAudit] Error fetching latest audit:', error);
+      return null;
+    }
+  },
+  {
+    auth: false, // Playground actions don't require authentication
+    schema: GetLatestEEATAuditSchema,
   },
 );
 
