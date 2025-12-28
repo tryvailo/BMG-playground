@@ -50,25 +50,65 @@ alter table public.local_indicators_audits enable row level security;
 -- But we still create policies for future use with authenticated users
 
 -- SELECT: Allow all (for playground usage)
-create policy local_indicators_audits_select on public.local_indicators_audits
-  for select
-  using (true);
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies 
+    where schemaname = 'public' 
+    and tablename = 'local_indicators_audits' 
+    and policyname = 'local_indicators_audits_select'
+  ) then
+    create policy local_indicators_audits_select on public.local_indicators_audits
+      for select
+      using (true);
+  end if;
+end $$;
 
 -- INSERT: Allow all (for playground usage)
-create policy local_indicators_audits_insert on public.local_indicators_audits
-  for insert
-  with check (true);
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies 
+    where schemaname = 'public' 
+    and tablename = 'local_indicators_audits' 
+    and policyname = 'local_indicators_audits_insert'
+  ) then
+    create policy local_indicators_audits_insert on public.local_indicators_audits
+      for insert
+      with check (true);
+  end if;
+end $$;
 
 -- UPDATE: Allow all (for playground usage)
-create policy local_indicators_audits_update on public.local_indicators_audits
-  for update
-  using (true)
-  with check (true);
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies 
+    where schemaname = 'public' 
+    and tablename = 'local_indicators_audits' 
+    and policyname = 'local_indicators_audits_update'
+  ) then
+    create policy local_indicators_audits_update on public.local_indicators_audits
+      for update
+      using (true)
+      with check (true);
+  end if;
+end $$;
 
 -- DELETE: Allow all (for playground usage)
-create policy local_indicators_audits_delete on public.local_indicators_audits
-  for delete
-  using (true);
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies 
+    where schemaname = 'public' 
+    and tablename = 'local_indicators_audits' 
+    and policyname = 'local_indicators_audits_delete'
+  ) then
+    create policy local_indicators_audits_delete on public.local_indicators_audits
+      for delete
+      using (true);
+  end if;
+end $$;
 
 -- Grant permissions
 -- Service role bypasses RLS, but we grant for completeness

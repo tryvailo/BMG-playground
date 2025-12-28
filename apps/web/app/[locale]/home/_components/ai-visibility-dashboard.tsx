@@ -52,7 +52,9 @@ export function AIVisibilityDashboard({ projectId, filters }: AIVisibilityDashbo
     ? {
         metrics: {
           clinicAiScore: {
-            value: dashboardData.kpis.avgAivScore,
+            value: typeof dashboardData.kpis.avgAivScore === 'number' 
+              ? dashboardData.kpis.avgAivScore 
+              : Number(dashboardData.kpis.avgAivScore) || 0,
             trend: 0, // TODO: Calculate trend from previous period
           },
           serviceVisibility: {

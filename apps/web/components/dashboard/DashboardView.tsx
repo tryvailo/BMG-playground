@@ -399,14 +399,26 @@ export function DashboardView({ data, loading = false }: DashboardViewProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <KpiCard
             title="Clinic AI Score"
-            value={metrics.clinicAiScore?.value?.toFixed(1) ?? 'N/A'}
+            value={
+              metrics.clinicAiScore?.value != null 
+                ? (typeof metrics.clinicAiScore.value === 'number' 
+                    ? metrics.clinicAiScore.value.toFixed(1) 
+                    : Number(metrics.clinicAiScore.value).toFixed(1))
+                : 'N/A'
+            }
             trend={metrics.clinicAiScore?.trend ?? 0}
             icon={Zap}
             color="emerald"
           />
           <KpiCard
             title="Видимість послуг"
-            value={metrics.serviceVisibility?.value != null ? `${metrics.serviceVisibility.value.toFixed(0)}%` : 'N/A'}
+            value={
+              metrics.serviceVisibility?.value != null 
+                ? `${(typeof metrics.serviceVisibility.value === 'number' 
+                    ? metrics.serviceVisibility.value 
+                    : Number(metrics.serviceVisibility.value) || 0).toFixed(0)}%`
+                : 'N/A'
+            }
             trend={metrics.serviceVisibility?.trend ?? 0}
             icon={Target}
             color="green"
@@ -414,7 +426,13 @@ export function DashboardView({ data, loading = false }: DashboardViewProps) {
           />
           <KpiCard
             title="Середня позиція"
-            value={metrics.avgPosition?.value != null && metrics.avgPosition.value > 0 ? metrics.avgPosition.value.toFixed(1) : 'N/A'}
+            value={
+              metrics.avgPosition?.value != null && metrics.avgPosition.value > 0
+                ? (typeof metrics.avgPosition.value === 'number'
+                    ? metrics.avgPosition.value.toFixed(1)
+                    : Number(metrics.avgPosition.value).toFixed(1))
+                : 'N/A'
+            }
             trend={metrics.avgPosition?.trend ?? 0}
             icon={Share2}
             color="cyan"
@@ -432,28 +450,52 @@ export function DashboardView({ data, loading = false }: DashboardViewProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <KpiCard
             title="Технічна база"
-            value={metrics.techOptimization?.value?.toFixed(1) ?? 'N/A'}
+            value={
+              metrics.techOptimization?.value != null
+                ? (typeof metrics.techOptimization.value === 'number'
+                    ? metrics.techOptimization.value.toFixed(1)
+                    : Number(metrics.techOptimization.value).toFixed(1))
+                : 'N/A'
+            }
             trend={metrics.techOptimization?.trend ?? 0}
             icon={Settings}
             color="blue"
           />
           <KpiCard
             title="Якість контенту"
-            value={metrics.contentOptimization?.value?.toFixed(1) ?? 'N/A'}
+            value={
+              metrics.contentOptimization?.value != null
+                ? (typeof metrics.contentOptimization.value === 'number'
+                    ? metrics.contentOptimization.value.toFixed(1)
+                    : Number(metrics.contentOptimization.value).toFixed(1))
+                : 'N/A'
+            }
             trend={metrics.contentOptimization?.trend ?? 0}
             icon={FileText}
             color="purple"
           />
           <KpiCard
             title="E-E-A-T фактори"
-            value={metrics.eeatSignal?.value?.toFixed(1) ?? 'N/A'}
+            value={
+              metrics.eeatSignal?.value != null
+                ? (typeof metrics.eeatSignal.value === 'number'
+                    ? metrics.eeatSignal.value.toFixed(1)
+                    : Number(metrics.eeatSignal.value).toFixed(1))
+                : 'N/A'
+            }
             trend={metrics.eeatSignal?.trend ?? 0}
             icon={Shield}
             color="orange"
           />
           <KpiCard
             title="Локальний вплив"
-            value={metrics.localSignal?.value?.toFixed(1) ?? 'N/A'}
+            value={
+              metrics.localSignal?.value != null
+                ? (typeof metrics.localSignal.value === 'number'
+                    ? metrics.localSignal.value.toFixed(1)
+                    : Number(metrics.localSignal.value).toFixed(1))
+                : 'N/A'
+            }
             trend={metrics.localSignal?.trend ?? 0}
             icon={MapPin}
             color="green"
