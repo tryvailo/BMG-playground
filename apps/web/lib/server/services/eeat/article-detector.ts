@@ -99,8 +99,8 @@ export function extractArticleAuthor($: CheerioAPI): ArticleAuthorInfo {
           .replace(/^(Автор|Author|By):?\s*/i, '')
           .trim()
           .split('\n')[0]
-          .split(',')[0]
-          .trim();
+          ?.split(',')[0]
+          ?.trim();
         
         if (cleanedName) {
           authorName = cleanedName;

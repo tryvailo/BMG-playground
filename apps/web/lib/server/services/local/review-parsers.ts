@@ -279,9 +279,12 @@ async function parseHelsiReviews(
         const ratingElement = $(element).find('.rating, .stars, [class*="rating"]').first();
         const ratingText = ratingElement.text() || ratingElement.attr('data-rating') || '';
         const ratingMatch = ratingText.match(/(\d+)/);
-        if (ratingMatch) {
-          rating = parseInt(ratingMatch[1], 10);
-          if (rating > 5) rating = rating / 2;
+        if (ratingMatch && ratingMatch[1]) {
+          const parsedRating = parseInt(ratingMatch[1], 10);
+          if (!isNaN(parsedRating)) {
+            rating = parsedRating;
+            if (rating > 5) rating = rating / 2;
+          }
         }
         
         // Extract author
@@ -365,11 +368,13 @@ function parseDate(dateText: string): string | null {
     
     for (const [month, monthNum] of Object.entries(ukrainianMonths)) {
       const match = dateText.match(new RegExp(`(\\d+)\\s+${month}\\s+(\\d+)`));
-      if (match) {
+      if (match && match[1] && match[2]) {
         const day = parseInt(match[1], 10);
         const year = parseInt(match[2], 10);
-        const date = new Date(year, monthNum, day);
-        return date.toISOString();
+        if (!isNaN(day) && !isNaN(year)) {
+          const date = new Date(year, monthNum, day);
+          return date.toISOString();
+        }
       }
     }
     

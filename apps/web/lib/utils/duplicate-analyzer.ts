@@ -322,8 +322,13 @@ export function analyzeContentDuplicates(
 
   for (let i = 0; i < pageShingles.length; i++) {
     for (let j = i + 1; j < pageShingles.length; j++) {
-      const { doc: docA, shingles: shinglesA } = pageShingles[i];
-      const { doc: docB, shingles: shinglesB } = pageShingles[j];
+      const pageA = pageShingles[i];
+      const pageB = pageShingles[j];
+      
+      if (!pageA || !pageB) continue;
+      
+      const { doc: docA, shingles: shinglesA } = pageA;
+      const { doc: docB, shingles: shinglesB } = pageB;
 
       let similarity: number | null = null;
       let detectionMethod = '';

@@ -169,10 +169,16 @@ export async function checkBacklink(
       }
     });
     
+    if (foundLink === null) {
+      return {
+        has_backlink: false,
+      };
+    }
+    
     return {
-      has_backlink: foundLink !== null,
-      anchor_text: foundLink !== null ? foundLink.anchor_text : undefined,
-      link_type: foundLink !== null ? foundLink.link_type : undefined,
+      has_backlink: true,
+      anchor_text: foundLink.anchor_text,
+      link_type: foundLink.link_type,
     };
   } catch (error) {
     console.warn('[GoogleCustomSearch] Failed to check backlink:', error);
