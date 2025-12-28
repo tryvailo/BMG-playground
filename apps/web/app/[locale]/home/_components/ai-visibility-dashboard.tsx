@@ -6,7 +6,7 @@ import { useDashboardData } from './hooks/use-dashboard-data';
 
 interface AIVisibilityDashboardProps {
   projectId?: string;
-  filters?: any;
+  filters?: Record<string, unknown>;
 }
 
 /**

@@ -2,9 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { getDashboardMetrics } from '~/lib/actions/dashboard';
-import type { DashboardMetricsResponse, DashboardFilters } from '~/lib/actions/dashboard.types';
-
-import type { DashboardData as DashboardViewData } from '~/components/dashboard/DashboardView';
+import type { DashboardFilters } from '~/lib/actions/dashboard.types';
 
 interface DashboardData {
   kpis: {

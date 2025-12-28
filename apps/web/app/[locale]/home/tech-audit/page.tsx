@@ -62,6 +62,7 @@ export default function TechAuditPage() {
   const [isMounted, setIsMounted] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
   const isLoadingRef = useRef(false); // Prevent multiple simultaneous loads
+  const timeoutRef = useRef<NodeJS.Timeout[]>([]); // Store timeout IDs for cleanup
 
   // Function to load audit data
   const loadAuditData = React.useCallback(async (skipLoadingState = false, forceReload = false) => {
@@ -114,9 +115,7 @@ export default function TechAuditPage() {
           return prevResult;
         });
         setAuditDate((prevDate) => {
-          if (result === null) {
-            return null;
-          }
+          // Keep existing date if we have previous result
           return prevDate;
         });
       }
@@ -158,9 +157,10 @@ export default function TechAuditPage() {
     }
 
     // Scroll smoothly to results area
-    setTimeout(() => {
+    const scrollTimeout = setTimeout(() => {
       resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
+    timeoutRef.current.push(scrollTimeout);
 
     // Normalize domain to URL
     let normalizedUrl = domain.trim();
@@ -247,9 +247,10 @@ export default function TechAuditPage() {
         
         // Refresh data from database to ensure consistency
         // Small delay to ensure database write is complete
-        setTimeout(() => {
+        const refreshTimeout = setTimeout(() => {
           loadAuditData();
         }, 1000);
+        timeoutRef.current.push(refreshTimeout);
       } else if (auditResult && auditResult.status === 'rejected' && 'reason' in auditResult) {
         console.error('[Technical Audit] Error:', auditResult.reason);
         const errorMessage = auditResult.reason instanceof Error ? auditResult.reason.message : 'Unknown error occurred';

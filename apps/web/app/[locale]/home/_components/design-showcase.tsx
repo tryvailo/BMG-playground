@@ -13,12 +13,9 @@ import {
   Shield,
   FileText,
   Settings,
-  MapPin,
   ChevronDown,
   Loader2,
   Play,
-  Pause,
-  RefreshCw,
 } from 'lucide-react';
 import {
   Card,

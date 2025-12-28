@@ -51,6 +51,7 @@ export default function EEATAssessmentPage() {
   const [isMounted, setIsMounted] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
   const isLoadingRef = useRef(false); // Prevent multiple simultaneous loads
+  const timeoutRef = useRef<NodeJS.Timeout[]>([]); // Store timeout IDs for cleanup
 
   // Function to load audit data
   const loadAuditData = React.useCallback(async (skipLoadingState = false, forceReload = false) => {
@@ -103,9 +104,7 @@ export default function EEATAssessmentPage() {
           return prevResult;
         });
         setAuditDate((prevDate) => {
-          if (result === null) {
-            return null;
-          }
+          // Keep existing date if we have previous result
           return prevDate;
         });
       }
@@ -124,6 +123,14 @@ export default function EEATAssessmentPage() {
     setIsMounted(true);
     loadAuditData();
   }, [loadAuditData]);
+
+  // Cleanup timeouts on unmount
+  React.useEffect(() => {
+    return () => {
+      timeoutRef.current.forEach(timeout => clearTimeout(timeout));
+      timeoutRef.current = [];
+    };
+  }, []);
 
   const handleRunAudit = async () => {
     setIsPending(true);
@@ -145,9 +152,10 @@ export default function EEATAssessmentPage() {
     }
 
     // Scroll smoothly to results area
-    setTimeout(() => {
+    const scrollTimeout = setTimeout(() => {
       resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
+    timeoutRef.current.push(scrollTimeout);
 
     try {
       const auditResult = await runEEATAudit({
@@ -165,9 +173,10 @@ export default function EEATAssessmentPage() {
       
       // Refresh data from database to ensure consistency
       // Small delay to ensure database write is complete
-      setTimeout(() => {
+      const refreshTimeout = setTimeout(() => {
         loadAuditData();
       }, 1000);
+      timeoutRef.current.push(refreshTimeout);
     } catch (error) {
       console.error('[E-E-A-T Assessment] Error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';

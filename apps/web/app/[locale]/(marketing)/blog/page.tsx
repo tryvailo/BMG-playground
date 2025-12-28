@@ -83,14 +83,14 @@ function markdownToHtml(markdown: string): string {
       processedLines.push('');
       continue;
     }
-    const isListItem = /^\- (.*)$/.test(line);
+    const isListItem = /^- (.*)$/.test(line);
     
     if (isListItem) {
       if (!inList) {
         processedLines.push('<ul class="list-disc space-y-2 my-4 ml-6">');
         inList = true;
       }
-      const content = line.replace(/^\- (.*)$/, '$1');
+      const content = line.replace(/^- (.*)$/, '$1');
       processedLines.push(`<li class="mb-2">${content}</li>`);
     } else {
       if (inList) {
@@ -125,7 +125,7 @@ async function BlogPage() {
   // Read the blog post
   const postPath = join(process.cwd(), 'content', 'posts', 'ai-visibility-clinics-2025.mdx');
   let postContent = '';
-  let frontmatter: any = {};
+  let frontmatter: Record<string, unknown> = {};
 
   try {
     const fileContents = readFileSync(postPath, 'utf-8');

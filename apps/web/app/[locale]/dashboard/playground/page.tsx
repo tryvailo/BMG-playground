@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Loader2, Play, Circle, Settings } from 'lucide-react';
+import { Loader2, Play, Circle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { Button } from '@kit/ui/button';

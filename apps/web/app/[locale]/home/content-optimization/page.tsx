@@ -51,6 +51,7 @@ export default function ContentOptimizationPage() {
   const [isMounted, setIsMounted] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
   const isLoadingRef = useRef(false); // Prevent multiple simultaneous loads
+  const timeoutRef = useRef<NodeJS.Timeout[]>([]); // Store timeout IDs for cleanup
 
   // Function to load audit data
   const loadAuditData = React.useCallback(async (skipLoadingState = false, forceReload = false) => {
@@ -103,9 +104,7 @@ export default function ContentOptimizationPage() {
           return prevResult;
         });
         setAuditDate((prevDate) => {
-          if (result === null) {
-            return null;
-          }
+          // Keep existing date if we have previous result
           return prevDate;
         });
       }
@@ -145,9 +144,10 @@ export default function ContentOptimizationPage() {
     }
 
     // Scroll smoothly to results area
-    setTimeout(() => {
+    const scrollTimeout = setTimeout(() => {
       resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
+    timeoutRef.current.push(scrollTimeout);
 
     try {
       const auditResult = await performContentAudit({
@@ -162,9 +162,10 @@ export default function ContentOptimizationPage() {
       
       // Refresh data from database to ensure consistency
       // Small delay to ensure database write is complete
-      setTimeout(() => {
+      const refreshTimeout = setTimeout(() => {
         loadAuditData();
       }, 1000);
+      timeoutRef.current.push(refreshTimeout);
     } catch (error) {
       console.error('[Content Optimization] Error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
