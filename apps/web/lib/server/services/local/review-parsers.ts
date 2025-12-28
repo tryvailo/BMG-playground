@@ -49,11 +49,17 @@ async function findDocUaClinicUrl(
     // Use Firecrawl to get search results
     const pages = await crawlSiteContent(searchUrl, 1, firecrawlApiKey);
     
-    if (pages.length === 0) {
+    if (pages.length === 0 || !pages[0]) {
       return null;
     }
     
-    const $ = load(pages[0].markdown || pages[0].html || '');
+    const firstPage = pages[0];
+    const pageContent = firstPage.content || firstPage.markdown || '';
+    if (!pageContent) {
+      return null;
+    }
+    
+    const $ = load(pageContent);
     
     // Look for clinic links in search results
     let clinicUrl: string | null = null;
@@ -93,11 +99,17 @@ async function parseDocUaReviews(
     // Get page content using Firecrawl
     const pages = await crawlSiteContent(clinicUrl, 1, firecrawlApiKey);
     
-    if (pages.length === 0) {
+    if (pages.length === 0 || !pages[0]) {
       return defaultResult;
     }
     
-    const $ = load(pages[0].html || pages[0].markdown || '');
+    const firstPage = pages[0];
+    const pageContent = firstPage.content || firstPage.markdown || '';
+    if (!pageContent) {
+      return defaultResult;
+    }
+    
+    const $ = load(pageContent);
     const reviews: ParsedReview[] = [];
     
     // DOC.ua review structure (may vary, need to adapt)
@@ -112,9 +124,12 @@ async function parseDocUaReviews(
         const ratingElement = $(element).find('.rating, .stars, [class*="rating"], [class*="star"]').first();
         const ratingText = ratingElement.text() || ratingElement.attr('data-rating') || '';
         const ratingMatch = ratingText.match(/(\d+)/);
-        if (ratingMatch) {
-          rating = parseInt(ratingMatch[1], 10);
-          if (rating > 5) rating = rating / 2; // Convert 10-point to 5-point
+        if (ratingMatch && ratingMatch[1]) {
+          const parsedRating = parseInt(ratingMatch[1], 10);
+          if (!isNaN(parsedRating)) {
+            rating = parsedRating;
+            if (rating > 5) rating = rating / 2; // Convert 10-point to 5-point
+          }
         }
         
         // Extract author
@@ -131,7 +146,7 @@ async function parseDocUaReviews(
         const responseDateText = hasResponse 
           ? responseElement.find('.date, [class*="date"]').first().text().trim() 
           : undefined;
-        const responseDate = responseDateText ? parseDate(responseDateText) : undefined;
+        const responseDate = responseDateText ? (parseDate(responseDateText) ?? undefined) : undefined;
         
         // Calculate response time
         let responseTimeHours: number | undefined;
@@ -190,11 +205,17 @@ async function findHelsiClinicUrl(
     // Use Firecrawl to get search results
     const pages = await crawlSiteContent(searchUrl, 1, firecrawlApiKey);
     
-    if (pages.length === 0) {
+    if (pages.length === 0 || !pages[0]) {
       return null;
     }
     
-    const $ = load(pages[0].markdown || pages[0].html || '');
+    const firstPage = pages[0];
+    const pageContent = firstPage.content || firstPage.markdown || '';
+    if (!pageContent) {
+      return null;
+    }
+    
+    const $ = load(pageContent);
     
     // Look for clinic links in search results
     let clinicUrl: string | null = null;
@@ -234,11 +255,17 @@ async function parseHelsiReviews(
     // Get page content using Firecrawl
     const pages = await crawlSiteContent(clinicUrl, 1, firecrawlApiKey);
     
-    if (pages.length === 0) {
+    if (pages.length === 0 || !pages[0]) {
       return defaultResult;
     }
     
-    const $ = load(pages[0].html || pages[0].markdown || '');
+    const firstPage = pages[0];
+    const pageContent = firstPage.content || firstPage.markdown || '';
+    if (!pageContent) {
+      return defaultResult;
+    }
+    
+    const $ = load(pageContent);
     const reviews: ParsedReview[] = [];
     
     // Helsi review structure (may vary, need to adapt)
@@ -271,7 +298,7 @@ async function parseHelsiReviews(
         const responseDateText = hasResponse 
           ? responseElement.find('.date').first().text().trim() 
           : undefined;
-        const responseDate = responseDateText ? parseDate(responseDateText) : undefined;
+        const responseDate = responseDateText ? (parseDate(responseDateText) ?? undefined) : undefined;
         
         // Calculate response time
         let responseTimeHours: number | undefined;
