@@ -907,7 +907,7 @@ export async function analyzeMultiplePages(
           googleBusinessApiKey: options.googleBusinessApiKey,
         });
         return result;
-      } catch (_error) {
+      } catch {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         errors.push({ url, error: errorMessage });
         console.warn(`[EEATAudit] Failed to analyze ${url}:`, errorMessage);

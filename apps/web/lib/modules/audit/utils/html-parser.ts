@@ -125,7 +125,7 @@ function parseJsonLd(content: string): JsonLdSchema | null {
         return null;
       }
     }
-  } catch (_error) {
+  } catch {
     // Malformed JSON - return null instead of throwing
     console.warn('[HTMLParser] Failed to parse JSON-LD:', error);
     return null;
@@ -538,7 +538,7 @@ async function checkLinksStatus(
         isTrusted,
         rel,
       };
-    } catch (_error) {
+    } catch {
       // If fetch fails, assume it's broken (404 or network error)
       return {
         url,

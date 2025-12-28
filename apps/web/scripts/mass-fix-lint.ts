@@ -41,7 +41,7 @@ async function massFixLint() {
     // 1. Исправление неиспользуемых переменных в catch блоках
     const catchErrorPattern = /catch\s*\(\s*error\s*\)\s*\{/g;
     if (catchErrorPattern.test(content)) {
-      content = content.replace(catchErrorPattern, 'catch (_error) {');
+      content = content.replace(catchErrorPattern, 'catch {');
       modified = true;
     }
 

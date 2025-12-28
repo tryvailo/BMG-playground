@@ -251,7 +251,7 @@ export function ServicesTable({
         const mockResults = generateMockResults(domain || 'yourclinic.com');
         setCalculationResults(mockResults);
       }
-    } catch (_error) {
+    } catch {
       console.error('[ServicesTable] Error loading services from storage:', error);
       setServices(DEFAULT_SERVICES);
       setCalculationResults(generateMockResults(domain || 'yourclinic.com'));
@@ -269,7 +269,7 @@ export function ServicesTable({
       // Also persist calculation results (convert Map to plain object for JSON)
       const resultsObj = Object.fromEntries(calculationResults.entries());
       localStorage.setItem(`${storageKey}_results`, JSON.stringify(resultsObj));
-    } catch (_error) {
+    } catch {
       console.error('[ServicesTable] Error saving services or results to storage:', error);
     }
   }, [services, calculationResults, isInitialized, storageKey]);
@@ -403,7 +403,7 @@ export function ServicesTable({
       });
 
       toast.success(`Calculated: ${service.name}`);
-    } catch (_error) {
+    } catch {
       console.error('[ServicesTable] Error calculating service:', service.name, error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
@@ -527,7 +527,7 @@ export function ServicesTable({
           }
 
           toast.success(`Calculated: ${service.name}`);
-        } catch (_error) {
+        } catch {
           console.error('[ServicesTable] Error calculating service:', service.name, error);
           console.error('[ServicesTable] Error details:', {
             name: error instanceof Error ? error.name : 'Unknown',
@@ -580,7 +580,7 @@ export function ServicesTable({
       }
 
       toast.success(`Calculated ${results.length} service(s)`);
-    } catch (_error) {
+    } catch {
       console.error('[ServicesTable] Error calculating services:', error);
       toast.error('Failed to calculate services');
     } finally {

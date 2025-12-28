@@ -386,7 +386,7 @@ Important:
     }
 
     return result;
-  } catch (_error) {
+  } catch {
     const responseTextLower = responseText.toLowerCase();
     const normalizedTarget = normalizeDomain(targetDomain);
     const domainPresent = responseTextLower.includes(normalizedTarget);
@@ -1015,7 +1015,7 @@ async function main() {
     }
 
     console.log('\n✅ Verification complete!\n');
-  } catch (_error) {
+  } catch {
     console.error('\n❌ Error during verification:');
     console.error(error instanceof Error ? error.message : String(error));
     if (error instanceof Error && error.stack) {

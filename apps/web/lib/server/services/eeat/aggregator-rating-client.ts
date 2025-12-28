@@ -92,7 +92,7 @@ export async function fetchAggregatorRating(
             review_count: reviewCount && !isNaN(reviewCount) ? reviewCount : undefined,
             fetched: (rating !== undefined && !isNaN(rating)) || (reviewCount !== undefined && !isNaN(reviewCount)),
         };
-    } catch (_error) {
+    } catch {
         console.warn(`[AggregatorRatingClient] Failed to fetch rating from ${platformName}:`, error);
         return {
             platform: platformName,

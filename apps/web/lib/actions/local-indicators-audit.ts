@@ -205,7 +205,7 @@ export const performLocalIndicatorsAudit = enhanceAction(
       }
 
       return result;
-    } catch (_error) {
+    } catch {
       console.error('[LocalIndicators] Error:', error);
 
       const errorMessage =
@@ -305,7 +305,7 @@ export const getLatestLocalIndicatorsAudit = enhanceAction(
         result: data.audit_result as LocalIndicatorsAuditResult,
         createdAt: data.created_at as string,
       };
-    } catch (_error) {
+    } catch {
       console.error('[LocalIndicators] Error fetching latest audit:', error);
       return null;
     }

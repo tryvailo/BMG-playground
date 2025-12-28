@@ -20,7 +20,7 @@ try {
       }
     }
   });
-} catch (_error) {
+} catch {
   console.warn('Could not load .env.local file');
 }
 
@@ -174,7 +174,7 @@ async function main() {
     console.log('\n' + '='.repeat(80));
     console.log('✅ Verification Complete');
     console.log('='.repeat(80));
-  } catch (_error) {
+  } catch {
     console.error('❌ Error:', error);
     if (error instanceof Error) {
       console.error('Stack:', error.stack);

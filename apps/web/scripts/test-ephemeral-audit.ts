@@ -31,7 +31,7 @@ function loadEnvFile() {
       }
     }
     console.log('✅ Loaded .env.local file');
-  } catch (_error) {
+  } catch {
     console.warn('⚠️  Could not load .env.local file:', error);
   }
 }
@@ -196,7 +196,7 @@ async function main() {
     console.log(JSON.stringify(result, null, 2));
     console.log('');
     
-  } catch (_error) {
+  } catch {
     console.error('❌ Error running technical audit:', error);
     if (error instanceof Error) {
       console.error('   Message:', error.message);

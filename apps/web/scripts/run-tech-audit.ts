@@ -26,7 +26,7 @@ try {
       }
     }
   });
-} catch (_error) {
+} catch {
   // .env.local might not exist, continue without it
 }
 
@@ -175,7 +175,7 @@ try {
   console.log(JSON.stringify(result, null, 2));
   console.log('────────────────────────────────────────────────────────────────────────────────\n');
 
-} catch (_error) {
+} catch {
   console.error('\n❌ Error during audit:', error);
   if (error instanceof Error) {
     console.error('Error message:', error.message);

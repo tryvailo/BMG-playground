@@ -216,7 +216,7 @@ export const runEEATAudit = enhanceAction(
       }
 
       return result;
-    } catch (_error) {
+    } catch {
       console.error('[EEATAudit] Error:', error);
 
       const errorMessage =
@@ -313,7 +313,7 @@ export const getLatestEEATAudit = enhanceAction(
         result: data.audit_result as EEATAuditResult,
         createdAt: data.created_at,
       };
-    } catch (_error) {
+    } catch {
       console.error('[EEATAudit] Error fetching latest audit:', error);
       return null;
     }

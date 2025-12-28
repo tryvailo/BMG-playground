@@ -166,7 +166,7 @@ async function verifyDashboardData() {
     console.log(`\n✅ Dashboard data verification complete!`);
     return true;
 
-  } catch (_error) {
+  } catch {
     console.error('❌ Error during verification:', error);
     return false;
   }

@@ -30,7 +30,7 @@ const NotFoundPage = async () => {
   try {
     const { data } = await client.auth.getClaims();
     claims = data;
-  } catch (_error) {
+  } catch {
     // Supabase might not be available (e.g., Docker not running)
     // Continue without auth claims
     console.warn('[NotFoundPage] Could not fetch auth claims:', error);

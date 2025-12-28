@@ -30,7 +30,7 @@ async function getGitHash() {
 
   try {
     return await getHashFromProcess();
-  } catch (_error) {
+  } catch {
     console.warn(
       `[WARN] Could not find git hash: ${JSON.stringify(error)}. You may want to provide a fallback.`,
     );

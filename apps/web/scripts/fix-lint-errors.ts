@@ -29,7 +29,7 @@ async function fixLintErrors() {
       cwd: path.resolve(__dirname, '../..')
     });
     console.log('✅ ESLint --fix выполнен\n');
-  } catch (_error) {
+  } catch {
     console.log('⚠️  ESLint --fix завершился с ошибками (это нормально, некоторые ошибки требуют ручного исправления)\n');
   }
 

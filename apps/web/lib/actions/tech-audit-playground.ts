@@ -224,7 +224,7 @@ export const getLatestPlaygroundTechAudit = enhanceAction(
         result: data.audit_result as EphemeralAuditResult,
         createdAt: data.created_at,
       };
-    } catch (_error) {
+    } catch {
       console.error('[PlaygroundTechAudit] Error fetching latest audit:', error);
       return null;
     }

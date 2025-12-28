@@ -271,7 +271,7 @@ export async function callOpenAIWithFallback(prompt: string) {
         usage: response.usage,
         fullResponse: response,
       };
-    } catch (_error) {
+    } catch {
       if (error instanceof OpenAIAPIError) {
         console.log(`Model ${model} failed: ${error.status} - ${error.message}`);
       } else {
@@ -305,7 +305,7 @@ export async function callOpenAIWithClient(prompt: string) {
       model: response.model,
       usage: response.usage,
     };
-  } catch (_error) {
+  } catch {
     if (error instanceof OpenAIAPIError) {
       console.error(`OpenAI API error: ${error.status} - ${error.message}`);
     } else {
@@ -339,7 +339,7 @@ export async function callOpenAIWithJSONMode(prompt: string) {
       model: response.model,
       usage: response.usage,
     };
-  } catch (_error) {
+  } catch {
     if (error instanceof OpenAIAPIError) {
       console.error(`OpenAI API error: ${error.status} - ${error.message}`);
     } else {
@@ -418,7 +418,7 @@ export async function callOpenAIWithSystemPrompt(
       model: response.model,
       usage: response.usage,
     };
-  } catch (_error) {
+  } catch {
     if (error instanceof OpenAIAPIError) {
       console.error(`OpenAI API error: ${error.status} - ${error.message}`);
     } else {
@@ -451,7 +451,7 @@ export async function callOpenAIWithRetry(prompt: string) {
       model: response.model,
       usage: response.usage,
     };
-  } catch (_error) {
+  } catch {
     if (error instanceof OpenAIAPIError) {
       console.error(`OpenAI API error: ${error.status} - ${error.message}`);
     } else {
@@ -489,7 +489,7 @@ export async function callOpenAIWithTimeout(prompt: string, timeoutMs: number = 
       model: response.model,
       usage: response.usage,
     };
-  } catch (_error) {
+  } catch {
     clearTimeout(timeout);
     if (error instanceof OpenAIAPIError) {
       console.error(`OpenAI API error: ${error.status} - ${error.message}`);
@@ -511,7 +511,7 @@ async function main() {
   try {
     const result1 = await callOpenAISimple(testPrompt);
     console.log('Result:', result1);
-  } catch (_error) {
+  } catch {
     if (error instanceof OpenAIAPIError) {
       console.error(`API Error: ${error.status} - ${error.message}`);
     } else {
@@ -523,7 +523,7 @@ async function main() {
   try {
     const result2 = await callOpenAIWithFallback(testPrompt);
     console.log('Result:', result2);
-  } catch (_error) {
+  } catch {
     console.error('Error:', error);
   }
 
@@ -531,7 +531,7 @@ async function main() {
   try {
     const result3 = await callOpenAIWithClient(testPrompt);
     console.log('Result:', result3);
-  } catch (_error) {
+  } catch {
     console.error('Error:', error);
   }
 
@@ -540,7 +540,7 @@ async function main() {
     const jsonPrompt = 'Return a JSON object with top 3 programming languages and their popularity scores.';
     const result4 = await callOpenAIWithJSONMode(jsonPrompt);
     console.log('Result:', result4);
-  } catch (_error) {
+  } catch {
     console.error('Error:', error);
   }
 
@@ -549,7 +549,7 @@ async function main() {
     const systemPrompt = 'You are a helpful assistant that provides concise answers.';
     const result6 = await callOpenAIWithSystemPrompt(systemPrompt, testPrompt);
     console.log('Result:', result6);
-  } catch (_error) {
+  } catch {
     console.error('Error:', error);
   }
 
@@ -557,7 +557,7 @@ async function main() {
   try {
     const result7 = await callOpenAIWithRetry(testPrompt);
     console.log('Result:', result7);
-  } catch (_error) {
+  } catch {
     console.error('Error:', error);
   }
 
@@ -565,7 +565,7 @@ async function main() {
   try {
     const result8 = await callOpenAIWithTimeout(testPrompt, 10000);
     console.log('Result:', result8);
-  } catch (_error) {
+  } catch {
     console.error('Error:', error);
   }
 

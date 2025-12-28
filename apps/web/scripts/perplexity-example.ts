@@ -104,7 +104,7 @@ async function callPerplexityWithFallback(prompt: string) {
         citations: data.citations || [], 
         fullResponse: data,
       };
-    } catch (_error) {
+    } catch {
       console.log(`Model ${model} error:`, error);
       continue;
     }
@@ -178,7 +178,7 @@ async function callPerplexityWithClient(prompt: string) {
       usage: response.usage,
       citations: response.citations,
     };
-  } catch (_error) {
+  } catch {
     console.error('Perplexity API error:', error);
     throw error;
   }
@@ -231,7 +231,7 @@ async function main() {
   try {
     const result1 = await callPerplexitySimple(testPrompt);
     console.log('Result:', result1);
-  } catch (_error) {
+  } catch {
     console.error('Error:', error);
   }
 
@@ -241,7 +241,7 @@ async function main() {
     console.log('Result Content:', result2.content);
     console.log('Model Used:', result2.model);
     console.log('Citations:', result2.citations);
-  } catch (_error) {
+  } catch {
     console.error('Error:', error);
   }
 }

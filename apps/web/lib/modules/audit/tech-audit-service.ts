@@ -166,7 +166,7 @@ async function fetchPageSpeed(
       score: numericScore,
       metrics,
     };
-    } catch (_error) {
+    } catch {
     console.error('[TechAudit] Error fetching PageSpeed data:', error);
     return { score: null, metrics: {} };
   }
@@ -211,7 +211,7 @@ async function checkLlmsTxt(baseUrl: string): Promise<{
         },
       };
     }
-    } catch (_error) {
+    } catch {
     // llms.txt doesn't exist - this is not necessarily an error
   }
 
@@ -250,7 +250,7 @@ async function checkRobotsTxt(baseUrl: string): Promise<{
         valid: hasUserAgent,
       };
     }
-    } catch (_error) {
+    } catch {
     // robots.txt doesn't exist
   }
 
@@ -284,7 +284,7 @@ async function checkSitemap(baseUrl: string): Promise<boolean> {
         return true;
       }
     }
-    } catch (_error) {
+    } catch {
     // Sitemap doesn't exist
   }
 
@@ -403,7 +403,7 @@ async function parseHomepage(url: string): Promise<{
       langAttribute,
       issues,
     };
-    } catch (_error) {
+    } catch {
     console.error('[TechAudit] Error parsing homepage:', error);
     issues.push(`Error parsing page: ${error instanceof Error ? error.message : 'Unknown error'}`);
     return {
@@ -564,7 +564,7 @@ export async function runFullTechAudit(projectId: string): Promise<string> {
       throw new Error('Failed to create audit record: auditId is null');
     }
     return auditId;
-    } catch (_error) {
+    } catch {
     console.error('[TechAudit] Error running full tech audit:', error);
 
     // Update audit status to 'failed' if we have an auditId
