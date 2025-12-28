@@ -206,7 +206,8 @@ async function BlogPage() {
           <div className="text-center py-12">
             <p className="text-muted-foreground">{t('marketing:noPosts') || 'No posts found'}</p>
           </div>
-        )}
+        );
+        })()}
       </div>
     </div>
   );
