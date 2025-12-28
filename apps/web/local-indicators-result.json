@@ -1,0 +1,97 @@
+{
+  "google_business_profile": {
+    "completeness_percent": 0,
+    "filled_fields_count": 0,
+    "total_fields_count": 20,
+    "photos_count": 0,
+    "high_quality_photos_count": 0,
+    "has_exterior_photos": false,
+    "has_interior_photos": false,
+    "has_team_photos": false,
+    "has_equipment_photos": false,
+    "services_count": 0,
+    "categories_count": 0,
+    "has_description": false,
+    "has_business_hours": false,
+    "has_all_days_hours": false,
+    "attributes_count": 0,
+    "has_qa": false,
+    "posts_count": 0,
+    "posts_per_month": 0
+  },
+  "review_response": {
+    "total_reviews": 0,
+    "responded_reviews": 0,
+    "response_rate_percent": 0,
+    "responded_within_24h": 0,
+    "response_rate_24h_percent": 0,
+    "negative_reviews_count": 0,
+    "negative_reviews_responded": 0,
+    "negative_response_rate_percent": 0,
+    "platforms": []
+  },
+  "gbp_engagement": {
+    "impressions_per_month": 0,
+    "website_clicks_per_month": 0,
+    "calls_per_month": 0,
+    "direction_requests_per_month": 0,
+    "total_actions_per_month": 0,
+    "ctr_percent": 0,
+    "search_impressions": 0,
+    "maps_impressions": 0
+  },
+  "local_backlinks": {
+    "total_local_backlinks": 0,
+    "unique_local_domains": 0,
+    "city": "Odesa",
+    "backlinks_by_type": {
+      "city_portals": 0,
+      "news_sites": 0,
+      "partners": 0,
+      "medical_associations": 0,
+      "charity_foundations": 0,
+      "local_bloggers": 0
+    },
+    "backlinks": []
+  },
+  "local_social_media": {
+    "facebook": {
+      "has_profile": true,
+      "has_correct_nap": true,
+      "has_geotags": false,
+      "has_city_mentions": false,
+      "posts_about_local_events": 0,
+      "interaction_with_local_audience": false,
+      "profile_url": "https://www.facebook.com/CompliMed.ua/"
+    },
+    "instagram": {
+      "has_profile": true,
+      "has_correct_nap": true,
+      "has_geotags": false,
+      "has_city_mentions": false,
+      "posts_about_local_events": 0,
+      "interaction_with_local_audience": false,
+      "profile_url": "https://www.instagram.com/CompliMed.ua/"
+    }
+  },
+  "local_business_schema": {
+    "is_implemented": false,
+    "is_functioning_correctly": false,
+    "has_name": false,
+    "has_address": false,
+    "has_phone": false,
+    "has_hours": false,
+    "has_price_range": false,
+    "has_aggregate_rating": false
+  },
+  "recommendations": [
+    "Google Business Profile completeness is 0%. Aim for 100% by filling all available fields.",
+    "Add more high-quality photos (currently 0, recommended: 10+). Include exterior, interior, team, and equipment photos.",
+    "Post regularly on Google Business Profile (currently 0.0 posts/month, recommended: 1+ per month).",
+    "Improve review response rate within 24 hours (currently 0%, aim for 90%+).",
+    "Respond to all negative reviews (currently 0% response rate).",
+    "Improve Google Business Profile CTR (currently 0%, aim for 5%+). Optimize profile photos, description, and posts.",
+    "Increase local backlinks (currently 0 local domains, aim for 5+). Reach out to city portals, local news sites, and partners.",
+    "Implement LocalBusiness schema markup on your website to help search engines understand your business information."
+  ]
+}

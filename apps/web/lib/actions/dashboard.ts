@@ -20,6 +20,7 @@ import {
   DashboardFiltersSchema,
   type DashboardFilters,
   type DashboardMetricsResponse,
+  type HistoryDataPoint,
 } from './dashboard.types';
 
 /*
@@ -211,6 +212,23 @@ export const getDashboardMetrics = enhanceAction(
       }
 
       const projectData = project as Project;
+      if (!projectData) {
+        return {
+          kpis: {
+            avgAivScore: 0,
+            serviceVisibility: 0,
+            avgPosition: null,
+            totalServices: 0,
+            techOptimization: 0,
+            contentOptimization: 0,
+            eeatSignal: 0,
+            localSignal: 0,
+          },
+          history: [],
+          competitors: [],
+        } satisfies DashboardMetricsResponse;
+      }
+
       const actualProjectId = projectData.id; // Use the actual UUID from database
 
       console.log('[Dashboard] Fetching metrics for project:', projectId, '->', actualProjectId, 'domain:', projectData.domain);

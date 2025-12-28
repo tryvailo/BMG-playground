@@ -39,6 +39,10 @@ const config = {
     reactCompiler: ENABLE_REACT_COMPILER,
     turbo: {
       resolveExtensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
+      resolveAlias: {
+        // Help Turbopack resolve locale files
+        'locales': './locales',
+      },
     },
     optimizePackageImports: [
       'recharts',

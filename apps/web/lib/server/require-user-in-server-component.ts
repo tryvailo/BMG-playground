@@ -18,7 +18,7 @@ export const requireUserInServerComponent = cache(async () => {
   const result = await requireUser(client);
 
   if (result.error) {
-    redirect(result.redirectTo);
+    redirect({ href: result.redirectTo });
   }
 
   return result.data;

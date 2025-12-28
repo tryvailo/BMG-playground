@@ -28,17 +28,21 @@ async function VerifyPage(props: Props) {
   const { data } = await client.auth.getClaims();
 
   if (!data?.claims) {
-    redirect(pathsConfig.auth.signIn);
+    redirect({ href: pathsConfig.auth.signIn });
   }
 
   const needsMfa = await checkRequiresMultiFactorAuthentication(client);
 
   if (!needsMfa) {
-    redirect(pathsConfig.auth.signIn);
+    redirect({ href: pathsConfig.auth.signIn });
   }
 
   const nextPath = (await props.searchParams).next;
   const redirectPath = nextPath ?? pathsConfig.app.home;
+
+  if (!data?.claims) {
+    redirect({ href: pathsConfig.auth.signIn });
+  }
 
   return (
     <MultiFactorChallengeContainer

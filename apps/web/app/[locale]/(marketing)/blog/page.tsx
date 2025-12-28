@@ -26,33 +26,36 @@ function parseFrontmatter(content: string) {
 
   const frontmatterText = match[1];
   const postContent = match[2];
-  const frontmatter: Record<string, any> = {};
+  const frontmatter: Record<string, string | string[] | boolean> = {};
 
   // Parse YAML-like frontmatter
-  frontmatterText.split('\n').forEach((line) => {
-    const colonIndex = line.indexOf(':');
-    if (colonIndex > 0) {
-      const key = line.substring(0, colonIndex).trim();
-      let value = line.substring(colonIndex + 1).trim();
-      
-      // Remove quotes
-      if ((value.startsWith('"') && value.endsWith('"')) || 
-          (value.startsWith("'") && value.endsWith("'"))) {
-        value = value.slice(1, -1);
+  if (frontmatterText) {
+    frontmatterText.split('\n').forEach((line) => {
+      if (!line) return;
+      const colonIndex = line.indexOf(':');
+      if (colonIndex > 0) {
+        const key = line.substring(0, colonIndex).trim();
+        let value: string | string[] | boolean = line.substring(colonIndex + 1).trim();
+        
+        // Remove quotes
+        if ((value.startsWith('"') && value.endsWith('"')) || 
+            (value.startsWith("'") && value.endsWith("'"))) {
+          value = value.slice(1, -1);
+        }
+        
+        // Parse arrays
+        if (typeof value === 'string' && value.startsWith('[') && value.endsWith(']')) {
+          value = value.slice(1, -1).split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
+        }
+        
+        // Parse booleans
+        if (value === 'true') value = true;
+        if (value === 'false') value = false;
+        
+        frontmatter[key] = value;
       }
-      
-      // Parse arrays
-      if (value.startsWith('[') && value.endsWith(']')) {
-        value = value.slice(1, -1).split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
-      }
-      
-      // Parse booleans
-      if (value === 'true') value = true;
-      if (value === 'false') value = false;
-      
-      frontmatter[key] = value;
-    }
-  });
+    });
+  }
 
   return { frontmatter, content: postContent };
 }
@@ -76,6 +79,10 @@ function markdownToHtml(markdown: string): string {
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+    if (!line) {
+      processedLines.push('');
+      continue;
+    }
     const isListItem = /^\- (.*)$/.test(line);
     
     if (isListItem) {
