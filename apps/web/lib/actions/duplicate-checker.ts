@@ -64,7 +64,7 @@ type DuplicateCheckResponse = DuplicateCheckSuccessResponse | DuplicateCheckErro
  * ```
  */
 export const runDuplicateCheckAction = enhanceAction(
-  async (input: DuplicateCheckInput, user?: undefined): Promise<DuplicateCheckResponse> => {
+  async (input: DuplicateCheckInput): Promise<DuplicateCheckResponse> => {
     const startTime = Date.now();
     
     try {

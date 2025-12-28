@@ -131,9 +131,10 @@ async function BlogPage() {
     const fileContents = readFileSync(postPath, 'utf-8');
     const parsed = parseFrontmatter(fileContents);
     frontmatter = parsed.frontmatter;
-    postContent = parsed.content;
+    postContent = parsed.content || '';
   } catch (error) {
     console.error('Error reading blog post:', error);
+    postContent = '';
   }
 
   return (
