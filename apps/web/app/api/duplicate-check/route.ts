@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { crawlSiteContent } from '~/lib/modules/audit/firecrawl-service';
 import { analyzeContentDuplicates } from '~/lib/utils/duplicate-analyzer';
 import type { DuplicateAnalysisResult } from '~/lib/utils/duplicate-analyzer';

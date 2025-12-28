@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Search, Plus } from 'lucide-react';
-import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ZAxis } from 'recharts';
+import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ZAxis } from 'recharts';
 import { LoadingOverlay } from '@kit/ui/loading-overlay';
 
 import { useKeywordExplorer } from './hooks/use-keyword-explorer';
