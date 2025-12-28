@@ -238,13 +238,13 @@ export default function TechAuditPage() {
       ];
 
       const results = await Promise.allSettled(promises);
-      const auditResult = results[0] as PromiseSettledResult<EphemeralAuditResult>;
-      const duplicateAnalysisResult = results[1] as PromiseSettledResult<DuplicateAnalysisResult | null>;
+      const auditResult = results[0];
+      const duplicateAnalysisResult = results[1];
 
       // Handle technical audit result
-      if (auditResult && auditResult.status === 'fulfilled' && 'value' in auditResult) {
+      if (auditResult && auditResult.status === 'fulfilled') {
         // Results are already saved to database by runPlaygroundTechAudit
-        setResult(auditResult.value as EphemeralAuditResult);
+        setResult(auditResult.value);
         setAuditDate(new Date().toISOString());
         toast.success('Technical audit completed successfully!');
         
@@ -271,7 +271,7 @@ export default function TechAuditPage() {
           // Analysis was skipped due to missing API key
           toast.info('Deep Content Analysis skipped: Firecrawl API key not provided');
         } else {
-          setDuplicateResult(duplicateAnalysisResult.value as DuplicateAnalysisResult);
+          setDuplicateResult(duplicateAnalysisResult.value);
           toast.success('Deep content analysis completed successfully!');
         }
       } else if (duplicateAnalysisResult && duplicateAnalysisResult.status === 'rejected' && 'reason' in duplicateAnalysisResult) {
