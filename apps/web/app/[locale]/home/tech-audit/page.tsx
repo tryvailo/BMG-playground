@@ -171,7 +171,7 @@ export default function TechAuditPage() {
 
     try {
       // Run technical audit and optionally deep content analysis
-      const promises: Promise<any>[] = [
+      const promises: Promise<EphemeralAuditResult | DuplicateAnalysisResult | null>[] = [
         runPlaygroundTechAudit({
           domain: domain,
           apiKeyOpenAI: apiKeyOpenAI || undefined,
