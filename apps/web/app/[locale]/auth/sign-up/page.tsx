@@ -20,7 +20,7 @@ export const generateMetadata = async () => {
 
 const paths = {
   callback: pathsConfig.auth.callback,
-  appHome: pathsConfig.app.home,
+  appHome: pathsConfig.app.home, // Explicitly set to '/home' - NOT onboarding
 };
 
 function SignUpPage() {

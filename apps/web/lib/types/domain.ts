@@ -79,6 +79,9 @@ export interface WeeklyStats {
   visability_score: number | null;
   avg_position: number | null;
   tech_score: number | null;
+  content_score: number | null; // Content Optimization Score (0-100)
+  eeat_score: number | null; // E-E-A-T Score (0-100)
+  local_score: number | null; // Local Indicators Score (0-100)
   created_at: string;
   updated_at: string;
 }
@@ -283,6 +286,9 @@ export const CreateWeeklyStatsSchema = z.object({
   visability_score: z.number().min(0).max(100).nullable().optional(),
   avg_position: z.number().min(1).nullable().optional(),
   tech_score: z.number().min(0).max(100).nullable().optional(),
+  content_score: z.number().min(0).max(100).nullable().optional(),
+  eeat_score: z.number().min(0).max(100).nullable().optional(),
+  local_score: z.number().min(0).max(100).nullable().optional(),
 });
 
 export type CreateWeeklyStatsInput = z.infer<typeof CreateWeeklyStatsSchema>;

@@ -50,11 +50,20 @@ export function calculateAuthorMetrics(
   const authorsWithCredentialsPercent =
     totalAuthors > 0 ? Math.round((authorsWithCredentials / totalAuthors) * 100) : 0;
 
+  // Count medical authors
+  const articlesWithMedicalAuthor = articleResults.filter(
+    (r) => r.authorship.article_author?.is_medical_author === true,
+  ).length;
+
+  const blogPagesWithMedicalAuthorPercent =
+    totalArticles > 0 ? Math.round((articlesWithMedicalAuthor / totalArticles) * 100) : 0;
+
   return {
     blog_pages_with_author_percent: blogPagesWithAuthorPercent,
     authors_with_credentials_percent: authorsWithCredentialsPercent,
-    total_articles,
+    total_articles: totalArticles,
     articles_with_author: articlesWithAuthor,
+    blog_pages_with_medical_author_percent: blogPagesWithMedicalAuthorPercent,
   };
 }
 
@@ -76,8 +85,7 @@ export function calculateDoctorExpertiseMetrics(
     return undefined;
   }
 
-  // Check for credentials (this would need to be enhanced with doctor-analyzer data)
-  // For now, we'll use author_credentials_found as a proxy
+  // Check for credentials
   const doctorPagesWithCredentials = doctorPages.filter(
     (r) =>
       r.authorship.author_credentials_found === true ||
@@ -123,7 +131,7 @@ export function calculateScientificSourcesMetrics(
     totalArticles > 0 ? Math.round((articlesWithSources / totalArticles) * 100) : 0;
 
   return {
-    total_articles,
+    total_articles: totalArticles,
     articles_with_sources: articlesWithSources,
     articles_with_sources_percent: articlesWithSourcesPercent,
   };
@@ -143,4 +151,3 @@ export function aggregateMetrics(results: EEATAuditResult[]): {
     scientificMetrics: calculateScientificSourcesMetrics(results),
   };
 }
-

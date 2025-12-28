@@ -27,7 +27,7 @@ export function SiteFooter() {
               label: <Trans i18nKey="auth:signIn" />,
             },
             {
-              href: '/auth/sign-up',
+              href: '/onboarding',
               label: <Trans i18nKey="auth:signUp" />,
             },
           ],

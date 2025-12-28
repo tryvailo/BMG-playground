@@ -1,4 +1,12 @@
 {
+  "common": {
+    "tabs": {
+      "dashboard": "Dashboard",
+      "explorer": "Explorer",
+      "reports": "Reports",
+      "design": "Design"
+    }
+  },
   "HomePage": {
     "title": "Hello"
   },
@@ -40,6 +48,118 @@
       "domainInvalid": "Please enter a valid domain (e.g., mayoclinic.org)",
       "cityRequired": "City is required",
       "keywordQueryRequired": "Keyword/Query is required"
+    },
+    "contentAudit": {
+      "title": "Content Optimization",
+      "description": "Analysis of website content in terms of its usability and GEO optimization",
+      "groups": {
+        "structure": "Structure & Architecture",
+        "quality": "Content Quality",
+        "authority": "Authority & Trust"
+      },
+      "items": {
+        "4_1": {
+          "title": "Department Pages",
+          "description": "Presence of separate pages for each clinic department with unique content."
+        },
+        "4_2": {
+          "title": "Service Pages",
+          "description": "Detailed service pages on separate URLs."
+        },
+        "4_3": {
+          "title": "Doctor Pages",
+          "description": "Personal profiles with biographies, experience, and photos."
+        },
+        "4_4": {
+          "title": "Site Architecture",
+          "description": "Logical hierarchy and quality of internal linking."
+        },
+        "4_5": {
+          "title": "Blog",
+          "description": "Presence of an articles section to demonstrate expertise."
+        },
+        "4_6": {
+          "title": "Content Uniqueness",
+          "description": "Originality of texts (optimally >90%)."
+        },
+        "4_7": {
+          "title": "Text Wateriness",
+          "description": "Proportion of unnecessary words (normal <25%)."
+        },
+        "4_8": {
+          "title": "Authority Links",
+          "description": "Citations of official medical organizations and journals."
+        },
+        "4_9": {
+          "title": "FAQ",
+          "description": "Section with answers to typical patient questions."
+        },
+        "4_10": {
+          "title": "Address",
+          "description": "Clear physical address of the clinic or branches."
+        },
+        "4_11": {
+          "title": "Phone",
+          "description": "Presence of a phone number with one-tap calling capability."
+        }
+      }
+    },
+    "eeatAudit": {
+      "title": "E-E-A-T Assessment",
+      "description": "Analysis of Experience, Expertise, Authoritativeness, and Trustworthiness signals",
+      "groups": {
+        "experience": "Experience",
+        "expertise": "Expertise",
+        "authority": "Authoritativeness",
+        "trust": "Trustworthiness",
+        "reputation": "Reputation"
+      },
+      "items": {
+        "5_1": {
+          "title": "Content Authors",
+          "description": "Presence of information about medical article authors and their qualifications."
+        },
+        "5_2": {
+          "title": "Doctor Profiles",
+          "description": "Completeness of information in specialist profiles (education, experience, certificates)."
+        },
+        "5_3": {
+          "title": "Scientific Sources",
+          "description": "Citations of authoritative medical publications and databases (PubMed, WHO, Cochrane)."
+        },
+        "5_4": {
+          "title": "Social Proof",
+          "description": "Mentions in media, participation in conferences and professional associations."
+        },
+        "5_5": {
+          "title": "Cases and Results",
+          "description": "Treatment examples, before/after photos, patient stories."
+        },
+        "5_6": {
+          "title": "Legal Transparency",
+          "description": "Presence of complete legal entity details and contact information."
+        },
+        "5_7": {
+          "title": "Medical Licenses",
+          "description": "Display of active MOH licenses and accreditation certificates."
+        },
+        "5_8": {
+          "title": "Privacy Policy",
+          "description": "Compliance with personal data processing and medical confidentiality requirements."
+        },
+        "5_9": {
+          "title": "External Ratings",
+          "description": "Presence and level of ratings on independent platforms (Google Maps, Doc.ua, etc.)."
+        },
+        "5_10": {
+          "title": "Contact",
+          "description": "Appointment booking, online consultations, and active contact forms."
+        },
+        "5_11": {
+          "title": "Currency",
+          "description": "Regular content updates and medical information dating."
+        }
+      }
     }
   }
 }

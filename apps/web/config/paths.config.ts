@@ -17,6 +17,7 @@ const PathsSchema = z.object({
     contentOptimization: z.string().min(1),
     eeatAssessment: z.string().min(1),
     localIndicators: z.string().min(1),
+    competitors: z.string().min(1),
     configuration: z.string().min(1),
   }),
   marketing: z.object({
@@ -42,6 +43,7 @@ const pathsConfigRaw = {
     contentOptimization: '/home/content-optimization',
     eeatAssessment: '/home/eeat-assessment',
     localIndicators: '/home/local-indicators',
+    competitors: '/home/competitors',
     configuration: '/home/configuration',
   },
   marketing: {

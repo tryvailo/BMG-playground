@@ -91,10 +91,11 @@ export function extractArticleAuthor($: CheerioAPI): ArticleAuthorInfo {
       hasAuthorBlock = true;
 
       // Try to extract author name
-      const nameText = authorElement.text().trim();
+      const nameText = authorElement.text();
       if (nameText && !authorName) {
         // Clean up name (remove common prefixes)
         authorName = nameText
+          .trim()
           .replace(/^(Автор|Author|By):?\s*/i, '')
           .trim()
           .split('\n')[0]
@@ -134,12 +135,31 @@ export function extractArticleAuthor($: CheerioAPI): ArticleAuthorInfo {
     });
   }
 
+  // Check for medical qualifications in author block
+  const medicalQuals = [
+    'dr.',
+    'doctor',
+    'md',
+    'к.м.н.',
+    'д.м.н.',
+    'phd',
+    'лікар',
+    'врач',
+    'професор',
+    'professor',
+  ];
+
+  const blockText = hasAuthorBlock ? $(authorSelectors.join(',')).first().text().toLowerCase() : '';
+  const isMedicalAuthor = medicalQuals.some(q => blockText.includes(q)) ||
+    (authorName?.toLowerCase().includes('dr.') || false);
+
   return {
     is_article: true,
     has_author_block: hasAuthorBlock,
     author_name: authorName,
     has_author_profile_link: hasAuthorProfileLink,
     author_profile_url: authorProfileUrl,
+    is_medical_author: isMedicalAuthor,
   };
 }
 

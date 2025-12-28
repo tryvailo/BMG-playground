@@ -39,64 +39,64 @@ export interface ScanResult {
 export function generateSimulatedHistory(finalScore: number): TrendPoint[] {
   // Ensure finalScore is within valid range
   const score = Math.max(0, Math.min(100, finalScore));
-  
+
   // Generate 6 points (Week -5 to Week 0 / Today)
   const points: TrendPoint[] = [];
-  
+
   // Start at finalScore - random(10, 20) for the first point
   const randomOffset = 10 + Math.random() * 10; // Random between 10 and 20
   const initialScore = Math.max(0, score - randomOffset);
-  
+
   // Generate dates for the last 6 weeks (Week -5 to Week 0 / Today)
   const today = new Date();
   const dates: string[] = [];
-  
+
   for (let i = 5; i >= 0; i--) {
     const date = new Date(today);
     date.setDate(date.getDate() - (i * 7)); // Go back i weeks
     dates.push(date.toISOString().split('T')[0] || '');
   }
-  
+
   // Generate scores for weeks -5 to -1 (first 5 points)
   let currentScore = initialScore;
-  
+
   for (let i = 0; i < 5; i++) {
     // Calculate target progress: we want to reach finalScore by the last point
     // So we need to progress from initialScore to finalScore over 6 points
     const progress = (i + 1) / 6; // 0.167, 0.333, 0.5, 0.667, 0.833
     const targetScore = initialScore + (score - initialScore) * progress;
-    
+
     // Add some randomness: small increments or decrements, but generally trending up
     // Random value between -2 and +4 (bias towards positive for growth)
     const randomChange = -2 + Math.random() * 6;
     currentScore = targetScore + randomChange;
-    
+
     // Ensure score stays within bounds and doesn't exceed finalScore too much
     currentScore = Math.max(0, Math.min(score + 5, currentScore));
-    
+
     // Ensure we're generally trending up (current should be >= previous - 3)
     // Allow small dips but maintain overall upward trend
     if (i > 0 && currentScore < points[i - 1]!.score - 3) {
       currentScore = points[i - 1]!.score - 2; // Small dip allowed, but not too much
     }
-    
+
     // Ensure we don't exceed the final score too early
     if (currentScore > score + 2) {
       currentScore = score - (5 - i) * 2; // Gradually approach final score
     }
-    
+
     points.push({
       date: dates[i] || '',
       score: Math.round(currentScore * 10) / 10, // Round to 1 decimal
     });
   }
-  
+
   // Add the final point (Today / Week 0) with exact finalScore
   points.push({
     date: dates[5] || today.toISOString().split('T')[0] || '',
     score: Math.round(score * 10) / 10,
   });
-  
+
   return points;
 }
 
@@ -258,40 +258,44 @@ export function mapLiveScanToDashboard(
     // This matches the requirement: Rank 1 = 90, Rank 5 = 50
     const simulatedScore = Math.max(20, 90 - (competitorPosition - 1) * 10);
 
+    // Simulate number of services for bubble size (z)
+    // Range from 5 to 50 services
+    const simulatedServices = Math.floor(5 + Math.random() * 45);
+
     competitorPoints.push({
       name: competitorDomain,
       x: competitorPosition,
       y: simulatedScore,
       isCurrent: false,
-      z: 1, // Single mention in this scan
+      z: simulatedServices,
     });
   });
 
   // Sort competitors by position (x-axis) for better visualization
   competitorPoints.sort((a, b) => (a.x || 0) - (b.x || 0));
 
-  // Calculate component scores for breakdown metrics
+  // Calculate component scores for breakdown metrics (0-100 scale)
   // Tech Optimization: Based on TTFB and SSL
   const ttfbMs = techAudit.performance.ttfbMs;
   let ttfbScore: number;
   if (ttfbMs < 600) {
-    ttfbScore = 10;
+    ttfbScore = 100;
   } else if (ttfbMs > 1500) {
-    ttfbScore = 2;
+    ttfbScore = 20;
   } else {
-    ttfbScore = 10 - ((ttfbMs - 600) / (1500 - 600)) * 8;
+    ttfbScore = 100 - ((ttfbMs - 600) / (1500 - 600)) * 80;
   }
-  const sslScore = techAudit.metadata.hasSsl ? 10 : 0;
+  const sslScore = techAudit.metadata.hasSsl ? 100 : 0;
   const techOptimizationValue = (ttfbScore + sslScore) / 2;
 
   // Content Optimization: Based on llms.txt existence
-  const contentOptimizationValue = techAudit.llmsTxt.exists ? 10 : 5;
+  const contentOptimizationValue = techAudit.llmsTxt.exists ? 100 : 50;
 
-  // E-E-A-T Signal: trustScore is already 1-10
-  const eeatSignalValue = trustScore;
+  // E-E-A-T Signal: trustScore is 1-10, scale to 10-100
+  const eeatSignalValue = trustScore * 10;
 
-  // Local Signal: localScore is already 1-10
-  const localSignalValue = localScore;
+  // Local Signal: localScore is 1-10, scale to 10-100
+  const localSignalValue = localScore * 10;
 
   return {
     metrics: {

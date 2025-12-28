@@ -115,21 +115,25 @@ export interface EphemeralAuditResult {
   };
   schema: {
     hasMedicalOrg: boolean;
+    hasLocalBusiness: boolean;
     hasPhysician: boolean;
     hasMedicalProcedure: boolean;
-    hasLocalBusiness: boolean;
-    hasFAQ: boolean;
-    hasReviews: boolean;
     hasMedicalSpecialty: boolean;
+    hasFAQPage: boolean;
+    hasReview: boolean;
     hasBreadcrumbList: boolean;
   };
   meta: {
     title: string;
+    titleLength: number | null;
     description: string;
+    descriptionLength: number | null;
     h1: string | null;
     canonical: string | null;
     robots: string | null;
     lang: string | null;
+    hreflangs: Array<{ lang: string; url: string }>;
+    noindexPages?: string[];
   };
   images: {
     total: number;
@@ -139,6 +143,7 @@ export interface EphemeralAuditResult {
     total: number;
     broken: number;
     trusted: number;
+    list: Array<{ url: string; status: number; isTrusted: boolean }>;
   };
   duplicates: {
     wwwRedirect: 'ok' | 'duplicate' | 'error'; // 'ok' = redirects properly, 'duplicate' = both work, 'error' = check failed
@@ -187,9 +192,9 @@ async function fetchPageSpeedScore(
 
   try {
     const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&key=${key}&strategy=${strategy}`;
-    
+
     console.log(`[EphemeralAudit] Fetching PageSpeed ${strategy} for ${url}...`);
-    
+
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
@@ -207,25 +212,25 @@ async function fetchPageSpeedScore(
 
     const data = (await response.json()) as PageSpeedResponse;
     const lighthouse = data.lighthouseResult;
-    
+
     // Extract performance score
     const performanceScore = lighthouse?.categories?.performance?.score;
-    const score = performanceScore !== null && performanceScore !== undefined 
-      ? Math.round(performanceScore * 100) 
+    const score = performanceScore !== null && performanceScore !== undefined
+      ? Math.round(performanceScore * 100)
       : null;
-    
+
     if (score === null) {
       console.warn(`[EphemeralAudit] PageSpeed ${strategy} returned no score in response`);
       return { score: null, details: null };
     }
-    
+
     // Extract Core Web Vitals and other metrics
     const audits = lighthouse?.audits || {};
     const getAuditValue = (id: string): number | null => {
       const audit = audits[id] as PageSpeedAudit | undefined;
       return audit?.numericValue !== undefined ? audit.numericValue : null;
     };
-    
+
     // Extract opportunities (recommendations with score < 1)
     const opportunities: PageSpeedDetailedMetrics['opportunities'] = [];
     Object.keys(audits).forEach((id) => {
@@ -242,11 +247,11 @@ async function fetchPageSpeedScore(
         });
       }
     });
-    
+
     // Sort opportunities by score (worst first) and take top 10
     opportunities.sort((a, b) => a.score - b.score);
     const topOpportunities = opportunities.slice(0, 10);
-    
+
     // Extract category scores
     const categories = lighthouse?.categories || {};
     const categoryScores = {
@@ -263,7 +268,7 @@ async function fetchPageSpeedScore(
         ? Math.round(categories.seo.score * 100)
         : null,
     };
-    
+
     const details: PageSpeedDetailedMetrics = {
       score,
       lcp: getAuditValue('largest-contentful-paint'),
@@ -276,10 +281,10 @@ async function fetchPageSpeedScore(
       opportunities: topOpportunities,
       categories: categoryScores,
     };
-    
+
     console.log(`[EphemeralAudit] PageSpeed ${strategy} score: ${score}/100`);
     console.log(`[EphemeralAudit] LCP: ${details.lcp}ms, FCP: ${details.fcp}ms, CLS: ${details.cls}, TBT: ${details.tbt}ms`);
-    
+
     return { score, details };
   } catch (error) {
     if (error instanceof Error && error.name === 'TimeoutError') {
@@ -319,10 +324,14 @@ async function checkTechnicalDuplicates(
   trailingSlash: 'ok' | 'duplicate' | 'error';
   httpRedirect: 'ok' | 'duplicate' | 'error';
 }> {
-  const result = {
-    wwwRedirect: 'error' as const,
-    trailingSlash: 'error' as const,
-    httpRedirect: 'error' as const,
+  const result: {
+    wwwRedirect: 'ok' | 'duplicate' | 'error';
+    trailingSlash: 'ok' | 'duplicate' | 'error';
+    httpRedirect: 'ok' | 'duplicate' | 'error';
+  } = {
+    wwwRedirect: 'error',
+    trailingSlash: 'error',
+    httpRedirect: 'error',
   };
 
   try {
@@ -336,7 +345,7 @@ async function checkTechnicalDuplicates(
     try {
       const wwwUrl = `${protocol}//www.${hostname}${pathname}${search}`;
       const nonWwwUrl = `${protocol}//${hostname.replace(/^www\./, '')}${pathname}${search}`;
-      
+
       const [wwwResponse, nonWwwResponse] = await Promise.allSettled([
         fetch(wwwUrl, {
           method: 'HEAD',
@@ -355,7 +364,7 @@ async function checkTechnicalDuplicates(
       if (wwwResponse.status === 'fulfilled' && nonWwwResponse.status === 'fulfilled') {
         const wwwStatus = wwwResponse.value.status;
         const nonWwwStatus = nonWwwResponse.value.status;
-        
+
         // If both return 200 without redirect (status 301/302), it's a duplicate
         if (wwwStatus === 200 && nonWwwStatus === 200) {
           result.wwwRedirect = 'duplicate';
@@ -398,7 +407,7 @@ async function checkTechnicalDuplicates(
         if (slashResponse.status === 'fulfilled' && noSlashResponse.status === 'fulfilled') {
           const slashStatus = slashResponse.value.status;
           const noSlashStatus = noSlashResponse.value.status;
-          
+
           // If both return 200 without redirect, it's a duplicate
           if (slashStatus === 200 && noSlashStatus === 200) {
             result.trailingSlash = 'duplicate';
@@ -468,9 +477,9 @@ async function checkAndAnalyzeLlmsTxt(
     // Normalize baseUrl - ensure it doesn't have trailing slash
     const normalizedBaseUrl = baseUrl.replace(/\/$/, '');
     const llmsTxtUrl = `${normalizedBaseUrl}/llms.txt`;
-    
+
     console.log(`[EphemeralAudit] Checking llms.txt at: ${llmsTxtUrl}`);
-    
+
     const response = await fetch(llmsTxtUrl, {
       method: 'GET',
       headers: {
@@ -493,7 +502,7 @@ async function checkAndAnalyzeLlmsTxt(
 
     const content = await response.text();
     console.log(`[EphemeralAudit] llms.txt fetched successfully, size: ${content.length} characters`);
-    
+
     if (!content || content.trim().length === 0) {
       console.warn('[EphemeralAudit] llms.txt file is empty');
       return {
@@ -502,14 +511,14 @@ async function checkAndAnalyzeLlmsTxt(
         recommendations: ['llms.txt file exists but is empty. Add content to help AI systems understand your content structure.'],
       };
     }
-    
+
     // Analyze with AI if key is provided
     if (openaiKey && openaiKey.trim().length > 0) {
       try {
         console.log('[EphemeralAudit] Starting AI analysis of llms.txt...');
         const analysis = await analyzeLlmsTxt(content, openaiKey);
         console.log(`[EphemeralAudit] llms.txt AI analysis completed, score: ${analysis.score}/100`);
-        
+
         return {
           present: true,
           score: analysis.score,
@@ -573,12 +582,12 @@ export async function performEphemeralTechAudit(
 ): Promise<EphemeralAuditResult> {
   const normalizedUrl = normalizeUrl(url);
   const baseUrl = normalizedUrl.replace(/\/$/, '');
-  
+
   // Use provided OpenAI key, or fallback to environment variable
   // Priority: 1) provided key, 2) OPENAI_API_KEY env var, 3) empty string
   const finalOpenaiKey = openaiKey?.trim() || process.env.OPENAI_API_KEY?.trim() || '';
   const pageSpeedApiKey = pageSpeedKey || process.env.GOOGLE_PAGESPEED_API_KEY;
-  
+
   // Log key usage for debugging (without exposing the actual key)
   if (finalOpenaiKey) {
     const keySource = openaiKey ? 'provided parameter' : 'environment variable';
@@ -599,10 +608,10 @@ export async function performEphemeralTechAudit(
   ] = await Promise.allSettled([
     // Google PageSpeed - Desktop (returns both score and details)
     fetchPageSpeedScore(normalizedUrl, 'desktop', pageSpeedApiKey),
-    
+
     // Google PageSpeed - Mobile (returns both score and details)
     fetchPageSpeedScore(normalizedUrl, 'mobile', pageSpeedApiKey),
-    
+
     // HTML Crawl
     fetch(normalizedUrl, {
       method: 'GET',
@@ -618,29 +627,29 @@ export async function performEphemeralTechAudit(
         return response.text();
       })
       .then((html) => parseHtml(html, normalizedUrl)),
-    
+
     // robots.txt check
     checkFileExists(new URL('/robots.txt', normalizedUrl).toString()),
-    
+
     // sitemap.xml check
     checkFileExists(new URL('/sitemap.xml', normalizedUrl).toString()),
-    
+
     // llms.txt check and analysis
     checkAndAnalyzeLlmsTxt(baseUrl, finalOpenaiKey),
-    
+
     // Technical duplicate check
     checkTechnicalDuplicates(normalizedUrl),
   ]);
 
   // Extract results with error handling
-  const desktopSpeedData = desktopSpeedResult.status === 'fulfilled' 
-    ? desktopSpeedResult.value 
+  const desktopSpeedData = desktopSpeedResult.status === 'fulfilled'
+    ? desktopSpeedResult.value
     : { score: null, details: null };
-  
-  const mobileSpeedData = mobileSpeedResult.status === 'fulfilled' 
-    ? mobileSpeedResult.value 
+
+  const mobileSpeedData = mobileSpeedResult.status === 'fulfilled'
+    ? mobileSpeedResult.value
     : { score: null, details: null };
-  
+
   const desktopSpeed = desktopSpeedData.score;
   const mobileSpeed = mobileSpeedData.score;
   const desktopDetails = desktopSpeedData.details;
@@ -650,27 +659,47 @@ export async function performEphemeralTechAudit(
   let htmlData = null;
   if (htmlFetchResult.status === 'fulfilled') {
     htmlData = htmlFetchResult.value;
+    console.log('[EphemeralAudit] HTML parsed successfully');
+    console.log('[EphemeralAudit] Schema data:', JSON.stringify(htmlData.schema, null, 2));
+    
+    // Detailed schema analysis
+    const schemaKeys = Object.keys(htmlData.schema || {});
+    const schemaValues = Object.values(htmlData.schema || {});
+    const trueValues = schemaValues.filter(v => v === true).length;
+    console.log(`[EphemeralAudit] Schema keys found: ${schemaKeys.length}, true values: ${trueValues}`);
+    
+    if (trueValues === 0) {
+      console.warn('[EphemeralAudit] ⚠️  WARNING: No schema types detected! This could mean:');
+      console.warn('[EphemeralAudit]   1. The website has no JSON-LD markup');
+      console.warn('[EphemeralAudit]   2. JSON-LD is malformed');
+      console.warn('[EphemeralAudit]   3. Schema types don\'t match expected patterns');
+    }
   } else {
     console.error('[EphemeralAudit] Error fetching HTML:', htmlFetchResult.reason);
+    console.warn('[EphemeralAudit] Schema analysis will be skipped due to HTML fetch failure');
+    if (htmlFetchResult.reason instanceof Error) {
+      console.error('[EphemeralAudit] Error details:', htmlFetchResult.reason.message);
+      console.error('[EphemeralAudit] Error stack:', htmlFetchResult.reason.stack);
+    }
   }
 
   // Extract file check results
-  const robotsPresent = robotsTxtResult.status === 'fulfilled' 
-    ? robotsTxtResult.value 
+  const robotsPresent = robotsTxtResult.status === 'fulfilled'
+    ? robotsTxtResult.value
     : false;
-  
-  const sitemapPresent = sitemapResult.status === 'fulfilled' 
-    ? sitemapResult.value 
+
+  const sitemapPresent = sitemapResult.status === 'fulfilled'
+    ? sitemapResult.value
     : false;
 
   // Extract llms.txt results
-  const llmsTxtData = llmsTxtResult.status === 'fulfilled' 
-    ? llmsTxtResult.value 
+  const llmsTxtData = llmsTxtResult.status === 'fulfilled'
+    ? llmsTxtResult.value
     : {
-        present: false,
-        score: 0,
-        recommendations: ['Unable to analyze llms.txt file.'],
-      };
+      present: false,
+      score: 0,
+      recommendations: ['Unable to analyze llms.txt file.'],
+    };
 
   // Extract security and meta data from HTML
   const httpsEnabled = normalizedUrl.startsWith('https://');
@@ -687,6 +716,17 @@ export async function performEphemeralTechAudit(
     hasMedicalSpecialty: false,
     hasBreadcrumbList: false,
   };
+  
+  // Log final schema mapping
+  console.log('[EphemeralAudit] Final schema mapping:');
+  console.log(`[EphemeralAudit]   hasMedicalOrganization: ${schema.hasMedicalOrganization} → hasMedicalOrg: ${schema.hasMedicalOrganization}`);
+  console.log(`[EphemeralAudit]   hasLocalBusiness: ${schema.hasLocalBusiness}`);
+  console.log(`[EphemeralAudit]   hasPhysician: ${schema.hasPhysician}`);
+  console.log(`[EphemeralAudit]   hasMedicalProcedure: ${schema.hasMedicalProcedure}`);
+  console.log(`[EphemeralAudit]   hasMedicalSpecialty: ${schema.hasMedicalSpecialty}`);
+  console.log(`[EphemeralAudit]   hasFAQPage: ${schema.hasFAQPage}`);
+  console.log(`[EphemeralAudit]   hasReview: ${schema.hasReview}`);
+  console.log(`[EphemeralAudit]   hasBreadcrumbList: ${schema.hasBreadcrumbList}`);
 
   // Extract meta data
   const title = htmlData?.meta.title || '';
@@ -714,10 +754,10 @@ export async function performEphemeralTechAudit(
   const duplicates = duplicatesResult.status === 'fulfilled'
     ? duplicatesResult.value
     : {
-        wwwRedirect: 'error' as const,
-        trailingSlash: 'error' as const,
-        httpRedirect: 'error' as const,
-      };
+      wwwRedirect: 'error' as const,
+      trailingSlash: 'error' as const,
+      httpRedirect: 'error' as const,
+    };
 
   // Build the audit result
   const auditResult: EphemeralAuditResult = {
@@ -742,21 +782,24 @@ export async function performEphemeralTechAudit(
     },
     schema: {
       hasMedicalOrg: schema.hasMedicalOrganization,
+      hasLocalBusiness: schema.hasLocalBusiness,
       hasPhysician: schema.hasPhysician,
       hasMedicalProcedure: schema.hasMedicalProcedure,
-      hasLocalBusiness: schema.hasLocalBusiness,
-      hasFAQ: schema.hasFAQPage,
-      hasReviews: schema.hasReview,
       hasMedicalSpecialty: schema.hasMedicalSpecialty,
+      hasFAQPage: schema.hasFAQPage,
+      hasReview: schema.hasReview,
       hasBreadcrumbList: schema.hasBreadcrumbList,
     },
     meta: {
       title,
+      titleLength: htmlData?.meta.titleLength ?? null,
       description,
+      descriptionLength: htmlData?.meta.descriptionLength ?? null,
       h1,
       canonical,
       robots,
       lang,
+      hreflangs: htmlData?.meta.hreflangs ?? [],
     },
     images: {
       total: images.total,
@@ -766,6 +809,7 @@ export async function performEphemeralTechAudit(
       total: externalLinks.total,
       broken: externalLinks.broken,
       trusted: trustedLinks,
+      list: externalLinks.list,
     },
     duplicates,
   };

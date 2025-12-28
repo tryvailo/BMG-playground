@@ -5,258 +5,200 @@ import {
   CheckCircle2,
   XCircle,
   FileText,
-  Settings,
   AlertCircle,
   Info,
   ChevronDown,
   Zap,
   Shield,
   Search,
-  Image,
   Gauge,
+  Activity,
+  TrendingUp,
 } from 'lucide-react';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
+  Cell, Legend
+} from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@kit/ui/card';
+import { Badge } from '@kit/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@kit/ui/collapsible';
 import { cn } from '@kit/ui/utils';
 import type { EphemeralAuditResult } from '~/lib/modules/audit/ephemeral-audit';
+import { useTranslation } from 'react-i18next';
+
+// --- Premium 2026 Light Tokens ---
+const TOKENS = {
+    colors: {
+        you: '#f43f5e', // Ruby
+        c1: '#3b82f6', // Blue
+        c2: '#8b5cf6', // Violet
+        c3: '#10b981', // Emerald
+        c4: '#f59e0b', // Amber
+        c5: '#0ea5e9', // Sky
+        c6: '#6366f1', // Indigo
+        c7: '#d946ef', // Fuchsia
+        c8: '#f97316', // Orange
+        c9: '#14b8a6', // Teal
+        c10: '#64748b', // Slate
+        marketAvg: '#cbd5e1',
+    },
+    shadows: {
+        soft: 'shadow-[0_8px_30px_rgb(0,0,0,0.04)]',
+        deep: 'shadow-[0_20px_50px_rgba(0,0,0,0.06)]',
+    }
+};
+
+// --- Custom Modern Components ---
+const BentoCard = ({ children, className, title, subtitle }: any) => (
+    <Card className={cn(
+        "border border-slate-200 bg-white shadow-[0_8px_32px_0_rgba(15,23,42,0.04)] overflow-hidden transition-all duration-300 hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] group",
+        className
+    )}>
+        {(title || subtitle) && (
+            <CardHeader className="pb-2">
+                {title && <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 group-hover:text-primary transition-colors">{title}</h3>}
+                {subtitle && <p className="text-sm font-bold text-slate-900">{subtitle}</p>}
+            </CardHeader>
+        )}
+        <CardContent className={cn("p-6", (title || subtitle) && "pt-2")}>
+            {children}
+        </CardContent>
+    </Card>
+);
 
 interface TechAuditSectionProps {
   data: EphemeralAuditResult;
 }
 
 /**
- * Progress Bar Component
+ * Single Audit Item Component
  */
-interface ProgressBarProps {
-  value: number;
-  max?: number;
-  label?: string;
-  showValue?: boolean;
-  size?: 'sm' | 'md' | 'lg';
-}
-
-function ProgressBar({ value, max = 100, label, showValue = true, size = 'md' }: ProgressBarProps) {
-  const percentage = Math.min(100, Math.max(0, (value / max) * 100));
-  
-  const getColor = () => {
-    if (percentage < 50) return 'bg-red-500';
-    if (percentage < 90) return 'bg-orange-500';
-    return 'bg-emerald-500';
-  };
-
-  const heightClasses = {
-    sm: 'h-2',
-    md: 'h-2.5',
-    lg: 'h-3',
-  };
-
-    return (
-    <div className="w-full">
-      {label && (
-        <div className="flex justify-between items-center mb-1.5">
-          <span className="text-sm font-medium text-foreground">{label}</span>
-          {showValue && (
-            <span className="text-sm font-semibold text-muted-foreground">
-              {Math.round(percentage)}%
-            </span>
-          )}
-        </div>
-      )}
-      <div className={cn('w-full bg-muted rounded-full overflow-hidden relative', heightClasses[size])}>
-        <div
-          className={cn('transition-all duration-500 ease-out rounded-full', getColor())}
-            style={{
-            width: `${percentage}%`, 
-            height: '100%',
-            minWidth: percentage > 0 ? '4px' : '0',
-            minHeight: '100%'
-          }}
-        />
-        </div>
-    </div>
-  );
-}
-
-/**
- * Enhanced Minimal Metric Card Component
- */
-interface MinimalMetricCardProps {
+interface AuditItemProps {
+  id: string;
   title: string;
-  icon?: React.ReactNode;
+  description: string;
   status: 'good' | 'bad' | 'warning' | 'neutral';
   value?: string | number | React.ReactNode;
   score?: number | null;
   children?: React.ReactNode;
-  defaultOpen?: boolean;
 }
 
-function MinimalMetricCard({ 
-  title, 
-  icon, 
-  status, 
-  value, 
-  score,
-  children, 
-  defaultOpen = false 
-}: MinimalMetricCardProps) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
-
-  // Auto-calculate score from status if score is not provided
-  const calculatedScore = score !== undefined && score !== null 
-    ? score 
-    : status === 'good' 
-      ? 100 
-      : status === 'warning' 
-        ? 50 
-        : status === 'bad' 
-          ? 0 
-          : null;
+function AuditItem({ title, description, status, value, score, children }: AuditItemProps) {
+  const [isOpen, setIsOpen] = useState(false);
 
   const getStatusIcon = () => {
     switch (status) {
-      case 'good':
-        return <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />;
-      case 'bad':
-        return <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />;
-      case 'warning':
-        return <AlertCircle className="h-5 w-5 text-orange-600 dark:text-orange-400" />;
-      default:
-        return <Info className="h-5 w-5 text-muted-foreground" />;
+      case 'good': return <CheckCircle2 className="h-5 w-5 text-emerald-600" />;
+      case 'bad': return <XCircle className="h-5 w-5 text-red-600" />;
+      case 'warning': return <AlertCircle className="h-5 w-5 text-orange-600" />;
+      default: return <Info className="h-5 w-5 text-slate-400" />;
     }
   };
 
-  const getStatusColor = () => {
+  const getStatusBg = () => {
     switch (status) {
-      case 'good':
-        return 'border-l-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20';
-      case 'bad':
-        return 'border-l-red-500 bg-red-50/50 dark:bg-red-950/20';
-      case 'warning':
-        return 'border-l-orange-500 bg-orange-50/50 dark:bg-orange-950/20';
-      default:
-        return 'border-l-border bg-muted/30';
+      case 'good': return 'bg-emerald-50 border-emerald-300';
+      case 'bad': return 'bg-red-50 border-red-300';
+      case 'warning': return 'bg-orange-50 border-orange-300';
+      default: return 'bg-white border-slate-200';
     }
   };
 
   return (
-    <Card className={cn(
-      'hover:shadow-lg transition-all border-l-4',
-      getStatusColor()
-    )}>
+    <BentoCard className={cn('border-2', getStatusBg())}>
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+          <CardHeader className="cursor-pointer hover:bg-slate-50/50 transition-colors">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {icon || getStatusIcon()}
-                <CardTitle className="text-base font-semibold text-foreground">
-                  {title}
-                </CardTitle>
+                {getStatusIcon()}
+                <div>
+                  <CardTitle className="text-base font-bold text-slate-900">{title}</CardTitle>
+                  <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">{description}</p>
+                </div>
               </div>
               <div className="flex items-center gap-4">
-                {calculatedScore !== null && calculatedScore !== undefined ? (
-                  <div className="flex items-center gap-2">
-                    <span className={cn(
-                      'text-lg font-bold',
-                      calculatedScore >= 90 ? 'text-emerald-600 dark:text-emerald-400' :
-                      calculatedScore >= 50 ? 'text-orange-600 dark:text-orange-400' :
-                      'text-red-600 dark:text-red-400'
-                    )}>
-                      {calculatedScore}
-                    </span>
-                    <span className="text-sm text-muted-foreground">/100</span>
-                  </div>
-                ) : null}
-                {value && (
-                  <span className="text-base font-semibold text-foreground">
-                    {value}
+                {score !== undefined && score !== null && (
+                  <span className={cn(
+                    'text-lg font-black italic',
+                    status === 'good' ? 'text-emerald-500' : 
+                    status === 'warning' ? 'text-orange-500' : 
+                    'text-rose-500'
+                  )}>
+                    {score}%
                   </span>
                 )}
-                <ChevronDown className={cn(
-                  'h-5 w-5 text-muted-foreground transition-transform',
-                  isOpen && 'rotate-180'
-                )} />
+                {value && <span className="text-base font-bold text-slate-900">{value}</span>}
+                <ChevronDown className={cn('h-5 w-5 text-slate-400 transition-transform', isOpen && 'rotate-180')} />
               </div>
             </div>
-            {calculatedScore !== null && calculatedScore !== undefined ? (
-              <div className="mt-3">
-                <ProgressBar value={calculatedScore} size="sm" showValue={false} />
-              </div>
-            ) : (
-              <div className="mt-3 h-2 w-full bg-muted rounded-full" />
-            )}
           </CardHeader>
         </CollapsibleTrigger>
-        {children && (
-          <CollapsibleContent>
-            <CardContent className="pt-0">
-              {children}
-            </CardContent>
-          </CollapsibleContent>
-        )}
+        <CollapsibleContent>
+          <CardContent className="pt-0">
+            <p className="mb-4 text-sm text-slate-700">{description}</p>
+            {children}
+          </CardContent>
+        </CollapsibleContent>
       </Collapsible>
-    </Card>
+    </BentoCard>
   );
 }
 
 /**
- * Category Section Component
- */
-interface CategorySectionProps {
-  title: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-}
-
-function CategorySection({ title, icon, children }: CategorySectionProps) {
-  return (
-        <div className="space-y-4">
-      <div className="flex items-center gap-3 pb-2 border-b border-border">
-        {icon}
-        <h2 className="text-xl font-bold text-foreground">{title}</h2>
-            </div>
-      <div className="grid grid-cols-1 gap-4">
-        {children}
-        </div>
-    </div>
-  );
-}
-
-/**
- * Calculate Overall Score
+ * Calculate Overall Technical Score
  */
 function calculateOverallScore(data: EphemeralAuditResult): number {
   const scores: number[] = [];
 
-  // Performance scores
+  // Speed scores
   if (data.speed.desktop !== null) scores.push(data.speed.desktop);
   if (data.speed.mobile !== null) scores.push(data.speed.mobile);
-  if (data.files.llmsTxt.present) scores.push(data.files.llmsTxt.score);
 
-  // Security (boolean to score)
+  // Security scores
   if (data.security.https) scores.push(100);
   if (data.security.mobileFriendly) scores.push(100);
 
-  // Files (boolean to score)
+  // Files scores
   if (data.files.robots) scores.push(100);
   if (data.files.sitemap) scores.push(100);
+  scores.push(data.files.llmsTxt.score);
 
-  // Meta tags (boolean to score)
-  if (data.meta.title) scores.push(100);
-  if (data.meta.description) scores.push(100);
-  if (data.meta.h1) scores.push(100);
+  // Schema scores (8 types)
+  const schemaCount = [
+    data.schema.hasMedicalOrg,
+    data.schema.hasLocalBusiness,
+    data.schema.hasPhysician,
+    data.schema.hasMedicalProcedure,
+    data.schema.hasMedicalSpecialty,
+    data.schema.hasFAQPage,
+    data.schema.hasReview,
+    data.schema.hasBreadcrumbList,
+  ].filter(Boolean).length;
+  scores.push((schemaCount / 8) * 100);
 
-  // Images (percentage of images with alt)
-  if (data.images.total > 0) {
-    const altPercentage = ((data.images.total - data.images.missingAlt) / data.images.total) * 100;
-    scores.push(altPercentage);
-  }
+  // Meta scores
+  if (data.meta.lang) scores.push(100);
+  if (data.meta.canonical) scores.push(100);
+  if (data.meta.titleLength && data.meta.titleLength >= 30 && data.meta.titleLength <= 65) scores.push(100);
+  if (data.meta.descriptionLength && data.meta.descriptionLength >= 120 && data.meta.descriptionLength <= 165) scores.push(100);
+  if (!data.meta.robots?.includes('noindex')) scores.push(100);
 
-  // External links (percentage of non-broken)
-  if (data.externalLinks.total > 0) {
-    const healthyPercentage = ((data.externalLinks.total - data.externalLinks.broken) / data.externalLinks.total) * 100;
-    scores.push(healthyPercentage);
-  }
+  // External links scores
+  if (data.externalLinks.broken === 0) scores.push(100);
+  if (data.externalLinks.trusted > 0) scores.push(Math.min(100, data.externalLinks.trusted * 20));
+
+  // Images scores
+  const imagesScore = data.images.total > 0 
+    ? ((data.images.total - data.images.missingAlt) / data.images.total) * 100 
+    : 100;
+  scores.push(imagesScore);
+
+  // Duplicates scores
+  if (data.duplicates.wwwRedirect === 'ok') scores.push(100);
+  if (data.duplicates.trailingSlash === 'ok') scores.push(100);
+  if (data.duplicates.httpRedirect === 'ok') scores.push(100);
 
   if (scores.length === 0) return 0;
   return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
@@ -266,633 +208,730 @@ function calculateOverallScore(data: EphemeralAuditResult): number {
  * Calculate Category Scores
  */
 function calculateCategoryScores(data: EphemeralAuditResult) {
-  const performanceScores: number[] = [];
-  const securityScores: number[] = [];
-  const seoScores: number[] = [];
-  const contentScores: number[] = [];
+  // AI Optimization
+  const aiScores: number[] = [];
+  if (data.files.llmsTxt.present) aiScores.push(100);
+  aiScores.push(data.files.llmsTxt.score);
+  if (data.files.robots) aiScores.push(100);
+  if (data.files.sitemap) aiScores.push(100);
+  const aiScore = aiScores.length > 0 ? Math.round(aiScores.reduce((a, b) => a + b, 0) / aiScores.length) : 0;
 
-  // Performance
-  if (data.speed.desktop !== null) performanceScores.push(data.speed.desktop);
-  if (data.speed.mobile !== null) performanceScores.push(data.speed.mobile);
-  if (data.files.llmsTxt.present) performanceScores.push(data.files.llmsTxt.score);
+  // Compliance
+  const complianceScores: number[] = [];
+  if (data.security.https) complianceScores.push(100);
+  if (data.security.mobileFriendly) complianceScores.push(100);
+  const complianceScore = complianceScores.length > 0 ? Math.round(complianceScores.reduce((a, b) => a + b, 0) / complianceScores.length) : 0;
 
-  // Security
-  if (data.security.https) securityScores.push(100);
-  if (data.security.mobileFriendly) securityScores.push(100);
+  // Schema
+  const schemaCount = [
+    data.schema.hasMedicalOrg,
+    data.schema.hasLocalBusiness,
+    data.schema.hasPhysician,
+    data.schema.hasMedicalProcedure,
+    data.schema.hasMedicalSpecialty,
+    data.schema.hasFAQPage,
+    data.schema.hasReview,
+    data.schema.hasBreadcrumbList,
+  ].filter(Boolean).length;
+  const schemaScore = (schemaCount / 8) * 100;
 
   // SEO
-  if (data.files.robots) seoScores.push(100);
-  if (data.files.sitemap) seoScores.push(100);
-  if (data.meta.title) seoScores.push(100);
-  if (data.meta.description) seoScores.push(100);
-  if (data.meta.h1) seoScores.push(100);
+  const seoScores: number[] = [];
+  if (data.meta.lang) seoScores.push(100);
   if (data.meta.canonical) seoScores.push(100);
-  if (data.schema.hasMedicalOrg) seoScores.push(100);
-  if (data.schema.hasPhysician) seoScores.push(100);
-  if (data.schema.hasLocalBusiness) seoScores.push(100);
+  if (data.meta.titleLength && data.meta.titleLength >= 30 && data.meta.titleLength <= 65) seoScores.push(100);
+  if (data.meta.descriptionLength && data.meta.descriptionLength >= 120 && data.meta.descriptionLength <= 165) seoScores.push(100);
+  if (!data.meta.robots?.includes('noindex')) seoScores.push(100);
+  if (data.externalLinks.broken === 0) seoScores.push(100);
+  if (data.externalLinks.trusted > 0) seoScores.push(Math.min(100, data.externalLinks.trusted * 20));
+  const seoScore = seoScores.length > 0 ? Math.round(seoScores.reduce((a, b) => a + b, 0) / seoScores.length) : 0;
 
-  // Content Quality
-  if (data.images.total > 0) {
-    const altPercentage = ((data.images.total - data.images.missingAlt) / data.images.total) * 100;
-    contentScores.push(altPercentage);
-  }
-  if (data.externalLinks.total > 0) {
-    const healthyPercentage = ((data.externalLinks.total - data.externalLinks.broken) / data.externalLinks.total) * 100;
-    contentScores.push(healthyPercentage);
-  }
+  // Performance
+  const perfScores: number[] = [];
+  if (data.speed.desktop !== null) perfScores.push(data.speed.desktop);
+  if (data.speed.mobile !== null) perfScores.push(data.speed.mobile);
+  if (data.duplicates.wwwRedirect === 'ok') perfScores.push(100);
+  if (data.duplicates.trailingSlash === 'ok') perfScores.push(100);
+  if (data.duplicates.httpRedirect === 'ok') perfScores.push(100);
+  const perfScore = perfScores.length > 0 ? Math.round(perfScores.reduce((a, b) => a + b, 0) / perfScores.length) : 0;
 
   return {
-    performance: performanceScores.length > 0 
-      ? Math.round(performanceScores.reduce((a, b) => a + b, 0) / performanceScores.length)
-      : null,
-    security: securityScores.length > 0
-      ? Math.round(securityScores.reduce((a, b) => a + b, 0) / securityScores.length)
-      : null,
-    seo: seoScores.length > 0
-      ? Math.round(seoScores.reduce((a, b) => a + b, 0) / seoScores.length)
-      : null,
-    content: contentScores.length > 0
-      ? Math.round(contentScores.reduce((a, b) => a + b, 0) / contentScores.length)
-      : null,
+    ai: aiScore,
+    compliance: complianceScore,
+    schema: schemaScore,
+    seo: seoScore,
+    performance: perfScore,
   };
 }
 
 /**
- * TechAuditSection Component
+ * Main TechAuditSection Component
  */
 export function TechAuditSection({ data }: TechAuditSectionProps) {
+  const { t } = useTranslation('playground');
+
+  // Helper to get status from boolean
+  const fromBool = (val: boolean | null): 'good' | 'bad' => val ? 'good' : 'bad';
+
   const overallScore = calculateOverallScore(data);
   const categoryScores = calculateCategoryScores(data);
 
   const getScoreColor = (score: number) => {
-    if (score >= 90) return 'text-emerald-600 dark:text-emerald-400';
-    if (score >= 50) return 'text-orange-600 dark:text-orange-400';
-    return 'text-red-600 dark:text-red-400';
+    if (score >= 90) return 'text-emerald-700';
+    if (score >= 50) return 'text-orange-600';
+    return 'text-red-600';
   };
 
   const getScoreBgColor = (score: number) => {
-    if (score >= 90) return 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800';
-    if (score >= 50) return 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800';
-    return 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800';
+    if (score >= 90) return 'bg-emerald-50 border-emerald-300';
+    if (score >= 50) return 'bg-orange-50 border-orange-300';
+    return 'bg-red-50 border-red-300';
   };
 
+  // Format metric value to 2 decimal places
+  const formatMetric = (value: number | null): string => {
+    if (value === null) return 'N/A';
+    return value.toFixed(2);
+  };
+
+  // Prepare performance data for charts
+  const speedComparisonData = [
+    {
+      name: 'Desktop',
+      score: data.speed.desktop || 0,
+      fill: TOKENS.colors.c1,
+    },
+    {
+      name: 'Mobile',
+      score: data.speed.mobile || 0,
+      fill: TOKENS.colors.c2,
+    },
+  ];
+
+  // Core Web Vitals data (if available) - using real data from desktopDetails and mobileDetails
+  const coreWebVitalsData = [];
+  if (data.speed.desktopDetails) {
+    if (data.speed.desktopDetails.lcp !== null) {
+      coreWebVitalsData.push({
+        metric: 'LCP',
+        desktop: data.speed.desktopDetails.lcp,
+        mobile: data.speed.mobileDetails?.lcp ?? null,
+        unit: 'ms',
+        good: 2500,
+        needsImprovement: 4000,
+      });
+    }
+    if (data.speed.desktopDetails.fcp !== null) {
+      coreWebVitalsData.push({
+        metric: 'FCP',
+        desktop: data.speed.desktopDetails.fcp,
+        mobile: data.speed.mobileDetails?.fcp ?? null,
+        unit: 'ms',
+        good: 1800,
+        needsImprovement: 3000,
+      });
+    }
+    if (data.speed.desktopDetails.cls !== null) {
+      coreWebVitalsData.push({
+        metric: 'CLS',
+        desktop: data.speed.desktopDetails.cls,
+        mobile: data.speed.mobileDetails?.cls ?? null,
+        unit: '',
+        good: 0.1,
+        needsImprovement: 0.25,
+      });
+    }
+    if (data.speed.desktopDetails.tbt !== null) {
+      coreWebVitalsData.push({
+        metric: 'TBT',
+        desktop: data.speed.desktopDetails.tbt,
+        mobile: data.speed.mobileDetails?.tbt ?? null,
+        unit: 'ms',
+        good: 200,
+        needsImprovement: 600,
+      });
+    }
+  }
+
+  // PageSpeed Categories data
+  const pageSpeedCategoriesData = [];
+  if (data.speed.desktopDetails?.categories) {
+    pageSpeedCategoriesData.push({
+      category: 'Performance',
+      desktop: data.speed.desktopDetails.categories.performance || 0,
+      mobile: data.speed.mobileDetails?.categories?.performance || 0,
+    });
+    pageSpeedCategoriesData.push({
+      category: 'Accessibility',
+      desktop: data.speed.desktopDetails.categories.accessibility || 0,
+      mobile: data.speed.mobileDetails?.categories?.accessibility || 0,
+    });
+    pageSpeedCategoriesData.push({
+      category: 'Best Practices',
+      desktop: data.speed.desktopDetails.categories.bestPractices || 0,
+      mobile: data.speed.mobileDetails?.categories?.bestPractices || 0,
+    });
+    pageSpeedCategoriesData.push({
+      category: 'SEO',
+      desktop: data.speed.desktopDetails.categories.seo || 0,
+      mobile: data.speed.mobileDetails?.categories?.seo || 0,
+    });
+  }
+
   return (
-    <div className="space-y-8">
-      {/* Hero Section */}
-      <Card className={cn('border-2', getScoreBgColor(overallScore))}>
+    <div className="space-y-12 mb-10">
+      {/* Hero Summary Dashboard */}
+      <BentoCard className={cn('border-2 relative overflow-hidden bg-white', getScoreBgColor(overallScore))}>
+        <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
+          <Gauge className="w-24 h-24" />
+        </div>
         <CardHeader>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-foreground mb-2">
+              <h1 className="text-3xl font-black italic tracking-tighter text-slate-900 mb-2">
                 Technical Audit Results
               </h1>
-              <p className="text-sm text-muted-foreground">
-                Overall assessment of your website's technical health
+              <p className="text-sm font-medium text-slate-700">
+                Comprehensive technical SEO and performance analysis
               </p>
             </div>
             <div className="text-center">
-              <div className={cn('text-5xl font-bold mb-1', getScoreColor(overallScore))}>
+              <div className={cn('text-5xl font-black italic tracking-tighter mb-1', getScoreColor(overallScore))}>
                 {overallScore}
               </div>
-              <div className="text-sm font-medium text-muted-foreground">
+              <div className="text-sm font-bold text-slate-600">
                 / 100
               </div>
             </div>
-      </div>
+          </div>
 
           {/* Category Progress Bars */}
-          <div className="space-y-3 mt-6">
-            {categoryScores.performance !== null && (
-              <ProgressBar 
-                value={categoryScores.performance} 
-                label="Performance" 
-                size="md"
-              />
-            )}
-            {categoryScores.security !== null && (
-              <ProgressBar 
-                value={categoryScores.security} 
-                label="Security" 
-                size="md"
-              />
-            )}
-            {categoryScores.seo !== null && (
-              <ProgressBar 
-                value={categoryScores.seo} 
-                label="SEO & Files" 
-                size="md"
-              />
-            )}
-            {categoryScores.content !== null && (
-              <ProgressBar 
-                value={categoryScores.content} 
-                label="Content Quality" 
-                size="md"
-              />
-              )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-6">
+            <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">AI</span>
+                <span className="text-xs font-black text-slate-900">{categoryScores.ai}%</span>
+              </div>
+              <div className="h-3 w-full bg-slate-200 rounded-full overflow-hidden relative border border-slate-300">
+                <div
+                  className={cn(
+                    'transition-all duration-500 ease-out rounded-full shadow-sm h-full',
+                    categoryScores.ai >= 90 ? 'bg-emerald-600' : categoryScores.ai >= 50 ? 'bg-orange-500' : 'bg-red-600'
+                  )}
+                  style={{ width: `${categoryScores.ai}%`, minWidth: categoryScores.ai > 0 ? '4px' : '0' }}
+                />
+              </div>
             </div>
+            <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Compliance</span>
+                <span className="text-xs font-black text-slate-900">{categoryScores.compliance}%</span>
+              </div>
+              <div className="h-3 w-full bg-slate-200 rounded-full overflow-hidden relative border border-slate-300">
+                <div
+                  className={cn(
+                    'transition-all duration-500 ease-out rounded-full shadow-sm h-full',
+                    categoryScores.compliance >= 90 ? 'bg-emerald-600' : categoryScores.compliance >= 50 ? 'bg-orange-500' : 'bg-red-600'
+                  )}
+                  style={{ width: `${categoryScores.compliance}%`, minWidth: categoryScores.compliance > 0 ? '4px' : '0' }}
+                />
+              </div>
+            </div>
+            <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Schema</span>
+                <span className="text-xs font-black text-slate-900">{Math.round(categoryScores.schema)}%</span>
+              </div>
+              <div className="h-3 w-full bg-slate-200 rounded-full overflow-hidden relative border border-slate-300">
+                <div
+                  className={cn(
+                    'transition-all duration-500 ease-out rounded-full shadow-sm h-full',
+                    categoryScores.schema >= 90 ? 'bg-emerald-600' : categoryScores.schema >= 50 ? 'bg-orange-500' : 'bg-red-600'
+                  )}
+                  style={{ width: `${categoryScores.schema}%`, minWidth: categoryScores.schema > 0 ? '4px' : '0' }}
+                />
+              </div>
+            </div>
+            <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">SEO</span>
+                <span className="text-xs font-black text-slate-900">{categoryScores.seo}%</span>
+              </div>
+              <div className="h-3 w-full bg-slate-200 rounded-full overflow-hidden relative border border-slate-300">
+                <div
+                  className={cn(
+                    'transition-all duration-500 ease-out rounded-full shadow-sm h-full',
+                    categoryScores.seo >= 90 ? 'bg-emerald-600' : categoryScores.seo >= 50 ? 'bg-orange-500' : 'bg-red-600'
+                  )}
+                  style={{ width: `${categoryScores.seo}%`, minWidth: categoryScores.seo > 0 ? '4px' : '0' }}
+                />
+              </div>
+            </div>
+            <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Performance</span>
+                <span className="text-xs font-black text-slate-900">{categoryScores.performance}%</span>
+              </div>
+              <div className="h-3 w-full bg-slate-200 rounded-full overflow-hidden relative border border-slate-300">
+                <div
+                  className={cn(
+                    'transition-all duration-500 ease-out rounded-full shadow-sm h-full',
+                    categoryScores.performance >= 90 ? 'bg-emerald-600' : categoryScores.performance >= 50 ? 'bg-orange-500' : 'bg-red-600'
+                  )}
+                  style={{ width: `${categoryScores.performance}%`, minWidth: categoryScores.performance > 0 ? '4px' : '0' }}
+                />
+              </div>
+            </div>
+          </div>
         </CardHeader>
-      </Card>
+      </BentoCard>
 
-      {/* Performance Category */}
-      <CategorySection 
-        title="Performance" 
-        icon={<Zap className="h-6 w-6 text-primary" />}
-      >
-        <MinimalMetricCard
-          title="Desktop Speed"
-          icon={<Gauge className="h-5 w-5" />}
-          status={data.speed.desktop !== null && data.speed.desktop >= 90 ? 'good' : data.speed.desktop !== null && data.speed.desktop >= 50 ? 'warning' : 'bad'}
-                score={data.speed.desktop}
-        >
-          <div className="space-y-4 text-sm text-muted-foreground">
-            {data.speed.desktopDetails && (
-              <>
-                <div>
-                  <h5 className="text-sm font-semibold mb-3 text-foreground">Core Web Vitals</h5>
-                  <div className="space-y-2">
-                    {data.speed.desktopDetails.lcp !== null && (
-                      <div className="flex justify-between">
-                        <span>LCP:</span>
-                        <span className="font-medium">{Math.round(data.speed.desktopDetails.lcp)}ms</span>
-                      </div>
-                    )}
-                    {data.speed.desktopDetails.fcp !== null && (
-                      <div className="flex justify-between">
-                        <span>FCP:</span>
-                        <span className="font-medium">{Math.round(data.speed.desktopDetails.fcp)}ms</span>
-                      </div>
-                    )}
-                    {data.speed.desktopDetails.cls !== null && (
-                      <div className="flex justify-between">
-                        <span>CLS:</span>
-                        <span className="font-medium">{data.speed.desktopDetails.cls.toFixed(3)}</span>
-                      </div>
-                    )}
-                    {data.speed.desktopDetails.tbt !== null && (
-                      <div className="flex justify-between">
-                        <span>TBT:</span>
-                        <span className="font-medium">{Math.round(data.speed.desktopDetails.tbt)}ms</span>
-                      </div>
-                    )}
-                    {data.speed.desktopDetails.si !== null && (
-                      <div className="flex justify-between">
-                        <span>Speed Index:</span>
-                        <span className="font-medium">{Math.round(data.speed.desktopDetails.si)}ms</span>
-                      </div>
-                    )}
-                    {data.speed.desktopDetails.ttfb !== null && (
-                      <div className="flex justify-between">
-                        <span>TTFB:</span>
-                        <span className="font-medium">{Math.round(data.speed.desktopDetails.ttfb)}ms</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                {data.speed.desktopDetails.opportunities.length > 0 && (
-                  <div>
-                    <h5 className="text-sm font-semibold mb-2 text-foreground">
-                      Top Opportunities ({data.speed.desktopDetails.opportunities.length})
-                    </h5>
-                    <div className="space-y-2">
-                      {data.speed.desktopDetails.opportunities.slice(0, 5).map((opp, idx) => (
-                        <div key={idx} className="flex items-start gap-2">
-                          <span className="text-orange-600 dark:text-orange-400 mt-0.5">•</span>
-                          <span className="flex-1">{opp.title}</span>
-                          {opp.savings && (
-                            <span className="text-emerald-600 dark:text-emerald-400 text-xs">
-                              {opp.savingsUnit === 'bytes' 
-                                ? `-${(opp.savings / 1024).toFixed(1)}KB`
-                                : `-${opp.savings}${opp.savingsUnit}`}
-                            </span>
-                          )}
-                        </div>
+      {/* Performance Metrics Visualization */}
+      {(data.speed.desktop !== null || data.speed.mobile !== null || coreWebVitalsData.length > 0 || pageSpeedCategoriesData.length > 0) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Speed Comparison: Desktop vs Mobile */}
+          {(data.speed.desktop !== null || data.speed.mobile !== null) && (
+            <BentoCard title="Speed Score Comparison" subtitle="Desktop vs Mobile Performance">
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={speedComparisonData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis 
+                      dataKey="name" 
+                      tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }}
+                      axisLine={{ stroke: '#cbd5e1' }}
+                    />
+                    <YAxis 
+                      domain={[0, 100]}
+                      tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }}
+                      axisLine={{ stroke: '#cbd5e1' }}
+                      label={{ value: 'Score', angle: -90, position: 'insideLeft', fill: '#64748b', fontSize: 12 }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        padding: '8px 12px',
+                      }}
+                      formatter={(value: number) => [`${value}%`, 'Score']}
+                    />
+                    <Bar dataKey="score" radius={[8, 8, 0, 0]}>
+                      {speedComparisonData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
                       ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </BentoCard>
+          )}
+
+          {/* PageSpeed Categories Radar Chart */}
+          {pageSpeedCategoriesData.length > 0 && (
+            <BentoCard title="PageSpeed Categories" subtitle="Performance, Accessibility, Best Practices, SEO">
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart data={pageSpeedCategoriesData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                    <PolarGrid stroke="#e2e8f0" />
+                    <PolarAngleAxis 
+                      dataKey="category" 
+                      tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }}
+                    />
+                    <PolarRadiusAxis 
+                      angle={90} 
+                      domain={[0, 100]}
+                      tick={{ fill: '#64748b', fontSize: 10 }}
+                    />
+                    <Radar
+                      name="Desktop"
+                      dataKey="desktop"
+                      stroke={TOKENS.colors.c1}
+                      fill={TOKENS.colors.c1}
+                      fillOpacity={0.6}
+                    />
+                    <Radar
+                      name="Mobile"
+                      dataKey="mobile"
+                      stroke={TOKENS.colors.c2}
+                      fill={TOKENS.colors.c2}
+                      fillOpacity={0.6}
+                    />
+                    <Legend 
+                      wrapperStyle={{ fontSize: '12px', fontWeight: 600, color: '#64748b' }}
+                      iconType="circle"
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        padding: '8px 12px',
+                      }}
+                      formatter={(value: number) => [`${value}%`, '']}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+            </BentoCard>
+          )}
+
+          {/* Core Web Vitals */}
+          {coreWebVitalsData.length > 0 && (
+            <BentoCard className="lg:col-span-2" title="Core Web Vitals" subtitle="LCP, FCP, CLS, TBT Metrics">
+              <div className="h-[350px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart 
+                    data={coreWebVitalsData} 
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                    layout="vertical"
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis 
+                      type="number"
+                      tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }}
+                      axisLine={{ stroke: '#cbd5e1' }}
+                      tickFormatter={(value) => formatMetric(value)}
+                    />
+                    <YAxis 
+                      type="category"
+                      dataKey="metric"
+                      tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }}
+                      axisLine={{ stroke: '#cbd5e1' }}
+                      width={80}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        padding: '8px 12px',
+                      }}
+                      formatter={(value: number | null, name: string, props: any) => {
+                        if (value === null) return ['N/A', name];
+                        const unit = props.payload.unit || '';
+                        return [`${formatMetric(value)}${unit}`, name];
+                      }}
+                    />
+                    <Legend 
+                      wrapperStyle={{ fontSize: '12px', fontWeight: 600, color: '#64748b' }}
+                    />
+                    <Bar dataKey="desktop" fill={TOKENS.colors.c1} radius={[0, 4, 4, 0]} name="Desktop" />
+                    <Bar dataKey="mobile" fill={TOKENS.colors.c2} radius={[0, 4, 4, 0]} name="Mobile" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {coreWebVitalsData.map((vital, idx) => (
+                  <div key={idx} className="p-3 bg-slate-50/50 rounded-lg border border-slate-200">
+                    <div className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">{vital.metric}</div>
+                    <div className="text-sm font-medium text-slate-500 mb-2">
+                      Good: &lt;{vital.good}{vital.unit} | Needs Improvement: &lt;{vital.needsImprovement}{vital.unit}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {vital.desktop !== null && (
+                        <div className="flex-1">
+                          <div className="text-xs text-slate-400 mb-0.5">Desktop</div>
+                          <div className={cn(
+                            'text-lg font-black',
+                            vital.desktop <= vital.good ? 'text-emerald-600' :
+                            vital.desktop <= vital.needsImprovement ? 'text-orange-600' :
+                            'text-red-600'
+                          )}>
+                            {formatMetric(vital.desktop)}{vital.unit}
+                          </div>
+                        </div>
+                      )}
+                      {vital.mobile !== null && (
+                        <div className="flex-1">
+                          <div className="text-xs text-slate-400 mb-0.5">Mobile</div>
+                          <div className={cn(
+                            'text-lg font-black',
+                            vital.mobile <= vital.good ? 'text-emerald-600' :
+                            vital.mobile <= vital.needsImprovement ? 'text-orange-600' :
+                            'text-red-600'
+                          )}>
+                            {formatMetric(vital.mobile)}{vital.unit}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
-                )}
-              </>
-            )}
-          </div>
-        </MinimalMetricCard>
+                ))}
+              </div>
+            </BentoCard>
+          )}
+        </div>
+      )}
+      {/* Category 1: AI Optimization */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-black flex items-center gap-2 text-slate-900">
+          <Zap className="h-6 w-6 text-primary" />
+          {t('techAudit.groups.ai')}
+        </h2>
 
-        <MinimalMetricCard
-          title="Mobile Speed"
-          icon={<Gauge className="h-5 w-5" />}
-          status={data.speed.mobile !== null && data.speed.mobile >= 90 ? 'good' : data.speed.mobile !== null && data.speed.mobile >= 50 ? 'warning' : 'bad'}
-                score={data.speed.mobile}
-        >
-          <div className="space-y-4 text-sm text-muted-foreground">
-            {data.speed.mobileDetails && (
-              <>
-                <div>
-                  <h5 className="text-sm font-semibold mb-3 text-foreground">Core Web Vitals</h5>
-                  <div className="space-y-2">
-                    {data.speed.mobileDetails.lcp !== null && (
-                      <div className="flex justify-between">
-                        <span>LCP:</span>
-                        <span className="font-medium">{Math.round(data.speed.mobileDetails.lcp)}ms</span>
-                      </div>
-                    )}
-                    {data.speed.mobileDetails.fcp !== null && (
-                      <div className="flex justify-between">
-                        <span>FCP:</span>
-                        <span className="font-medium">{Math.round(data.speed.mobileDetails.fcp)}ms</span>
-                      </div>
-                    )}
-                    {data.speed.mobileDetails.cls !== null && (
-                      <div className="flex justify-between">
-                        <span>CLS:</span>
-                        <span className="font-medium">{data.speed.mobileDetails.cls.toFixed(3)}</span>
-                      </div>
-                    )}
-                    {data.speed.mobileDetails.tbt !== null && (
-                      <div className="flex justify-between">
-                        <span>TBT:</span>
-                        <span className="font-medium">{Math.round(data.speed.mobileDetails.tbt)}ms</span>
-                      </div>
-                    )}
-                    {data.speed.mobileDetails.si !== null && (
-                      <div className="flex justify-between">
-                        <span>Speed Index:</span>
-                        <span className="font-medium">{Math.round(data.speed.mobileDetails.si)}ms</span>
-                      </div>
-                    )}
-                    {data.speed.mobileDetails.ttfb !== null && (
-                      <div className="flex justify-between">
-                        <span>TTFB:</span>
-                        <span className="font-medium">{Math.round(data.speed.mobileDetails.ttfb)}ms</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                {data.speed.mobileDetails.opportunities.length > 0 && (
-                  <div>
-                    <h5 className="text-sm font-semibold mb-2 text-foreground">
-                      Top Opportunities ({data.speed.mobileDetails.opportunities.length})
-                    </h5>
-                    <div className="space-y-2">
-                      {data.speed.mobileDetails.opportunities.slice(0, 5).map((opp, idx) => (
-                        <div key={idx} className="flex items-start gap-2">
-                          <span className="text-orange-600 dark:text-orange-400 mt-0.5">•</span>
-                          <span className="flex-1">{opp.title}</span>
-                          {opp.savings && (
-                            <span className="text-emerald-600 dark:text-emerald-400 text-xs">
-                              {opp.savingsUnit === 'bytes' 
-                                ? `-${(opp.savings / 1024).toFixed(1)}KB`
-                                : `-${opp.savings}${opp.savingsUnit}`}
-                            </span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </MinimalMetricCard>
-
-        <MinimalMetricCard
-          title="LLMS.txt Readiness"
-          icon={<FileText className="h-5 w-5" />}
-          status={data.files.llmsTxt.present && data.files.llmsTxt.score >= 70 ? 'good' : data.files.llmsTxt.present ? 'warning' : 'bad'}
-          score={data.files.llmsTxt.present ? data.files.llmsTxt.score : null}
-        >
-          <div className="space-y-3 text-sm text-muted-foreground">
-            <div className="space-y-2">
-            <p>
-                <strong className="text-foreground">File Present:</strong> {data.files.llmsTxt.present ? 'Yes' : 'No'}
-            </p>
-              {data.files.llmsTxt.present && data.files.llmsTxt.score !== null && (
-            <p>
-                  <strong className="text-foreground">AI Quality Score:</strong> {data.files.llmsTxt.score}/100
-            </p>
-              )}
-          </div>
-            {data.files.llmsTxt.recommendations && data.files.llmsTxt.recommendations.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-                  {data.files.llmsTxt.present ? 'Recommendations' : 'Suggestions'}
-                </h4>
-                <ul className="space-y-2">
-                  {data.files.llmsTxt.recommendations.map((recommendation, index) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <span className="text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0">•</span>
-                      <span>{recommendation}</span>
-                    </li>
-                  ))}
+        <div className="grid grid-cols-1 gap-3">
+          <AuditItem
+            id="3_1"
+            title={t('techAudit.items.3_1.title')}
+            description={t('techAudit.items.3_1.description')}
+            status={fromBool(data.files.llmsTxt.present)}
+            value={data.files.llmsTxt.present ? 'Знайдено' : 'Відсутній'}
+          />
+          <AuditItem
+            id="3_2"
+            title={t('techAudit.items.3_2.title')}
+            description={t('techAudit.items.3_2.description')}
+            status={data.files.llmsTxt.score >= 80 ? 'good' : data.files.llmsTxt.score >= 50 ? 'warning' : 'bad'}
+            score={data.files.llmsTxt.score}
+          >
+            {data.files.llmsTxt.recommendations.length > 0 && (
+              <div className="bg-slate-50/50 p-3 rounded-lg border border-slate-200 space-y-2">
+                <p className="font-black text-xs uppercase tracking-wider text-slate-400">Рекомендації:</p>
+                <ul className="list-disc list-inside space-y-1 text-xs text-slate-700">
+                  {data.files.llmsTxt.recommendations.map((rec, i) => <li key={i}>{rec}</li>)}
                 </ul>
               </div>
             )}
-          </div>
-        </MinimalMetricCard>
-      </CategorySection>
+          </AuditItem>
+          <AuditItem
+            id="3_3"
+            title={t('techAudit.items.3_3.title')}
+            description={t('techAudit.items.3_3.description')}
+            status={fromBool(data.files.robots)}
+            value={data.files.robots ? 'Знайдено' : 'Відсутній'}
+          />
+          <AuditItem
+            id="3_4"
+            title={t('techAudit.items.3_4.title')}
+            description={t('techAudit.items.3_4.description')}
+            status={data.files.robots && data.files.sitemap ? 'good' : 'warning'}
+            value={data.files.sitemap ? 'Sitemap знайдено' : 'Sitemap не вказано'}
+          />
+        </div>
+      </section>
 
-      {/* Security Category */}
-      <CategorySection 
-        title="Security" 
-        icon={<Shield className="h-6 w-6 text-primary" />}
-      >
-        <MinimalMetricCard
-          title="HTTPS"
-          icon={<Shield className="h-5 w-5" />}
-          status={data.security.https ? 'good' : 'bad'}
-          value={data.security.https ? 'Enabled' : 'Disabled'}
-        >
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <p>
-              <strong className="text-foreground">Status:</strong> {data.security.https ? 'HTTPS is enabled' : 'HTTPS is not enabled'}
-            </p>
-            <p>
-              HTTPS encrypts data between the browser and server, improving security and SEO rankings.
-            </p>
-          </div>
-        </MinimalMetricCard>
+      {/* Category 2: Core Compliance */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-black flex items-center gap-2 text-slate-900">
+          <Shield className="h-6 w-6 text-primary" />
+          {t('techAudit.groups.compliance')}
+        </h2>
+        <div className="grid grid-cols-1 gap-3">
+          <AuditItem
+            id="3_5"
+            title={t('techAudit.items.3_5.title')}
+            description={t('techAudit.items.3_5.description')}
+            status={fromBool(data.security.https)}
+            value={data.security.https ? 'Включено' : 'Відключено'}
+          />
+          <AuditItem
+            id="3_6"
+            title={t('techAudit.items.3_6.title')}
+            description={t('techAudit.items.3_6.description')}
+            status={fromBool(data.security.mobileFriendly)}
+            value={data.security.mobileFriendly ? 'Так' : 'Ні'}
+          />
+        </div>
+      </section>
 
-        <MinimalMetricCard
-          title="Mobile Friendly"
-          icon={<Settings className="h-5 w-5" />}
-          status={data.security.mobileFriendly ? 'good' : 'bad'}
-          value={data.security.mobileFriendly ? 'Yes' : 'No'}
-        >
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <p>
-              <strong className="text-foreground">Status:</strong> {data.security.mobileFriendly ? 'Mobile-friendly' : 'Not mobile-friendly'}
-            </p>
-            <p>
-              Mobile-friendly websites provide better user experience and rank higher in mobile search results.
-            </p>
-          </div>
-        </MinimalMetricCard>
-      </CategorySection>
+      {/* Category 3: Schema Markup */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-black flex items-center gap-2 text-slate-900">
+          <FileText className="h-6 w-6 text-primary" />
+          {t('techAudit.groups.schema')}
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <AuditItem
+            id="3_7" title={t('techAudit.items.3_7.title')} description={t('techAudit.items.3_7.description')}
+            status={fromBool(data.schema.hasMedicalOrg)} value={data.schema.hasMedicalOrg ? '✓' : '✗'}
+          />
+          <AuditItem
+            id="3_8" title={t('techAudit.items.3_8.title')} description={t('techAudit.items.3_8.description')}
+            status={fromBool(data.schema.hasLocalBusiness)} value={data.schema.hasLocalBusiness ? '✓' : '✗'}
+          />
+          <AuditItem
+            id="3_9" title={t('techAudit.items.3_9.title')} description={t('techAudit.items.3_9.description')}
+            status={fromBool(data.schema.hasPhysician)} value={data.schema.hasPhysician ? '✓' : '✗'}
+          />
+          <AuditItem
+            id="3_10" title={t('techAudit.items.3_10.title')} description={t('techAudit.items.3_10.description')}
+            status={fromBool(data.schema.hasMedicalSpecialty)} value={data.schema.hasMedicalSpecialty ? '✓' : '✗'}
+          />
+          <AuditItem
+            id="3_11" title={t('techAudit.items.3_11.title')} description={t('techAudit.items.3_11.description')}
+            status={fromBool(data.schema.hasMedicalProcedure)} value={data.schema.hasMedicalProcedure ? '✓' : '✗'}
+          />
+          <AuditItem
+            id="3_12" title={t('techAudit.items.3_12.title')} description={t('techAudit.items.3_12.description')}
+            status={fromBool(data.schema.hasFAQPage)} value={data.schema.hasFAQPage ? '✓' : '✗'}
+          />
+          <AuditItem
+            id="3_13" title={t('techAudit.items.3_13.title')} description={t('techAudit.items.3_13.description')}
+            status={fromBool(data.schema.hasReview)} value={data.schema.hasReview ? '✓' : '✗'}
+          />
+          <AuditItem
+            id="3_14" title={t('techAudit.items.3_14.title')} description={t('techAudit.items.3_14.description')}
+            status={fromBool(data.schema.hasBreadcrumbList)} value={data.schema.hasBreadcrumbList ? '✓' : '✗'}
+          />
+        </div>
+      </section>
 
-      {/* SEO & Files Category */}
-      <CategorySection 
-        title="SEO & Files" 
-        icon={<Search className="h-6 w-6 text-primary" />}
-      >
-        <MinimalMetricCard
-          title="robots.txt"
-          icon={<FileText className="h-5 w-5" />}
-          status={data.files.robots ? 'good' : 'bad'}
-          value={data.files.robots ? 'Present' : 'Missing'}
-        >
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <p>
-              <strong className="text-foreground">Status:</strong> {data.files.robots ? 'File found' : 'File not found'}
-            </p>
-            <p>
-              The robots.txt file tells search engines which pages they can and cannot access on your site.
-            </p>
-          </div>
-        </MinimalMetricCard>
-
-        <MinimalMetricCard
-          title="sitemap.xml"
-          icon={<FileText className="h-5 w-5" />}
-          status={data.files.sitemap ? 'good' : 'bad'}
-          value={data.files.sitemap ? 'Present' : 'Missing'}
-        >
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <p>
-              <strong className="text-foreground">Status:</strong> {data.files.sitemap ? 'File found' : 'File not found'}
-            </p>
-            <p>
-              A sitemap helps search engines discover and index all pages on your website.
-            </p>
-          </div>
-        </MinimalMetricCard>
-
-        <MinimalMetricCard
-          title="Title Tag"
-          icon={<Info className="h-5 w-5" />}
-          status={data.meta.title ? 'good' : 'bad'}
-          value={data.meta.title ? `${data.meta.title.length} chars` : 'Missing'}
-        >
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <p>
-              <strong className="text-foreground">Status:</strong> {data.meta.title ? 'Present' : 'Missing'}
-            </p>
-            {data.meta.title && (
-              <p className="bg-muted p-3 rounded border border-border text-sm">
-                {data.meta.title}
-              </p>
+      {/* Category 4: SEO Basics */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-black flex items-center gap-2 text-slate-900">
+          <Search className="h-6 w-6 text-primary" />
+          {t('techAudit.groups.seo')}
+        </h2>
+        <div className="grid grid-cols-1 gap-3">
+          <AuditItem
+            id="3_15"
+            title={t('techAudit.items.3_15.title')}
+            description={t('techAudit.items.3_15.description')}
+            status={fromBool(!!data.meta.lang)}
+            value={data.meta.lang || 'Не вказано'}
+          />
+          <AuditItem
+            id="3_16"
+            title={t('techAudit.items.3_16.title')}
+            description={t('techAudit.items.3_16.description')}
+            status={data.meta.hreflangs?.length > 0 ? 'good' : 'neutral'}
+            value={`${data.meta.hreflangs?.length || 0} версій`}
+          >
+            {data.meta.hreflangs?.length > 0 && (
+              <div className="bg-slate-50/50 p-2 rounded-lg border border-slate-200 text-[10px] grid grid-cols-1 gap-1">
+                {data.meta.hreflangs.map((h, i) => (
+                  <div key={i} className="flex justify-between border-b border-slate-200 pb-1 last:border-0 last:pb-0">
+                    <span className="font-bold text-slate-900">{h.lang}</span>
+                    <span className="truncate max-w-[200px] text-slate-500">{h.url}</span>
+                  </div>
+                ))}
+              </div>
             )}
-            <p>
-              Title tag is crucial for SEO and appears in search results.
+          </AuditItem>
+          <AuditItem
+            id="3_17"
+            title={t('techAudit.items.3_17.title')}
+            description={t('techAudit.items.3_17.description')}
+            status={data.externalLinks.broken === 0 ? 'good' : 'warning'}
+            value={`${data.externalLinks.total} посилань`}
+          >
+            <div className="flex gap-4 text-xs">
+              <div className="bg-red-50 border border-red-200 text-red-600 px-3 py-2 rounded-lg font-bold">Біті: {data.externalLinks.broken}</div>
+              <div className="bg-emerald-50 border border-emerald-200 text-emerald-600 px-3 py-2 rounded-lg font-bold">Довірені: {data.externalLinks.trusted}</div>
+            </div>
+          </AuditItem>
+          <AuditItem
+            id="3_18"
+            title={t('techAudit.items.3_18.title')}
+            description={t('techAudit.items.3_18.description')}
+            status={data.meta.titleLength && data.meta.titleLength >= 30 && data.meta.titleLength <= 65 ? 'good' : 'warning'}
+            value={`${data.meta.titleLength || 0} симв.`}
+          >
+            <div className="bg-slate-50/50 p-3 rounded-lg border border-slate-200 text-xs italic font-medium text-slate-700">"{data.meta.title}"</div>
+          </AuditItem>
+          <AuditItem
+            id="3_19"
+            title={t('techAudit.items.3_19.title')}
+            description={t('techAudit.items.3_19.description')}
+            status={data.meta.descriptionLength && data.meta.descriptionLength >= 120 && data.meta.descriptionLength <= 165 ? 'good' : 'warning'}
+            value={`${data.meta.descriptionLength || 0} симв.`}
+          >
+            <div className="bg-slate-50/50 p-3 rounded-lg border border-slate-200 text-xs italic text-slate-600">"{data.meta.description}"</div>
+          </AuditItem>
+          <AuditItem
+            id="3_20"
+            title={t('techAudit.items.3_20.title')}
+            description={t('techAudit.items.3_20.description')}
+            status={fromBool(!!data.meta.canonical)}
+            value={data.meta.canonical ? 'ОК' : 'Відсутній'}
+          >
+            {data.meta.canonical && <p className="text-[10px] break-all text-slate-500">{data.meta.canonical}</p>}
+          </AuditItem>
+          <AuditItem
+            id="3_21"
+            title={t('techAudit.items.3_21.title')}
+            description={t('techAudit.items.3_21.description')}
+            status={data.meta.robots?.includes('noindex') ? 'warning' : 'good'}
+            value={data.meta.robots?.includes('noindex') ? 'Noindex' : 'Index'}
+          />
+          <AuditItem
+            id="3_22"
+            title={t('techAudit.items.3_22.title')}
+            description={t('techAudit.items.3_22.description')}
+            status={data.externalLinks.trusted > 0 ? 'good' : 'warning'}
+            value={`${data.externalLinks.trusted} довірених`}
+          >
+            <p className="text-xs text-slate-500 mb-2">
+              Аналіз вихідних посилань на авторитетні домени (PubMed, WHO, та ін.).
             </p>
-          </div>
-        </MinimalMetricCard>
+            <div className="text-[10px] space-y-1 text-slate-600">
+              <p>Всього зовнішніх посилань: <strong className="font-bold text-slate-900">{data.externalLinks.total}</strong></p>
+              <p>Довірених посилань (E-E-A-T): <strong className="font-bold text-slate-900">{data.externalLinks.trusted}</strong></p>
+            </div>
+          </AuditItem>
+        </div>
+      </section>
 
-        <MinimalMetricCard
-          title="Meta Description"
-          icon={<Info className="h-5 w-5" />}
-          status={data.meta.description ? 'good' : 'bad'}
-          value={data.meta.description ? `${data.meta.description.length} chars` : 'Missing'}
-        >
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <p>
-              <strong className="text-foreground">Status:</strong> {data.meta.description ? 'Present' : 'Missing'}
-            </p>
-            {data.meta.description && (
-              <p className="bg-muted p-3 rounded border border-border text-sm">
-                {data.meta.description}
-              </p>
-            )}
-            <p>
-              Meta description appears in search results and influences click-through rates.
-            </p>
-          </div>
-        </MinimalMetricCard>
-
-        <MinimalMetricCard
-          title="H1 Heading"
-          icon={<Info className="h-5 w-5" />}
-          status={data.meta.h1 ? 'good' : 'bad'}
-          value={data.meta.h1 ? `${data.meta.h1.length} chars` : 'Missing'}
-        >
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <p>
-              <strong className="text-foreground">Status:</strong> {data.meta.h1 ? 'Present' : 'Missing'}
-            </p>
-            {data.meta.h1 && (
-              <p className="bg-muted p-3 rounded border border-border text-sm">
-                {data.meta.h1}
-              </p>
-            )}
-            <p>
-              H1 tag is the main heading and important for SEO structure.
-            </p>
-          </div>
-        </MinimalMetricCard>
-
-        <MinimalMetricCard
-          title="Schema Markup"
-          icon={<FileText className="h-5 w-5" />}
-          status={
-            data.schema.hasMedicalOrg || 
-            data.schema.hasPhysician || 
-            data.schema.hasLocalBusiness 
-              ? 'good' 
-              : 'warning'
-          }
-          value={
-            [
-              data.schema.hasMedicalOrg && 'Medical Org',
-              data.schema.hasPhysician && 'Physician',
-              data.schema.hasLocalBusiness && 'Local Business',
-              data.schema.hasMedicalProcedure && 'Procedure',
-              data.schema.hasBreadcrumbList && 'Breadcrumb',
-            ].filter(Boolean).join(', ') || 'None'
-          }
-        >
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <strong className="text-foreground">Medical Org:</strong> {data.schema.hasMedicalOrg ? '✓' : '✗'}
-          </div>
-              <div>
-                <strong className="text-foreground">Physician:</strong> {data.schema.hasPhysician ? '✓' : '✗'}
-          </div>
-              <div>
-                <strong className="text-foreground">Local Business:</strong> {data.schema.hasLocalBusiness ? '✓' : '✗'}
-          </div>
-              <div>
-                <strong className="text-foreground">Procedure:</strong> {data.schema.hasMedicalProcedure ? '✓' : '✗'}
+      {/* Category 5: Speed & Content */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-black flex items-center gap-2 text-slate-900">
+          <Gauge className="h-6 w-6 text-primary" />
+          {t('techAudit.groups.performance')}
+        </h2>
+        <div className="grid grid-cols-1 gap-3">
+          <AuditItem
+            id="3_23"
+            title={t('techAudit.items.3_23.title')}
+            description={t('techAudit.items.3_23.description')}
+            status={
+              data.duplicates.wwwRedirect === 'ok' &&
+                data.duplicates.trailingSlash === 'ok' &&
+                data.duplicates.httpRedirect === 'ok'
+                ? 'good' : 'warning'
+            }
+            value={data.duplicates.wwwRedirect === 'ok' ? 'Налаштовано' : 'Є зауваження'}
+          >
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between items-center bg-slate-50/50 border border-slate-200 p-3 rounded-lg">
+                <span className="font-medium text-slate-700">WWW Редирект</span>
+                <Badge variant={data.duplicates.wwwRedirect === 'ok' ? 'default' : 'destructive'}
+                  className={data.duplicates.wwwRedirect === 'ok' ? 'bg-emerald-100 text-emerald-800' : ''}>
+                  {data.duplicates.wwwRedirect === 'ok' ? 'OK' : 'Помилка'}
+                </Badge>
+              </div>
+              <div className="flex justify-between items-center bg-slate-50/50 border border-slate-200 p-3 rounded-lg">
+                <span className="font-medium text-slate-700">Trailing Slash</span>
+                <Badge variant={data.duplicates.trailingSlash === 'ok' ? 'default' : 'destructive'}
+                  className={data.duplicates.trailingSlash === 'ok' ? 'bg-emerald-100 text-emerald-800' : ''}>
+                  {data.duplicates.trailingSlash === 'ok' ? 'OK' : 'Помилка'}
+                </Badge>
+              </div>
+              <div className="flex justify-between items-center bg-slate-50/50 border border-slate-200 p-3 rounded-lg">
+                <span className="font-medium text-slate-700">HTTP Редирект</span>
+                <Badge variant={data.duplicates.httpRedirect === 'ok' ? 'default' : 'destructive'}
+                  className={data.duplicates.httpRedirect === 'ok' ? 'bg-emerald-100 text-emerald-800' : ''}>
+                  {data.duplicates.httpRedirect === 'ok' ? 'OK' : 'Помилка'}
+                </Badge>
               </div>
             </div>
-            <p>
-              Schema markup helps search engines understand your content and can display rich snippets.
-            </p>
-          </div>
-        </MinimalMetricCard>
-      </CategorySection>
-
-      {/* Content Quality Category */}
-      <CategorySection 
-        title="Content Quality" 
-        icon={<Image className="h-6 w-6 text-primary" />}
-      >
-        <MinimalMetricCard
-          title="Images Analysis"
-          icon={<Image className="h-5 w-5" />}
-          status={data.images.missingAlt === 0 ? 'good' : data.images.missingAlt <= data.images.total * 0.1 ? 'warning' : 'bad'}
-          value={`${data.images.total} total`}
-          score={data.images.total > 0 ? Math.round(((data.images.total - data.images.missingAlt) / data.images.total) * 100) : null}
-        >
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <div className="flex justify-between">
-              <span>Total Images:</span>
-              <span className="font-medium text-foreground">{data.images.total}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Missing Alt Tags:</span>
-              <span className={cn(
-                "font-medium",
-                data.images.missingAlt === 0 
-                  ? "text-emerald-600 dark:text-emerald-400" 
-                  : data.images.missingAlt <= data.images.total * 0.1
-                  ? "text-orange-600 dark:text-orange-400"
-                  : "text-red-600 dark:text-red-400"
-              )}>
-                {data.images.missingAlt}
-                {data.images.total > 0 && (
-                  <span className="text-muted-foreground ml-1">
-                    ({Math.round((data.images.missingAlt / data.images.total) * 100)}%)
-                  </span>
-                )}
-              </span>
-            </div>
-            {data.images.missingAlt > 0 && (
-              <p className="text-orange-600 dark:text-orange-400 mt-2 text-sm">
-                ⚠️ {data.images.missingAlt} image{data.images.missingAlt > 1 ? 's' : ''} missing alt text for accessibility
-              </p>
-            )}
-          </div>
-        </MinimalMetricCard>
-
-        <MinimalMetricCard
-          title="External Links"
-          icon={<FileText className="h-5 w-5" />}
-          status={data.externalLinks.broken === 0 && data.externalLinks.trusted > 0 ? 'good' : data.externalLinks.broken > 0 ? 'bad' : 'neutral'}
-          value={`${data.externalLinks.total} total`}
-          score={data.externalLinks.total > 0 ? Math.round(((data.externalLinks.total - data.externalLinks.broken) / data.externalLinks.total) * 100) : null}
-        >
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <div className="flex justify-between">
-              <span>Total External Links:</span>
-              <span className="font-medium text-foreground">{data.externalLinks.total}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Broken Links (404):</span>
-              <span className={cn(
-                "font-medium",
-                data.externalLinks.broken === 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
-              )}>
-                {data.externalLinks.broken}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span>Trusted Domains:</span>
-              <span className={cn(
-                "font-medium",
-                data.externalLinks.trusted > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"
-              )}>
-                {data.externalLinks.trusted > 0 ? data.externalLinks.trusted : 'None'}
-              </span>
-            </div>
-            {data.externalLinks.broken > 0 && (
-              <p className="text-orange-600 dark:text-orange-400 mt-2 text-sm">
-                ⚠️ {data.externalLinks.broken} broken link{data.externalLinks.broken > 1 ? 's' : ''} found
-              </p>
-            )}
-          </div>
-        </MinimalMetricCard>
-
-        <MinimalMetricCard
-          title="URL Duplicates"
-          icon={<Settings className="h-5 w-5" />}
-          status={
-            data.duplicates.wwwRedirect === 'ok' && 
-            data.duplicates.trailingSlash === 'ok' && 
-            data.duplicates.httpRedirect === 'ok'
-              ? 'good' 
-              : data.duplicates.wwwRedirect === 'duplicate' || 
-                data.duplicates.trailingSlash === 'duplicate' || 
-                data.duplicates.httpRedirect === 'duplicate'
-              ? 'warning'
-              : 'neutral'
-          }
-          value={
-            [
-              data.duplicates.wwwRedirect === 'ok' && 'WWW ✓',
-              data.duplicates.trailingSlash === 'ok' && 'Slash ✓',
-              data.duplicates.httpRedirect === 'ok' && 'HTTPS ✓',
-            ].filter(Boolean).join(', ') || 'Check needed'
-          }
-        >
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <div className="space-y-1">
-              <div>
-                <strong className="text-foreground">WWW Redirect:</strong>{' '}
-                {data.duplicates.wwwRedirect === 'ok' ? '✓ OK' : data.duplicates.wwwRedirect === 'duplicate' ? '⚠ Duplicate' : '? Unknown'}
-          </div>
-              <div>
-                <strong className="text-foreground">Trailing Slash:</strong>{' '}
-                {data.duplicates.trailingSlash === 'ok' ? '✓ OK' : data.duplicates.trailingSlash === 'duplicate' ? '⚠ Duplicate' : '? Unknown'}
-          </div>
-              <div>
-                <strong className="text-foreground">HTTP → HTTPS:</strong>{' '}
-                {data.duplicates.httpRedirect === 'ok' ? '✓ OK' : data.duplicates.httpRedirect === 'duplicate' ? '⚠ Duplicate' : '? Unknown'}
-          </div>
-          </div>
-            <p>
-              Consistent URL handling prevents duplicate content issues and improves SEO.
-            </p>
-          </div>
-        </MinimalMetricCard>
-      </CategorySection>
+          </AuditItem>
+          <AuditItem
+            id="3_24"
+            title={t('techAudit.items.3_24.title')}
+            description={t('techAudit.items.3_24.description')}
+            status={data.speed.desktop !== null && data.speed.desktop >= 90 ? 'good' : data.speed.desktop !== null && data.speed.desktop >= 50 ? 'warning' : 'bad'}
+            score={data.speed.desktop}
+          />
+          <AuditItem
+            id="3_25"
+            title={t('techAudit.items.3_25.title')}
+            description={t('techAudit.items.3_25.description')}
+            status={data.speed.mobile !== null && data.speed.mobile >= 90 ? 'good' : data.speed.mobile !== null && data.speed.mobile >= 50 ? 'warning' : 'bad'}
+            score={data.speed.mobile}
+          />
+        </div>
+      </section>
     </div>
   );
 }

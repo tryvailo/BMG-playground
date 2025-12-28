@@ -49,6 +49,7 @@ import {
   checkJournalPublications,
   checkAssociationMembershipDetailed,
 } from './community-analyzer';
+import { fetchAggregatorRating } from './aggregator-rating-client';
 
 /*
  * -------------------------------------------------------
@@ -667,11 +668,32 @@ export async function analyzeEEAT(
     });
   }
 
+  // Fetch other aggregator ratings
+  const aggregatorRatings = [];
+  for (const [pattern, label] of Object.entries(PLATFORM_PATTERNS)) {
+    if (label !== 'Google Maps') {
+      const link = $('a[href*="' + pattern + '"]').first().attr('href');
+      if (link) {
+        const fullLink = link.startsWith('http') ? link : new URL(link, url).toString();
+        const ratingResult = await fetchAggregatorRating(fullLink, label);
+        if (ratingResult.fetched) {
+          aggregatorRatings.push(ratingResult);
+          if (ratingResult.rating) {
+            ratings.push({
+              rating: ratingResult.rating,
+              review_count: ratingResult.review_count || 0,
+            });
+          }
+        }
+      }
+    }
+  }
+
   if (ratings.length > 0) {
-    const totalRating = ratings.reduce((sum, r) => sum + r.rating * r.review_count, 0);
-    const totalReviews = ratings.reduce((sum, r) => sum + r.review_count, 0);
+    const totalRatingWeight = ratings.reduce((sum, r) => sum + r.rating * (r.review_count || 1), 0);
+    const totalReviews = ratings.reduce((sum, r) => sum + (r.review_count || 1), 0);
     averageRating = {
-      average_rating: totalReviews > 0 ? totalRating / totalReviews : undefined,
+      average_rating: totalReviews > 0 ? totalRatingWeight / totalReviews : undefined,
       total_reviews: totalReviews,
       platforms_count: ratings.length,
     };
@@ -747,6 +769,13 @@ export async function analyzeEEAT(
     authorProfile = analyzeAuthorProfile($);
   }
 
+  // If author profile exists, update is_medical_author based on profile qualifications
+  if (authorProfile && articleAuthor.is_article && !articleAuthor.is_medical_author) {
+    if (authorProfile.has_qualifications) {
+      articleAuthor.is_medical_author = true;
+    }
+  }
+
   // Doctor expertise analysis
   let doctorCredentials = undefined;
   if (url.includes('/doctors/') || url.includes('/team/')) {
@@ -806,6 +835,7 @@ export async function analyzeEEAT(
       linked_platforms: linkedPlatforms,
       social_links: socialLinks,
       google_maps_rating: googleMapsRating,
+      aggregator_ratings: aggregatorRatings.length > 0 ? aggregatorRatings : undefined,
       average_rating: averageRating,
     },
     experience: {
@@ -899,6 +929,10 @@ export async function analyzeMultiplePages(
   // Use the first result as base and merge aggregated metrics
   const baseResult = results[0];
 
+  if (!baseResult) {
+    throw new Error('No results available for aggregation');
+  }
+
   // Merge all results to get comprehensive data
   const mergedResult: EEATAuditResult = {
     ...baseResult,
@@ -937,6 +971,7 @@ export async function analyzeMultiplePages(
 
   if (
     aggregatedMetrics.scientificMetrics &&
+    aggregatedMetrics.scientificMetrics.articles_with_sources_percent !== undefined &&
     aggregatedMetrics.scientificMetrics.articles_with_sources_percent < 70
   ) {
     mergedResult.recommendations.push(

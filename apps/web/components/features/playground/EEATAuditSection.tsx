@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useTransition } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   Shield,
   CheckCircle2,
@@ -17,7 +18,13 @@ import {
   Award,
   AlertCircle,
   Info,
+  Globe,
+  Share2,
 } from 'lucide-react';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  Cell
+} from 'recharts';
 import { toast } from 'sonner';
 
 import { Badge } from '@kit/ui/badge';
@@ -49,6 +56,46 @@ import { cn } from '@kit/ui/utils';
 
 import { runEEATAudit } from '~/lib/actions/eeat-audit';
 import type { EEATAuditResult } from '~/lib/server/services/eeat/types';
+
+// --- Premium 2026 Light Tokens ---
+const TOKENS = {
+    colors: {
+        you: '#f43f5e', // Ruby
+        c1: '#3b82f6', // Blue
+        c2: '#8b5cf6', // Violet
+        c3: '#10b981', // Emerald
+        c4: '#f59e0b', // Amber
+        c5: '#0ea5e9', // Sky
+        c6: '#6366f1', // Indigo
+        c7: '#d946ef', // Fuchsia
+        c8: '#f97316', // Orange
+        c9: '#14b8a6', // Teal
+        c10: '#64748b', // Slate
+        marketAvg: '#cbd5e1',
+    },
+    shadows: {
+        soft: 'shadow-[0_8px_30px_rgb(0,0,0,0.04)]',
+        deep: 'shadow-[0_20px_50px_rgba(0,0,0,0.06)]',
+    }
+};
+
+// --- Custom Modern Components ---
+const BentoCard = ({ children, className, title, subtitle }: any) => (
+    <Card className={cn(
+        "border border-slate-200 bg-white shadow-[0_8px_32px_0_rgba(15,23,42,0.04)] overflow-hidden transition-all duration-300 hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] group",
+        className
+    )}>
+        {(title || subtitle) && (
+            <CardHeader className="pb-2">
+                {title && <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 group-hover:text-primary transition-colors">{title}</h3>}
+                {subtitle && <p className="text-sm font-bold text-slate-900">{subtitle}</p>}
+            </CardHeader>
+        )}
+        <CardContent className={cn("p-6", (title || subtitle) && "pt-2")}>
+            {children}
+        </CardContent>
+    </Card>
+);
 
 interface EEATAuditSectionProps {
   /** Optional URL from parent context. If provided, will be used as default */
@@ -101,7 +148,7 @@ function PlatformBadge({ name, found, icon: Icon }: PlatformBadgeProps) {
         'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors',
         found
           ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:hover:bg-emerald-900/50'
-          : 'bg-muted text-muted-foreground hover:bg-muted/80',
+          : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
       )}
     >
       {Icon && <Icon className="h-3.5 w-3.5" />}
@@ -129,7 +176,7 @@ function CountBadge({ label, count, icon: Icon }: CountBadgeProps) {
         'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors',
         isGood
           ? 'bg-primary/10 text-primary hover:bg-primary/20 dark:bg-primary/20 dark:text-primary dark:hover:bg-primary/30'
-          : 'bg-muted text-muted-foreground hover:bg-muted/80',
+          : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
       )}
     >
       {Icon && <Icon className="h-3.5 w-3.5" />}
@@ -151,16 +198,16 @@ function ChecklistItem({ label, checked }: ChecklistItemProps) {
   return (
     <div className="flex items-center gap-3 py-2">
       {checked ? (
-        <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
+        <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-emerald-600" />
       ) : (
-        <XCircle className="h-5 w-5 flex-shrink-0 text-red-500 dark:text-red-400" />
+        <XCircle className="h-5 w-5 flex-shrink-0 text-red-500" />
       )}
       <span
         className={cn(
-          'text-sm',
+          'text-sm font-medium',
           checked
-            ? 'text-foreground'
-            : 'text-muted-foreground',
+            ? 'text-slate-900'
+            : 'text-slate-600',
         )}
       >
         {label}
@@ -182,36 +229,36 @@ interface ProgressBarProps {
 
 function ProgressBar({ value, max = 100, label, showValue = true, size = 'md' }: ProgressBarProps) {
   const percentage = Math.min(100, Math.max(0, (value / max) * 100));
-  
+
   const getColor = () => {
-    if (percentage < 50) return 'bg-red-500';
+    if (percentage < 50) return 'bg-red-600';
     if (percentage < 90) return 'bg-orange-500';
-    return 'bg-emerald-500';
+    return 'bg-emerald-600';
   };
 
   const heightClasses = {
-    sm: 'h-2',
-    md: 'h-2.5',
-    lg: 'h-3',
+    sm: 'h-2.5',
+    md: 'h-3',
+    lg: 'h-4',
   };
 
   return (
     <div className="w-full">
       {label && (
         <div className="flex justify-between items-center mb-1.5">
-          <span className="text-sm font-medium text-foreground">{label}</span>
+          <span className="text-sm font-bold text-slate-700">{label}</span>
           {showValue && (
-            <span className="text-sm font-semibold text-muted-foreground">
+            <span className="text-sm font-black text-slate-900">
               {Math.round(percentage)}%
             </span>
           )}
         </div>
       )}
-      <div className={cn('w-full bg-muted rounded-full overflow-hidden relative', heightClasses[size])}>
+      <div className={cn('w-full bg-slate-200 rounded-full overflow-hidden relative border border-slate-300', heightClasses[size])}>
         <div
-          className={cn('transition-all duration-500 ease-out rounded-full', getColor())}
-          style={{ 
-            width: `${percentage}%`, 
+          className={cn('transition-all duration-500 ease-out rounded-full shadow-sm', getColor())}
+          style={{
+            width: `${percentage}%`,
             height: '100%',
             minWidth: percentage > 0 ? '4px' : '0',
             minHeight: '100%'
@@ -235,66 +282,63 @@ interface MinimalMetricCardProps {
   defaultOpen?: boolean;
 }
 
-function MinimalMetricCard({ 
-  title, 
-  icon, 
-  status, 
-  value, 
+function MinimalMetricCard({
+  title,
+  icon,
+  status,
+  value,
   score,
-  children, 
-  defaultOpen = false 
+  children,
+  defaultOpen = false
 }: MinimalMetricCardProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   // Auto-calculate score from status if score is not provided
-  const calculatedScore = score !== undefined && score !== null 
-    ? score 
-    : status === 'good' 
-      ? 100 
-      : status === 'warning' 
-        ? 50 
-        : status === 'bad' 
-          ? 0 
+  const calculatedScore = score !== undefined && score !== null
+    ? score
+    : status === 'good'
+      ? 100
+      : status === 'warning'
+        ? 50
+        : status === 'bad'
+          ? 0
           : null;
 
   const getStatusIcon = () => {
     switch (status) {
       case 'good':
-        return <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />;
+        return <CheckCircle2 className="h-5 w-5 text-emerald-600" />;
       case 'bad':
-        return <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />;
+        return <XCircle className="h-5 w-5 text-red-600" />;
       case 'warning':
-        return <AlertCircle className="h-5 w-5 text-orange-600 dark:text-orange-400" />;
+        return <AlertCircle className="h-5 w-5 text-orange-600" />;
       default:
-        return <Info className="h-5 w-5 text-muted-foreground" />;
+        return <Info className="h-5 w-5 text-slate-400" />;
     }
   };
 
   const getStatusColor = () => {
     switch (status) {
       case 'good':
-        return 'border-l-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20';
+        return 'bg-emerald-50 border-emerald-300';
       case 'bad':
-        return 'border-l-red-500 bg-red-50/50 dark:bg-red-950/20';
+        return 'bg-red-50 border-red-300';
       case 'warning':
-        return 'border-l-orange-500 bg-orange-50/50 dark:bg-orange-950/20';
+        return 'bg-orange-50 border-orange-300';
       default:
-        return 'border-l-border bg-muted/30';
+        return 'bg-white border-slate-200';
     }
   };
 
   return (
-    <Card className={cn(
-      'hover:shadow-lg transition-all border-l-4',
-      getStatusColor()
-    )}>
+    <BentoCard className={cn('border-2', getStatusColor())}>
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+          <CardHeader className="cursor-pointer hover:bg-slate-50/50 transition-colors">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 {icon || getStatusIcon()}
-                <CardTitle className="text-base font-semibold text-foreground">
+                <CardTitle className="text-base font-bold text-slate-900">
                   {title}
                 </CardTitle>
               </div>
@@ -302,23 +346,23 @@ function MinimalMetricCard({
                 {calculatedScore !== null && calculatedScore !== undefined ? (
                   <div className="flex items-center gap-2">
                     <span className={cn(
-                      'text-lg font-bold',
-                      calculatedScore >= 90 ? 'text-emerald-600 dark:text-emerald-400' :
-                      calculatedScore >= 50 ? 'text-orange-600 dark:text-orange-400' :
-                      'text-red-600 dark:text-red-400'
+                      'text-lg font-black italic',
+                      calculatedScore >= 90 ? 'text-emerald-500' :
+                        calculatedScore >= 50 ? 'text-orange-500' :
+                          'text-rose-500'
                     )}>
                       {calculatedScore}
                     </span>
-                    <span className="text-sm text-muted-foreground">/100</span>
+                    <span className="text-sm text-slate-500">/100</span>
                   </div>
                 ) : null}
                 {value && (
-                  <span className="text-base font-semibold text-foreground">
+                  <span className="text-base font-bold text-slate-900">
                     {value}
                   </span>
                 )}
                 <ChevronDown className={cn(
-                  'h-5 w-5 text-muted-foreground transition-transform',
+                  'h-5 w-5 text-slate-400 transition-transform',
                   isOpen && 'rotate-180'
                 )} />
               </div>
@@ -328,7 +372,7 @@ function MinimalMetricCard({
                 <ProgressBar value={calculatedScore} size="sm" showValue={false} />
               </div>
             ) : (
-              <div className="mt-3 h-2 w-full bg-muted rounded-full" />
+              <div className="mt-3 h-2.5 w-full bg-slate-100 rounded-full border border-slate-200" />
             )}
           </CardHeader>
         </CollapsibleTrigger>
@@ -340,7 +384,7 @@ function MinimalMetricCard({
           </CollapsibleContent>
         )}
       </Collapsible>
-    </Card>
+    </BentoCard>
   );
 }
 
@@ -358,7 +402,7 @@ function CategorySection({ title, icon, children }: CategorySectionProps) {
     <div className="space-y-4">
       <div className="flex items-center gap-3 pb-2 border-b border-border">
         {icon}
-        <h2 className="text-xl font-bold text-foreground">{title}</h2>
+        <h2 className="text-xl font-black text-slate-900">{title}</h2>
       </div>
       <div className="grid grid-cols-1 gap-4">
         {children}
@@ -399,7 +443,7 @@ function calculateOverallScore(data: EEATAuditResult): number {
   }
 
   // Authoritativeness scores
-  if (data.authority.scientific_metrics) {
+  if (data.authority.scientific_metrics?.articles_with_sources_percent !== undefined) {
     scores.push(data.authority.scientific_metrics.articles_with_sources_percent);
   } else if (data.authority.scientific_sources_count > 0) {
     scores.push(Math.min(100, data.authority.scientific_sources_count * 20));
@@ -477,7 +521,7 @@ function calculateCategoryScores(data: EEATAuditResult) {
   }
 
   // Authoritativeness
-  if (data.authority.scientific_metrics) {
+  if (data.authority.scientific_metrics?.articles_with_sources_percent !== undefined) {
     authorityScores.push(data.authority.scientific_metrics.articles_with_sources_percent);
   } else if (data.authority.scientific_sources_count > 0) {
     authorityScores.push(Math.min(100, data.authority.scientific_sources_count * 20));
@@ -541,6 +585,7 @@ export function EEATAuditSection({
   result: externalResult,
   className,
 }: EEATAuditSectionProps) {
+  const t = useTranslations('Playground.eeatAudit');
   const [url, setUrl] = useState(defaultUrl || '');
   const [internalResult, setInternalResult] = useState<EEATAuditResult | null>(
     null,
@@ -606,10 +651,53 @@ export function EEATAuditSection({
   };
 
   const getScoreBgColor = (score: number) => {
-    if (score >= 90) return 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800';
-    if (score >= 50) return 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800';
-    return 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800';
+    if (score >= 90) return 'bg-emerald-50 border-emerald-300';
+    if (score >= 50) return 'bg-orange-50 border-orange-300';
+    return 'bg-red-50 border-red-300';
   };
+
+  // Prepare Trust Signals data for Bar Chart
+  const trustSignalsData = [
+    {
+      name: 'Privacy Policy',
+      value: result.trust.has_privacy_policy ? 100 : 0,
+      status: result.trust.has_privacy_policy ? 'good' : 'bad',
+    },
+    {
+      name: 'Licenses',
+      value: result.trust.has_licenses ? 100 : 0,
+      status: result.trust.has_licenses ? 'good' : 'bad',
+    },
+    {
+      name: 'Contact Page',
+      value: result.trust.contact_page_found ? 100 : 0,
+      status: result.trust.contact_page_found ? 'good' : 'bad',
+    },
+    {
+      name: 'NAP Present',
+      value: result.trust.nap_present ? 100 : 0,
+      status: result.trust.nap_present ? 'good' : 'bad',
+    },
+    {
+      name: 'Legal Entity',
+      value: result.trust.legal_entity?.has_legal_entity_name ? 100 : 0,
+      status: result.trust.legal_entity?.has_legal_entity_name ? 'good' : 'bad',
+    },
+    {
+      name: 'About Us',
+      value: result.trust.about_us?.has_about_us_link ? 100 : 0,
+      status: result.trust.about_us?.has_about_us_link ? 'good' : 'bad',
+    },
+    {
+      name: 'Contact Block',
+      value: result.trust.contact_block ? 
+        ((result.trust.contact_block.has_email ? 1 : 0) + 
+         (result.trust.contact_block.has_booking_form ? 1 : 0) + 
+         (result.trust.contact_block.has_map ? 1 : 0)) / 3 * 100 : 0,
+      status: result.trust.contact_block ? 
+        ((result.trust.contact_block.has_email && result.trust.contact_block.has_booking_form && result.trust.contact_block.has_map) ? 'good' : 'warning') : 'bad',
+    },
+  ];
 
   // Calculate status for each category
   const getReputationStatus = () => {
@@ -674,493 +762,574 @@ export function EEATAuditSection({
 
       {/* Loading State */}
       {isPending && (
-        <Card className="border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20">
+        <BentoCard className="border-2 border-emerald-300 bg-emerald-50">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+            <CardTitle className="flex items-center gap-2 text-emerald-700">
               <Loader2 className="h-5 w-5 animate-spin" />
               E-E-A-T Assessment in Progress
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-slate-600">
               Scanning for authorship, trust, authority, reputation, and
               experience signals...
             </CardDescription>
           </CardHeader>
-        </Card>
+        </BentoCard>
       )}
 
       {/* Results */}
       {result && !isPending && (
         <>
           {/* Hero Section */}
-          <Card className={cn('border-2', getScoreBgColor(overallScore))}>
+          <BentoCard className={cn('border-2 relative overflow-hidden bg-white', getScoreBgColor(overallScore))}>
+            <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
+              <Shield className="w-24 h-24" />
+            </div>
             <CardHeader>
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h1 className="text-2xl font-bold text-foreground mb-2">
-                    E-E-A-T Assessment Results
+                  <h1 className="text-3xl font-black italic tracking-tighter text-slate-900 mb-2">
+                    {t('title')}
                   </h1>
-                  <p className="text-sm text-muted-foreground">
-                    Overall assessment of your website's E-E-A-T signals
+                  <p className="text-sm font-medium text-slate-700">
+                    {t('description')}
                   </p>
                 </div>
                 <div className="text-center">
-                  <div className={cn('text-5xl font-bold mb-1', getScoreColor(overallScore))}>
+                  <div className={cn('text-5xl font-black italic tracking-tighter mb-1', getScoreColor(overallScore))}>
                     {overallScore}
                   </div>
-                  <div className="text-sm font-medium text-muted-foreground">
+                  <div className="text-sm font-bold text-slate-600">
                     / 100
                   </div>
                 </div>
               </div>
-              
+
               {/* Category Progress Bars */}
-              <div className="space-y-3 mt-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
                 {categoryScores.experience !== null && (
-                  <ProgressBar 
-                    value={categoryScores.experience} 
-                    label="Experience" 
-                    size="md"
-                  />
+                  <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('groups.experience')}</span>
+                      <span className="text-xs font-black text-slate-900">{categoryScores.experience}%</span>
+                    </div>
+                    <ProgressBar value={categoryScores.experience} size="md" showValue={false} />
+                  </div>
                 )}
                 {categoryScores.expertise !== null && (
-                  <ProgressBar 
-                    value={categoryScores.expertise} 
-                    label="Expertise" 
-                    size="md"
-                  />
+                  <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('groups.expertise')}</span>
+                      <span className="text-xs font-black text-slate-900">{categoryScores.expertise}%</span>
+                    </div>
+                    <ProgressBar value={categoryScores.expertise} size="md" showValue={false} />
+                  </div>
                 )}
                 {categoryScores.authority !== null && (
-                  <ProgressBar 
-                    value={categoryScores.authority} 
-                    label="Authoritativeness" 
-                    size="md"
-                  />
+                  <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('groups.authority')}</span>
+                      <span className="text-xs font-black text-slate-900">{categoryScores.authority}%</span>
+                    </div>
+                    <ProgressBar value={categoryScores.authority} size="md" showValue={false} />
+                  </div>
                 )}
                 {categoryScores.trust !== null && (
-                  <ProgressBar 
-                    value={categoryScores.trust} 
-                    label="Trustworthiness" 
-                    size="md"
-                  />
+                  <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('groups.trust')}</span>
+                      <span className="text-xs font-black text-slate-900">{categoryScores.trust}%</span>
+                    </div>
+                    <ProgressBar value={categoryScores.trust} size="md" showValue={false} />
+                  </div>
                 )}
               </div>
             </CardHeader>
-          </Card>
+          </BentoCard>
 
-          {/* 5.1. Authors */}
+          {/* Trust Signals Breakdown Bar Chart */}
+          <BentoCard title="Trust Signals Breakdown" subtitle="Key trust indicators and their status">
+            <div className="h-[350px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart 
+                  data={trustSignalsData} 
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  layout="vertical"
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis 
+                    type="number"
+                    domain={[0, 100]}
+                    tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }}
+                    axisLine={{ stroke: '#cbd5e1' }}
+                  />
+                  <YAxis 
+                    type="category"
+                    dataKey="name"
+                    tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }}
+                    axisLine={{ stroke: '#cbd5e1' }}
+                    width={120}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      padding: '8px 12px',
+                    }}
+                    formatter={(value: number) => [`${value}%`, 'Status']}
+                  />
+                  <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                    {trustSignalsData.map((entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={
+                          entry.status === 'good' ? TOKENS.colors.c3 :
+                          entry.status === 'warning' ? TOKENS.colors.c4 :
+                          TOKENS.colors.you
+                        } 
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {trustSignalsData.map((signal, idx) => (
+                <div key={idx} className="p-3 bg-slate-50/50 rounded-lg border border-slate-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-slate-700">{signal.name}</span>
+                    {signal.status === 'good' ? (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                    ) : signal.status === 'warning' ? (
+                      <AlertCircle className="h-4 w-4 text-orange-600" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-red-600" />
+                    )}
+                  </div>
+                  <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden border border-slate-300">
+                    <div
+                      className={cn(
+                        'h-full transition-all duration-500 ease-out rounded-full',
+                        signal.status === 'good' ? 'bg-emerald-600' :
+                        signal.status === 'warning' ? 'bg-orange-500' :
+                        'bg-red-600'
+                      )}
+                      style={{ width: `${signal.value}%`, minWidth: signal.value > 0 ? '4px' : '0' }}
+                    />
+                  </div>
+                  <div className="text-xs text-slate-500 mt-1">{signal.value}%</div>
+                </div>
+              ))}
+            </div>
+          </BentoCard>
+
+          {/* 5.1. Content Authors */}
           <MinimalMetricCard
-              title="Authors"
-              icon={<Users className="h-5 w-5" />}
-              status={
-                result.authorship.metrics
-                  ? result.authorship.metrics.blog_pages_with_author_percent >= 80 &&
-                    result.authorship.metrics.authors_with_credentials_percent >= 80
-                    ? 'good'
-                    : result.authorship.metrics.blog_pages_with_author_percent >= 50 ||
-                      result.authorship.metrics.authors_with_credentials_percent >= 50
+            title={t('items.5_1.title')}
+            icon={<Users className="h-5 w-5" />}
+            status={
+              result.authorship.metrics
+                ? result.authorship.metrics.blog_pages_with_author_percent >= 80 &&
+                  result.authorship.metrics.authors_with_credentials_percent >= 80
+                  ? 'good'
+                  : result.authorship.metrics.blog_pages_with_author_percent >= 50 ||
+                    result.authorship.metrics.authors_with_credentials_percent >= 50
                     ? 'warning'
                     : 'bad'
-                  : result.authorship.has_author_blocks && result.authorship.author_credentials_found
+                : result.authorship.has_author_blocks && result.authorship.author_credentials_found
                   ? 'good'
                   : result.authorship.has_author_blocks || result.authorship.author_credentials_found
-                  ? 'warning'
-                  : 'bad'
-              }
-              score={
-                result.authorship.metrics
-                  ? Math.round((result.authorship.metrics.blog_pages_with_author_percent + result.authorship.metrics.authors_with_credentials_percent) / 2)
-                  : result.authorship.has_author_blocks && result.authorship.author_credentials_found
-                  ? 100
-                  : result.authorship.has_author_blocks || result.authorship.author_credentials_found
-                  ? 50
-                  : 0
-              }
-              value={
-                result.authorship.metrics
-                  ? `${result.authorship.metrics.blog_pages_with_author_percent.toFixed(0)}% articles`
-                  : result.authorship.has_author_blocks
-                  ? 'Author blocks found'
-                  : 'No authors'
-              }
-            >
-              <div className="space-y-4">
-                {/* Calculation Metrics */}
-                {result.authorship.metrics ? (
-                  <>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                        <div>
-                          <p className="text-sm font-medium text-foreground">
-                            Blog pages with medical author
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {result.authorship.metrics.articles_with_author} of{' '}
-                            {result.authorship.metrics.total_articles} articles
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-foreground">
-                            {result.authorship.metrics.blog_pages_with_author_percent.toFixed(1)}%
-                          </div>
-                          <Badge
-                            variant={
-                              result.authorship.metrics.blog_pages_with_author_percent >= 80
-                                ? 'default'
-                                : result.authorship.metrics.blog_pages_with_author_percent >= 50
-                                ? 'secondary'
-                                : 'destructive'
-                            }
-                            className={
-                              result.authorship.metrics.blog_pages_with_author_percent >= 80
-                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
-                                : result.authorship.metrics.blog_pages_with_author_percent >= 50
-                                ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'
-                                : ''
-                            }
-                          >
-                            {result.authorship.metrics.blog_pages_with_author_percent >= 80
-                              ? 'Good'
-                              : result.authorship.metrics.blog_pages_with_author_percent >= 50
-                              ? 'Needs improvement'
-                              : 'Poor'}
-                          </Badge>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                        <div>
-                          <p className="text-sm font-medium text-foreground">
-                            Authors with verified credentials
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Diploma, certificates, association memberships
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-foreground">
-                            {result.authorship.metrics.authors_with_credentials_percent.toFixed(1)}%
-                          </div>
-                          <Badge
-                            variant={
-                              result.authorship.metrics.authors_with_credentials_percent >= 80
-                                ? 'default'
-                                : result.authorship.metrics.authors_with_credentials_percent >= 50
-                                ? 'secondary'
-                                : 'destructive'
-                            }
-                            className={
-                              result.authorship.metrics.authors_with_credentials_percent >= 80
-                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
-                                : result.authorship.metrics.authors_with_credentials_percent >= 50
-                                ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'
-                                : ''
-                            }
-                          >
-                            {result.authorship.metrics.authors_with_credentials_percent >= 80
-                              ? 'Good'
-                              : result.authorship.metrics.authors_with_credentials_percent >= 50
-                              ? 'Needs improvement'
-                              : 'Poor'}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Good/Bad Examples */}
-                    <div className="pt-4 border-t border-border">
-                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                        Best Practices
-                      </h4>
-                      <div className="space-y-3">
-                        <div className="p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200 dark:border-emerald-900/30">
-                          <div className="flex items-start gap-2">
-                            <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
-                            <div className="text-xs text-foreground">
-                              <strong className="text-emerald-800 dark:text-emerald-400">Good Example:</strong> All
-                              treatment articles contain a block: "Author: Cardiologist, PhD, Member of
-                              [Association]" with a link to their profile page.
-                            </div>
-                          </div>
-                        </div>
-                        <div className="p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-900/30">
-                          <div className="flex items-start gap-2">
-                            <XCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
-                            <div className="text-xs text-foreground">
-                              <strong className="text-red-800 dark:text-red-400">Bad Example:</strong> Clinic
-                              blog without author names, listed only as "Site Editorial Team," with no data
-                              on education or experience.
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    {/* Single Page Analysis */}
-                    <div className="space-y-3">
-                      <ChecklistItem
-                        label="Author blocks present"
-                        checked={result.authorship.has_author_blocks}
-                      />
-                      <ChecklistItem
-                        label="Author credentials found (diploma, certificates, associations)"
-                        checked={result.authorship.author_credentials_found}
-                      />
-                      {result.authorship.article_author && (
-                        <>
-                          <ChecklistItem
-                            label="Article identified"
-                            checked={result.authorship.article_author.is_article}
-                          />
-                          <ChecklistItem
-                            label="Author block on article"
-                            checked={result.authorship.article_author.has_author_block}
-                          />
-                          {result.authorship.article_author.author_name && (
-                            <div className="pl-8 text-xs text-muted-foreground">
-                              Author: {result.authorship.article_author.author_name}
-                            </div>
-                          )}
-                          <ChecklistItem
-                            label="Link to author profile"
-                            checked={result.authorship.article_author.has_author_profile_link}
-                          />
-                        </>
-                      )}
-                      {result.authorship.author_profile && (
-                        <>
-                          <ChecklistItem
-                            label="Qualifications mentioned (Dr., MD, PhD, к.м.н.)"
-                            checked={result.authorship.author_profile.has_qualifications}
-                          />
-                          <ChecklistItem
-                            label="Position/title mentioned"
-                            checked={result.authorship.author_profile.has_position}
-                          />
-                          <ChecklistItem
-                            label="Years of experience mentioned"
-                            checked={result.authorship.author_profile.has_experience_years}
-                          />
-                          <ChecklistItem
-                            label="Links to diplomas/certificates"
-                            checked={result.authorship.author_profile.has_credentials_links}
-                          />
-                        </>
-                      )}
-                    </div>
-
-                    {/* Good/Bad Examples */}
-                    <div className="pt-4 border-t border-border">
-                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                        Best Practices
-                      </h4>
-                      <div className="space-y-3">
-                        <div className="p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200 dark:border-emerald-900/30">
-                          <div className="flex items-start gap-2">
-                            <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
-                            <div className="text-xs text-foreground">
-                              <strong className="text-emerald-800 dark:text-emerald-400">Good Example:</strong> All
-                              treatment articles contain a block: "Author: Cardiologist, PhD, Member of
-                              [Association]" with a link to their profile page.
-                            </div>
-                          </div>
-                        </div>
-                        <div className="p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-900/30">
-                          <div className="flex items-start gap-2">
-                            <XCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
-                            <div className="text-xs text-foreground">
-                              <strong className="text-red-800 dark:text-red-400">Bad Example:</strong> Clinic
-                              blog without author names, listed only as "Site Editorial Team," with no data
-                              on education or experience.
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            </MinimalMetricCard>
-
-          {/* 5.2. Doctor Expertise */}
-          <MinimalMetricCard
-              title="Doctor Expertise"
-              icon={<Award className="h-5 w-5" />}
-              status={
-                result.authorship.author_profile
-                  ? result.authorship.author_profile.has_qualifications &&
-                    result.authorship.author_profile.has_credentials_links
-                    ? 'good'
-                    : result.authorship.author_profile.has_qualifications ||
-                      result.authorship.author_profile.has_credentials_links
                     ? 'warning'
                     : 'bad'
-                  : result.authorship.author_credentials_found
-                  ? 'warning'
-                  : 'bad'
-              }
-              score={
-                result.authorship.author_profile
-                  ? Math.round(([
-                      result.authorship.author_profile.has_qualifications,
-                      result.authorship.author_profile.has_position,
-                      result.authorship.author_profile.has_experience_years,
-                      result.authorship.author_profile.has_credentials_links,
-                    ].filter(Boolean).length / 4) * 100)
-                  : result.authorship.author_credentials_found
-                  ? 50
-                  : 0
-              }
-              value={
-                result.authorship.author_profile
-                  ? [
-                      result.authorship.author_profile.has_qualifications,
-                      result.authorship.author_profile.has_position,
-                      result.authorship.author_profile.has_experience_years,
-                      result.authorship.author_profile.has_credentials_links,
-                    ].filter(Boolean).length + '/4 verified'
-                  : result.authorship.author_credentials_found
-                  ? 'Credentials found'
-                  : 'No credentials'
-              }
-            >
-              <div className="space-y-4">
-                {/* Multi-page Metrics */}
-                {result.analysis_scope === 'multi_page' && result.multi_page_metrics?.doctor_expertise_metrics ? (
-                  <>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                        <div>
-                          <p className="text-sm font-medium text-foreground">
-                            Doctor pages with verified credentials
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {result.multi_page_metrics.doctor_expertise_metrics.doctor_pages_with_credentials || 0} of{' '}
-                            {result.multi_page_metrics.doctor_expertise_metrics.total_doctor_pages || 0} doctor pages
-                          </p>
+            }
+            score={
+              result.authorship.metrics
+                ? Math.round((result.authorship.metrics.blog_pages_with_author_percent + result.authorship.metrics.authors_with_credentials_percent) / 2)
+                : result.authorship.has_author_blocks && result.authorship.author_credentials_found
+                  ? 100
+                  : result.authorship.has_author_blocks || result.authorship.author_credentials_found
+                    ? 50
+                    : 0
+            }
+            value={
+              result.authorship.metrics
+                ? `${result.authorship.metrics.blog_pages_with_author_percent.toFixed(0)}% articles`
+                : result.authorship.has_author_blocks
+                  ? 'Author blocks found'
+                  : 'No authors'
+            }
+          >
+            <div className="space-y-4">
+              {/* Calculation Metrics */}
+              {result.authorship.metrics ? (
+                <>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-slate-50/50 rounded-lg border border-slate-200">
+                      <div>
+                        <p className="text-sm font-bold text-slate-900">
+                          Blog pages with medical author
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {result.authorship.metrics.articles_with_author} of{' '}
+                          {result.authorship.metrics.total_articles} articles
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-black italic text-slate-900">
+                          {result.authorship.metrics.blog_pages_with_author_percent.toFixed(1)}%
                         </div>
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-foreground">
-                            {result.multi_page_metrics.doctor_expertise_metrics.doctor_pages_with_credentials_percent?.toFixed(1) || 0}%
-                          </div>
-                          <Badge
-                            variant={
-                              (result.multi_page_metrics.doctor_expertise_metrics.doctor_pages_with_credentials_percent || 0) >= 80
-                                ? 'default'
-                                : (result.multi_page_metrics.doctor_expertise_metrics.doctor_pages_with_credentials_percent || 0) >= 50
+                        <Badge
+                          variant={
+                            result.authorship.metrics.blog_pages_with_author_percent >= 80
+                              ? 'default'
+                              : result.authorship.metrics.blog_pages_with_author_percent >= 50
                                 ? 'secondary'
                                 : 'destructive'
-                            }
-                            className={
-                              (result.multi_page_metrics.doctor_expertise_metrics.doctor_pages_with_credentials_percent || 0) >= 80
-                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
-                                : (result.multi_page_metrics.doctor_expertise_metrics.doctor_pages_with_credentials_percent || 0) >= 50
-                                ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'
+                          }
+                          className={
+                            result.authorship.metrics.blog_pages_with_author_percent >= 80
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : result.authorship.metrics.blog_pages_with_author_percent >= 50
+                                ? 'bg-orange-100 text-orange-800'
                                 : ''
-                            }
-                          >
-                            {(result.multi_page_metrics.doctor_expertise_metrics.doctor_pages_with_credentials_percent || 0) >= 80
-                              ? 'Good'
-                              : (result.multi_page_metrics.doctor_expertise_metrics.doctor_pages_with_credentials_percent || 0) >= 50
+                          }
+                        >
+                          {result.authorship.metrics.blog_pages_with_author_percent >= 80
+                            ? 'Good'
+                            : result.authorship.metrics.blog_pages_with_author_percent >= 50
                               ? 'Needs improvement'
                               : 'Poor'}
-                          </Badge>
-                        </div>
+                        </Badge>
                       </div>
                     </div>
 
-                    <div className="pt-4 border-t border-border">
-                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                        Calculation
-                      </h4>
-                      <p className="text-xs text-muted-foreground">
-                        % of doctor pages with verified medical credentials = (doctor pages with credentials) / (total doctor pages) × 100
-                      </p>
+                    <div className="flex items-center justify-between p-3 bg-slate-50/50 rounded-lg border border-slate-200">
+                      <div>
+                        <p className="text-sm font-bold text-slate-900">
+                          Authors with verified credentials
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Diploma, certificates, association memberships
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-black italic text-slate-900">
+                          {result.authorship.metrics.authors_with_credentials_percent.toFixed(1)}%
+                        </div>
+                        <Badge
+                          variant={
+                            result.authorship.metrics.authors_with_credentials_percent >= 80
+                              ? 'default'
+                              : result.authorship.metrics.authors_with_credentials_percent >= 50
+                                ? 'secondary'
+                                : 'destructive'
+                          }
+                          className={
+                            result.authorship.metrics.authors_with_credentials_percent >= 80
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : result.authorship.metrics.authors_with_credentials_percent >= 50
+                                ? 'bg-orange-100 text-orange-800'
+                                : ''
+                          }
+                        >
+                          {result.authorship.metrics.authors_with_credentials_percent >= 80
+                            ? 'Good'
+                            : result.authorship.metrics.authors_with_credentials_percent >= 50
+                              ? 'Needs improvement'
+                              : 'Poor'}
+                        </Badge>
+                      </div>
                     </div>
-                  </>
-                ) : (
-                  <>
-                    {/* Single Page Analysis */}
+                  </div>
+
+                  {/* Good/Bad Examples */}
+                  <div className="pt-4 border-t border-border">
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3">
+                      Best Practices
+                    </h4>
                     <div className="space-y-3">
-                      <p className="text-sm text-muted-foreground mb-3">
-                        The experience and expertise of doctors must be confirmed by their years of work, completion of courses, education, etc.
-                      </p>
-                      
-                      {result.authorship.author_profile ? (
-                        <>
-                          <ChecklistItem
-                            label="Qualifications mentioned (Dr., MD, PhD, к.м.н.)"
-                            checked={result.authorship.author_profile.has_qualifications}
-                          />
-                          <ChecklistItem
-                            label="Position/title mentioned"
-                            checked={result.authorship.author_profile.has_position}
-                          />
-                          <ChecklistItem
-                            label="Years of experience mentioned"
-                            checked={result.authorship.author_profile.has_experience_years}
-                          />
-                          <ChecklistItem
-                            label="Links to diplomas/certificates"
-                            checked={result.authorship.author_profile.has_credentials_links}
-                          />
-                        </>
-                      ) : (
-                        <>
-                          <ChecklistItem
-                            label="Author credentials found"
-                            checked={result.authorship.author_credentials_found}
-                          />
-                          <p className="text-sm text-muted-foreground italic pl-8">
-                            This page does not appear to be a doctor profile page. For multi-page analysis, enable "Multi-page Analysis" and select "Doctors Only" filter.
-                          </p>
-                        </>
-                      )}
+                      <div className="p-3 bg-emerald-50/50 rounded-lg border border-emerald-100">
+                        <div className="flex items-start gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                          <div className="text-xs text-slate-700">
+                            <strong className="text-emerald-600">Good Example:</strong> All
+                            treatment articles contain a block: "Author: Cardiologist, PhD, Member of
+                            [Association]" with a link to their profile page.
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-3 bg-rose-50/50 rounded-lg border border-rose-100">
+                        <div className="flex items-start gap-2">
+                          <XCircle className="h-4 w-4 text-rose-500 mt-0.5 flex-shrink-0" />
+                          <div className="text-xs text-slate-700">
+                            <strong className="text-rose-600">Bad Example:</strong> Clinic
+                            blog without author names, listed only as "Site Editorial Team," with no data
+                            on education or experience.
+                          </div>
+                        </div>
+                      </div>
                     </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Single Page Analysis */}
+                  <div className="space-y-3">
+                    <ChecklistItem
+                      label="Author blocks present"
+                      checked={result.authorship.has_author_blocks}
+                    />
+                    <ChecklistItem
+                      label="Author credentials found (diploma, certificates, associations)"
+                      checked={result.authorship.author_credentials_found}
+                    />
+                    {result.authorship.article_author && (
+                      <>
+                        <ChecklistItem
+                          label="Article identified"
+                          checked={result.authorship.article_author.is_article}
+                        />
+                        <ChecklistItem
+                          label="Author block on article"
+                          checked={result.authorship.article_author.has_author_block}
+                        />
+                        {result.authorship.article_author.author_name && (
+                          <div className="pl-8 text-xs text-muted-foreground">
+                            Author: {result.authorship.article_author.author_name}
+                          </div>
+                        )}
+                        <ChecklistItem
+                          label="Link to author profile"
+                          checked={result.authorship.article_author.has_author_profile_link}
+                        />
+                      </>
+                    )}
+                    {result.authorship.author_profile && (
+                      <>
+                        <ChecklistItem
+                          label="Qualifications mentioned (Dr., MD, PhD, к.м.н.)"
+                          checked={result.authorship.author_profile.has_qualifications}
+                        />
+                        <ChecklistItem
+                          label="Position/title mentioned"
+                          checked={result.authorship.author_profile.has_position}
+                        />
+                        <ChecklistItem
+                          label="Years of experience mentioned"
+                          checked={result.authorship.author_profile.has_experience_years}
+                        />
+                        <ChecklistItem
+                          label="Links to diplomas/certificates"
+                          checked={result.authorship.author_profile.has_credentials_links}
+                        />
+                      </>
+                    )}
+                  </div>
 
-                    <div className="pt-4 border-t border-border">
-                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                        Calculation
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        % of doctor pages with verified medical credentials (diplomas, certificates, association memberships).
-                      </p>
-                      <p className="text-sm text-muted-foreground italic mt-2">
-                        For accurate calculation, use multi-page analysis with "Doctors Only" filter.
-                      </p>
+                  {/* Good/Bad Examples */}
+                  <div className="pt-4 border-t border-border">
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3">
+                      Best Practices
+                    </h4>
+                    <div className="space-y-3">
+                      <div className="p-3 bg-emerald-50/50 rounded-lg border border-emerald-100">
+                        <div className="flex items-start gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                          <div className="text-xs text-slate-700">
+                            <strong className="text-emerald-600">Good Example:</strong> All
+                            treatment articles contain a block: "Author: Cardiologist, PhD, Member of
+                            [Association]" with a link to their profile page.
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-3 bg-rose-50/50 rounded-lg border border-rose-100">
+                        <div className="flex items-start gap-2">
+                          <XCircle className="h-4 w-4 text-rose-500 mt-0.5 flex-shrink-0" />
+                          <div className="text-xs text-slate-700">
+                            <strong className="text-rose-600">Bad Example:</strong> Clinic
+                            blog without author names, listed only as "Site Editorial Team," with no data
+                            on education or experience.
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </>
-                )}
-              </div>
-            </MinimalMetricCard>
+                  </div>
+                </>
+              )}
+            </div>
+          </MinimalMetricCard>
 
-          {/* 5.3. Clinic Experience */}
+          {/* 5.2. Doctor Profiles */}
           <MinimalMetricCard
-            title="Clinic Experience"
+            title={t('items.5_2.title')}
+            icon={<Award className="h-5 w-5" />}
+            status={
+              result.authorship.author_profile
+                ? result.authorship.author_profile.has_qualifications &&
+                  result.authorship.author_profile.has_credentials_links
+                  ? 'good'
+                  : result.authorship.author_profile.has_qualifications ||
+                    result.authorship.author_profile.has_credentials_links
+                    ? 'warning'
+                    : 'bad'
+                : 'bad'
+            }
+            score={
+              result.authorship.author_profile
+                ? (([
+                  result.authorship.author_profile.has_qualifications,
+                  result.authorship.author_profile.has_position,
+                  result.authorship.author_profile.has_experience_years,
+                  result.authorship.author_profile.has_credentials_links,
+                ].filter(Boolean).length /
+                  4) *
+                  100)
+                : 0
+            }
+            value={
+              result.authorship.author_profile
+                ? result.authorship.author_profile.has_qualifications
+                  ? 'Profile with credentials'
+                  : 'Basic profile'
+                : 'Profile missing'
+            }
+          >
+            <div className="space-y-4">
+              {/* Multi-page Metrics */}
+              {result.analysis_scope === 'multi_page' && result.multi_page_metrics?.doctor_expertise_metrics ? (
+                <>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-slate-50/50 rounded-lg border border-slate-200">
+                      <div>
+                        <p className="text-sm font-bold text-slate-900">
+                          Doctor pages with verified credentials
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {result.multi_page_metrics.doctor_expertise_metrics.doctor_pages_with_credentials || 0} of{' '}
+                          {result.multi_page_metrics.doctor_expertise_metrics.total_doctor_pages || 0} doctor pages
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-black italic text-slate-900">
+                          {result.multi_page_metrics.doctor_expertise_metrics.doctor_pages_with_credentials_percent?.toFixed(1) || 0}%
+                        </div>
+                        <Badge
+                          variant={
+                            (result.multi_page_metrics.doctor_expertise_metrics.doctor_pages_with_credentials_percent || 0) >= 80
+                              ? 'default'
+                              : (result.multi_page_metrics.doctor_expertise_metrics.doctor_pages_with_credentials_percent || 0) >= 50
+                                ? 'secondary'
+                                : 'destructive'
+                          }
+                          className={
+                            (result.multi_page_metrics.doctor_expertise_metrics.doctor_pages_with_credentials_percent || 0) >= 80
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : (result.multi_page_metrics.doctor_expertise_metrics.doctor_pages_with_credentials_percent || 0) >= 50
+                                ? 'bg-orange-100 text-orange-800'
+                                : ''
+                          }
+                        >
+                          {(result.multi_page_metrics.doctor_expertise_metrics.doctor_pages_with_credentials_percent || 0) >= 80
+                            ? 'Good'
+                            : (result.multi_page_metrics.doctor_expertise_metrics.doctor_pages_with_credentials_percent || 0) >= 50
+                              ? 'Needs improvement'
+                              : 'Poor'}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-border">
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3">
+                      Calculation
+                    </h4>
+                    <p className="text-xs text-muted-foreground">
+                      % of doctor pages with verified medical credentials = (doctor pages with credentials) / (total doctor pages) × 100
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Single Page Analysis */}
+                  <div className="space-y-3">
+                    <p className="text-sm text-slate-500 mb-3">
+                      The experience and expertise of doctors must be confirmed by their years of work, completion of courses, education, etc.
+                    </p>
+
+                    {result.authorship.author_profile ? (
+                      <>
+                        <ChecklistItem
+                          label="Qualifications mentioned (Dr., MD, PhD, к.м.н.)"
+                          checked={result.authorship.author_profile.has_qualifications}
+                        />
+                        <ChecklistItem
+                          label="Position/title mentioned"
+                          checked={result.authorship.author_profile.has_position}
+                        />
+                        <ChecklistItem
+                          label="Years of experience mentioned"
+                          checked={result.authorship.author_profile.has_experience_years}
+                        />
+                        <ChecklistItem
+                          label="Links to diplomas/certificates"
+                          checked={result.authorship.author_profile.has_credentials_links}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <ChecklistItem
+                          label="Author credentials found"
+                          checked={result.authorship.author_credentials_found}
+                        />
+                        <p className="text-sm text-muted-foreground italic pl-8">
+                          This page does not appear to be a doctor profile page. For multi-page analysis, enable "Multi-page Analysis" and select "Doctors Only" filter.
+                        </p>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="pt-4 border-t border-border">
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3">
+                      Calculation
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      % of doctor pages with verified medical credentials (diplomas, certificates, association memberships).
+                    </p>
+                    <p className="text-sm text-muted-foreground italic mt-2">
+                      For accurate calculation, use multi-page analysis with "Doctors Only" filter.
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+          </MinimalMetricCard>
+
+          {/* 5.5. Case Studies & Results */}
+          <MinimalMetricCard
+            title={t('items.5_5.title')}
             icon={<Briefcase className="h-5 w-5" />}
             status={
               result.experience.has_case_studies && result.experience.experience_figures_found
                 ? 'good'
                 : result.experience.has_case_studies || result.experience.experience_figures_found
-                ? 'warning'
-                : 'bad'
+                  ? 'warning'
+                  : 'bad'
             }
             score={
               result.experience.has_case_studies && result.experience.experience_figures_found
                 ? 100
                 : result.experience.has_case_studies || result.experience.experience_figures_found
-                ? 50
-                : 0
+                  ? 50
+                  : 0
             }
             value={
               result.experience.has_case_studies && result.experience.experience_figures_found
                 ? 'Cases + Figures'
                 : result.experience.has_case_studies
-                ? 'Cases found'
-                : result.experience.experience_figures_found
-                ? 'Figures found'
-                : 'No data'
+                  ? 'Cases found'
+                  : result.experience.experience_figures_found
+                    ? 'Figures found'
+                    : 'No data'
             }
           >
             <div className="space-y-4">
@@ -1168,7 +1337,7 @@ export function EEATAuditSection({
                 <p className="text-sm text-muted-foreground mb-3">
                   Demonstration of real cases, years of operation, and patient volume in specific areas.
                 </p>
-                
+
                 <ChecklistItem
                   label="Case studies / Patient stories present"
                   checked={result.experience.has_case_studies}
@@ -1181,7 +1350,7 @@ export function EEATAuditSection({
                 {/* Case Study Structure Details */}
                 {result.experience.case_study_structure && (
                   <div className="pl-8 pt-2 space-y-2">
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-sm text-slate-500">
                       <strong>Case Study Structure:</strong>
                     </div>
                     <div className="space-y-1">
@@ -1218,7 +1387,8 @@ export function EEATAuditSection({
                     <ChecklistItem
                       label="No personal identifying information (PII)"
                       checked={
-                        result.experience.pii_compliance.names_absent &&
+                        result.experience.pii_compliance.is_compliant &&
+                        result.experience.pii_compliance.names_anonymized &&
                         result.experience.pii_compliance.addresses_absent &&
                         result.experience.pii_compliance.phones_absent
                       }
@@ -1237,7 +1407,7 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-emerald-800 dark:text-emerald-400">Good Example:</strong> "Laser Vision
+                        <strong className="text-emerald-600">Good Example:</strong> "Laser Vision
                         Correction" page featuring data: "15 years of experience, 5000+ surgeries."
                       </div>
                     </div>
@@ -1246,7 +1416,7 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <XCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-red-800 dark:text-red-400">Bad Example:</strong> Generic text like "We
+                        <strong className="text-rose-600">Bad Example:</strong> Generic text like "We
                         are a professional clinic," without specifics or figures regarding experience.
                       </div>
                     </div>
@@ -1266,41 +1436,41 @@ export function EEATAuditSection({
             </div>
           </MinimalMetricCard>
 
-          {/* 5.4. Reputation */}
+          {/* 5.9. External Ratings */}
           <MinimalMetricCard
-            title="Reputation"
+            title={t('items.5_9.title')}
             icon={<MapPin className="h-5 w-5" />}
             status={
               result.reputation.google_maps_rating?.fetched &&
-              result.reputation.google_maps_rating.rating &&
-              result.reputation.google_maps_rating.rating >= 4.7 &&
-              (result.reputation.google_maps_rating.review_count || 0) >= 200
+                result.reputation.google_maps_rating.rating &&
+                result.reputation.google_maps_rating.rating >= 4.7 &&
+                (result.reputation.google_maps_rating.review_count || 0) >= 200
                 ? 'good'
                 : result.reputation.google_maps_rating?.fetched &&
                   result.reputation.google_maps_rating.rating &&
                   result.reputation.google_maps_rating.rating >= 4.0
-                ? 'warning'
-                : result.reputation.google_maps_rating?.fetched
-                ? 'bad'
-                : result.reputation.linked_platforms.length > 0 || result.reputation.social_links.length > 0
-                ? 'warning'
-                : 'bad'
+                  ? 'warning'
+                  : result.reputation.google_maps_rating?.fetched
+                    ? 'bad'
+                    : result.reputation.linked_platforms.length > 0 || result.reputation.social_links.length > 0
+                      ? 'warning'
+                      : 'bad'
             }
             score={
               result.reputation.google_maps_rating?.fetched && result.reputation.google_maps_rating.rating
                 ? Math.round((result.reputation.google_maps_rating.rating / 5) * 100)
                 : result.reputation.average_rating?.average_rating
-                ? Math.round((result.reputation.average_rating.average_rating / 5) * 100)
-                : result.reputation.linked_platforms.length > 0 || result.reputation.social_links.length > 0
-                ? 50
-                : 0
+                  ? Math.round((result.reputation.average_rating.average_rating / 5) * 100)
+                  : result.reputation.linked_platforms.length > 0 || result.reputation.social_links.length > 0
+                    ? 50
+                    : 0
             }
             value={
               result.reputation.google_maps_rating?.fetched && result.reputation.google_maps_rating.rating
                 ? `${result.reputation.google_maps_rating.rating.toFixed(1)}★ (${result.reputation.google_maps_rating.review_count?.toLocaleString() || 0} reviews)`
                 : result.reputation.average_rating?.average_rating
-                ? `${result.reputation.average_rating.average_rating.toFixed(1)}★ avg`
-                : `${result.reputation.linked_platforms.length + result.reputation.social_links.length} links`
+                  ? `${result.reputation.average_rating.average_rating.toFixed(1)}★ avg`
+                  : `${result.reputation.linked_platforms.length + result.reputation.social_links.length} links`
             }
           >
             <div className="space-y-4">
@@ -1317,7 +1487,7 @@ export function EEATAuditSection({
                       </span>
                       <span className="text-lg text-yellow-500">★</span>
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-sm text-slate-500">
                       {result.reputation.google_maps_rating.review_count?.toLocaleString() || 0}{' '}
                       reviews
                     </div>
@@ -1338,7 +1508,7 @@ export function EEATAuditSection({
                       </span>
                       <span className="text-lg text-yellow-500">★</span>
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-sm text-slate-500">
                       {result.reputation.average_rating.total_reviews?.toLocaleString() || 0} total
                       reviews across {result.reputation.average_rating.platforms_count} platform(s)
                     </div>
@@ -1392,7 +1562,7 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-emerald-800 dark:text-emerald-400">Good Example:</strong> 4.7+ stars on
+                        <strong className="text-emerald-600">Good Example:</strong> 4.7+ stars on
                         Google Maps with 200+ reviews and positive sentiment.
                       </div>
                     </div>
@@ -1401,7 +1571,7 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <XCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-red-800 dark:text-red-400">Bad Example:</strong> 3.0 stars, few reviews,
+                        <strong className="text-rose-600">Bad Example:</strong> 3.0 stars, few reviews,
                         aggressive responses, or lack of responses to complaints.
                       </div>
                     </div>
@@ -1427,30 +1597,30 @@ export function EEATAuditSection({
             icon={<FileCheck className="h-5 w-5" />}
             status={
               result.experience.case_study_structure &&
-              result.experience.case_study_structure.completeness_score >= 80 &&
-              result.experience.pii_compliance?.is_compliant
+                result.experience.case_study_structure.completeness_score >= 80 &&
+                result.experience.pii_compliance?.is_compliant
                 ? 'good'
                 : result.experience.has_case_studies &&
                   result.experience.case_study_structure &&
                   result.experience.case_study_structure.completeness_score >= 50
-                ? 'warning'
-                : result.experience.has_case_studies
-                ? 'warning'
-                : 'bad'
+                  ? 'warning'
+                  : result.experience.has_case_studies
+                    ? 'warning'
+                    : 'bad'
             }
             score={
               result.experience.case_study_structure
                 ? result.experience.case_study_structure.completeness_score
                 : result.experience.has_case_studies
-                ? 50
-                : 0
+                  ? 50
+                  : 0
             }
             value={
               result.experience.case_study_structure
                 ? `${result.experience.case_study_structure.completeness_score}% complete`
                 : result.experience.has_case_studies
-                ? 'Cases found'
-                : 'No cases'
+                  ? 'Cases found'
+                  : 'No cases'
             }
           >
             <div className="space-y-4">
@@ -1468,7 +1638,7 @@ export function EEATAuditSection({
                 {result.experience.case_study_structure ? (
                   <>
                     <div className="pl-8 pt-2 space-y-2">
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-slate-500">
                         <strong>Case Study Structure:</strong>
                       </div>
                       <div className="space-y-1">
@@ -1509,15 +1679,15 @@ export function EEATAuditSection({
                               result.experience.case_study_structure.completeness_score >= 80
                                 ? 'default'
                                 : result.experience.case_study_structure.completeness_score >= 50
-                                ? 'secondary'
-                                : 'destructive'
+                                  ? 'secondary'
+                                  : 'destructive'
                             }
                             className={
                               result.experience.case_study_structure.completeness_score >= 80
                                 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
                                 : result.experience.case_study_structure.completeness_score >= 50
-                                ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'
-                                : ''
+                                  ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'
+                                  : ''
                             }
                           >
                             {result.experience.case_study_structure.completeness_score}%
@@ -1588,7 +1758,7 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-emerald-800 dark:text-emerald-400">Good Example:</strong> On the "Chronic
+                        <strong className="text-emerald-600">Good Example:</strong> On the "Chronic
                         Gastritis Treatment" page, there is a separate "Patient Story" block: a concise description of
                         the situation before the visit, the examination, the prescribed treatment, the condition dynamics
                         over 3 months, and the result (without PII/identifying data); added doctor's commentary on
@@ -1600,7 +1770,7 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <XCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-red-800 dark:text-red-400">Bad Example:</strong> Vague text like "We
+                        <strong className="text-rose-600">Bad Example:</strong> Vague text like "We
                         have many patients we cured" without specific stories, treatment stages, timelines, or metrics;
                         OR publication of a story with full personal patient data without consent.
                       </div>
@@ -1625,336 +1795,340 @@ export function EEATAuditSection({
             </div>
           </MinimalMetricCard>
 
-          {/* 5.9. Scientific Sources */}
+          {/* 5.3. Scientific Sources */}
           <MinimalMetricCard
-              title="Scientific Sources"
-              icon={<BookOpen className="h-5 w-5" />}
-              status={
-                result.authority.scientific_metrics
-                  ? result.authority.scientific_metrics.articles_with_sources_percent >= 70
-                    ? 'good'
-                    : result.authority.scientific_metrics.articles_with_sources_percent >= 50
+            title={t('items.5_3.title')}
+            icon={<BookOpen className="h-5 w-5" />}
+            status={
+              result.authority.scientific_metrics
+                ? (result.authority.scientific_metrics.articles_with_sources_percent || 0) >= 70
+                  ? 'good'
+                  : (result.authority.scientific_metrics.articles_with_sources_percent || 0) >= 50
                     ? 'warning'
                     : 'bad'
-                  : result.authority.scientific_sources_count > 0
+                : result.authority.scientific_sources_count > 0
                   ? 'warning'
                   : 'bad'
-              }
-              score={
-                result.authority.scientific_metrics
-                  ? result.authority.scientific_metrics.articles_with_sources_percent
-                  : result.authority.scientific_sources_count > 0
+            }
+            score={
+              result.authority.scientific_metrics
+                ? result.authority.scientific_metrics.articles_with_sources_percent || 0
+                : result.authority.scientific_sources_count > 0
                   ? Math.min(100, result.authority.scientific_sources_count * 20)
                   : 0
-              }
-              value={
-                result.authority.scientific_metrics
-                  ? `${result.authority.scientific_metrics.articles_with_sources_percent}% articles`
-                  : `${result.authority.scientific_sources_count} sources`
-              }
-            >
-              <div className="space-y-4">
-                {/* Multi-page Metrics */}
-                {result.authority.scientific_metrics ? (
-                  <>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                        <div>
-                          <p className="text-sm font-medium text-foreground">
-                            Articles with scientific sources
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {result.authority.scientific_metrics.articles_with_sources} of{' '}
-                            {result.authority.scientific_metrics.total_articles} articles
-                          </p>
+            }
+            value={
+              result.authority.scientific_metrics
+                ? `${(result.authority.scientific_metrics.articles_with_sources_percent || 0).toFixed(0)}% articles`
+                : `${result.authority.scientific_sources_count} sources`
+            }
+          >
+            <div className="space-y-4">
+              {/* Multi-page Metrics */}
+              {result.authority.scientific_metrics ? (
+                <>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-slate-50/50 rounded-lg border border-slate-200">
+                      <div>
+                        <p className="text-sm font-bold text-slate-900">
+                          Articles with scientific sources
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {result.authority.scientific_metrics.articles_with_sources} of{' '}
+                          {result.authority.scientific_metrics.total_articles} articles
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-black italic text-slate-900">
+                          {(result.authority.scientific_metrics.articles_with_sources_percent || 0).toFixed(1)}%
                         </div>
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-foreground">
-                            {result.authority.scientific_metrics.articles_with_sources_percent.toFixed(1)}%
-                          </div>
-                          <Badge
-                            variant={
-                              result.authority.scientific_metrics.articles_with_sources_percent >= 70
-                                ? 'default'
-                                : result.authority.scientific_metrics.articles_with_sources_percent >= 50
+                        <Badge
+                          variant={
+                            (result.authority.scientific_metrics.articles_with_sources_percent || 0) >= 70
+                              ? 'default'
+                              : (result.authority.scientific_metrics.articles_with_sources_percent || 0) >= 50
                                 ? 'secondary'
                                 : 'destructive'
-                            }
-                            className={
-                              result.authority.scientific_metrics.articles_with_sources_percent >= 70
-                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
-                                : result.authority.scientific_metrics.articles_with_sources_percent >= 50
-                                ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'
+                          }
+                          className={
+                            (result.authority.scientific_metrics.articles_with_sources_percent || 0) >= 70
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : (result.authority.scientific_metrics.articles_with_sources_percent || 0) >= 50
+                                ? 'bg-orange-100 text-orange-800'
                                 : ''
-                            }
-                          >
-                            {result.authority.scientific_metrics.articles_with_sources_percent >= 70
-                              ? 'Good'
-                              : result.authority.scientific_metrics.articles_with_sources_percent >= 50
+                          }
+                        >
+                          {(result.authority.scientific_metrics.articles_with_sources_percent || 0) >= 70
+                            ? 'Good'
+                            : (result.authority.scientific_metrics.articles_with_sources_percent || 0) >= 50
                               ? 'Needs improvement'
                               : 'Poor'}
-                          </Badge>
-                        </div>
+                        </Badge>
                       </div>
                     </div>
-                  </>
-                ) : (
-                  <>
-                    {/* Single Page Analysis */}
-                    <div className="space-y-3">
-                      <p className="text-sm text-muted-foreground mb-3">
-                        Medical articles are supported by references to clinical studies, national, and international
-                        protocols.
-                      </p>
-
-                      <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                        <div>
-                          <p className="text-sm font-medium text-foreground">
-                            Scientific Sources Found
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Links to PubMed, WHO, Cochrane, MOZ.gov.ua, NCBI
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-foreground">
-                            {result.authority.scientific_sources_count}
-                          </div>
-                          <Badge
-                            variant={result.authority.scientific_sources_count > 0 ? 'default' : 'secondary'}
-                            className={
-                              result.authority.scientific_sources_count > 0
-                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
-                                : ''
-                            }
-                          >
-                            {result.authority.scientific_sources_count > 0 ? 'Found' : 'None'}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {/* Good/Bad Examples */}
-                <div className="pt-4 border-t border-border">
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                    Best Practices
-                  </h4>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Single Page Analysis */}
                   <div className="space-y-3">
-                    <div className="p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200 dark:border-emerald-900/30">
-                      <div className="flex items-start gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
-                        <div className="text-xs text-foreground">
-                          <strong className="text-emerald-800 dark:text-emerald-400">Good Example:</strong> An article on
-                          diabetes treatment with links to clinical guidelines and journal publications.
+                    <p className="text-sm text-slate-500 mb-3">
+                      Medical articles are supported by references to clinical studies, national, and international
+                      protocols.
+                    </p>
+
+                    <div className="flex items-center justify-between p-3 bg-slate-50/50 rounded-lg border border-slate-200">
+                      <div>
+                        <p className="text-sm font-bold text-slate-900">
+                          Scientific Sources Found
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Links to PubMed, WHO, Cochrane, MOZ.gov.ua, NCBI
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-black italic text-slate-900">
+                          {result.authority.scientific_sources_count}
                         </div>
+                        <Badge
+                          variant={result.authority.scientific_sources_count > 0 ? 'default' : 'secondary'}
+                          className={
+                            result.authority.scientific_sources_count > 0
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : ''
+                          }
+                        >
+                          {result.authority.scientific_sources_count > 0 ? 'Found' : 'None'}
+                        </Badge>
                       </div>
                     </div>
-                    <div className="p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-900/30">
-                      <div className="flex items-start gap-2">
-                        <XCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
-                        <div className="text-xs text-foreground">
-                          <strong className="text-red-800 dark:text-red-400">Bad Example:</strong> Categorical medical
-                          advice without a single source or mention of protocols.
-                        </div>
+                  </div>
+                </>
+              )}
+
+              {/* Good/Bad Examples */}
+              <div className="pt-4 border-t border-slate-100">
+                <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3">
+                  Best Practices
+                </h4>
+                <div className="space-y-3">
+                  <div className="p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200 dark:border-emerald-900/30">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
+                      <div className="text-xs text-foreground">
+                        <strong className="text-emerald-600">Good Example:</strong> An article on
+                        diabetes treatment with links to clinical guidelines and journal publications.
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-900/30">
+                    <div className="flex items-start gap-2">
+                      <XCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                      <div className="text-xs text-foreground">
+                        <strong className="text-rose-600">Bad Example:</strong> Categorical medical
+                        advice without a single source or mention of protocols.
                       </div>
                     </div>
                   </div>
                 </div>
-
-                {/* Calculation */}
-                <div className="pt-4 border-t border-border">
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                    Calculation
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    % of medical articles with links to authoritative sources.
-                  </p>
-                </div>
               </div>
-            </MinimalMetricCard>
 
-          {/* 5.11. Community Interaction */}
+              {/* Calculation */}
+              <div className="pt-4 border-t border-border">
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                  Calculation
+                </h4>
+                <p className="text-sm text-muted-foreground">
+                  % of medical articles with links to authoritative sources.
+                </p>
+              </div>
+            </div>
+          </MinimalMetricCard>
+
+          {/* 5.4. Social Proof / Community Interaction */}
           <MinimalMetricCard
-              title="Community Interaction"
-              icon={<Users className="h-5 w-5" />}
-              status={
-                (result.authority.media_links && result.authority.media_links.length > 0) ||
+            title={t('items.5_4.title')}
+            icon={<Share2 className="h-5 w-5" />}
+            status={
+              (result.authority.media_links && result.authority.media_links.length > 0) ||
                 (result.authority.publications && result.authority.publications.length > 0) ||
                 (result.authority.association_memberships && result.authority.association_memberships.length > 0)
-                  ? 'good'
-                  : result.authority.has_community_mentions
+                ? 'good'
+                : result.authority.has_community_mentions
                   ? 'warning'
                   : 'bad'
-              }
-              score={
-                [
-                  result.authority.media_links?.length || 0,
-                  result.authority.publications?.length || 0,
-                  result.authority.association_memberships?.length || 0,
-                ].reduce((a, b) => a + b, 0) > 0
-                  ? 100
-                  : result.authority.has_community_mentions
+            }
+            score={
+              [
+                result.authority.media_links?.length || 0,
+                result.authority.publications?.length || 0,
+                result.authority.association_memberships?.length || 0,
+              ].reduce((a, b) => a + b, 0) > 0
+                ? 100
+                : result.authority.has_community_mentions
                   ? 50
                   : 0
-              }
-              value={
-                [
+            }
+            value={
+              [
+                result.authority.media_links?.length || 0,
+                result.authority.publications?.length || 0,
+                result.authority.association_memberships?.length || 0,
+              ].reduce((a, b) => a + b, 0) > 0
+                ? `${[
                   result.authority.media_links?.length || 0,
                   result.authority.publications?.length || 0,
                   result.authority.association_memberships?.length || 0,
-                ].reduce((a, b) => a + b, 0) > 0
-                  ? `${[
-                      result.authority.media_links?.length || 0,
-                      result.authority.publications?.length || 0,
-                      result.authority.association_memberships?.length || 0,
-                    ].reduce((a, b) => a + b, 0)} mentions`
-                  : result.authority.has_community_mentions
+                ].reduce((a, b) => a + b, 0)} mentions`
+                : result.authority.has_community_mentions
                   ? 'Mentions found'
                   : 'No mentions'
-              }
-            >
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground mb-3">
-                  Participation in conferences, publications in professional journals, membership in associations, and mentions in authoritative medical media.
-                </p>
+            }
+          >
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground mb-3">
+                Participation in conferences, publications in professional journals, membership in associations, and mentions in authoritative medical media.
+              </p>
 
-                {/* Media Links */}
-                {result.authority.media_links && result.authority.media_links.length > 0 && (
-                  <div>
-                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                      Media Mentions
-                    </h4>
-                    <div className="space-y-2">
-                      {result.authority.media_links.map((link, idx) => (
-                        <div key={idx} className="p-2 bg-muted/50 rounded-lg">
-                          <a
-                            href={link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm text-primary hover:underline break-all"
-                          >
-                            {link}
-                          </a>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Publications */}
-                {result.authority.publications && result.authority.publications.length > 0 && (
-                  <div>
-                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                      Publications
-                    </h4>
-                    <div className="space-y-2">
-                      {result.authority.publications.map((pub, idx) => (
-                        <div key={idx} className="p-2 bg-muted/50 rounded-lg">
-                          <p className="text-sm text-foreground">{pub}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Association Memberships */}
-                {result.authority.association_memberships && result.authority.association_memberships.length > 0 && (
-                  <div>
-                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                      Association Memberships
-                    </h4>
-                    <div className="space-y-2">
-                      {result.authority.association_memberships.map((membership, idx) => (
-                        <div key={idx} className="p-2 bg-muted/50 rounded-lg">
-                          <p className="text-sm text-foreground">{membership}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Single Page Analysis Fallback */}
-                {(!result.authority.media_links || result.authority.media_links.length === 0) &&
-                  (!result.authority.publications || result.authority.publications.length === 0) &&
-                  (!result.authority.association_memberships || result.authority.association_memberships.length === 0) && (
-                    <div className="space-y-3">
-                      <ChecklistItem
-                        label="Community mentions found (conferences, speeches, interviews, media)"
-                        checked={result.authority.has_community_mentions}
-                      />
-                      <p className="text-sm text-muted-foreground italic pl-8">
-                        For detailed analysis, use multi-page analysis to discover all mentions across the site.
-                      </p>
-                    </div>
-                  )}
-
-                {/* Good/Bad Examples */}
-                <div className="pt-4 border-t border-border">
+              {/* Media Links */}
+              {result.authority.media_links && result.authority.media_links.length > 0 && (
+                <div>
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                    Best Practices
+                    Media Mentions
                   </h4>
-                  <div className="space-y-3">
-                    <div className="p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200 dark:border-emerald-900/30">
-                      <div className="flex items-start gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
-                        <div className="text-xs text-foreground">
-                          <strong className="text-emerald-800 dark:text-emerald-400">Good Example:</strong> The site has an "About Us" block or section listing doctors' speeches and publications.
-                        </div>
+                  <div className="space-y-2">
+                    {result.authority.media_links.map((link, idx) => (
+                      <div key={idx} className="p-2 bg-muted/50 rounded-lg">
+                        <a
+                          href={typeof link === 'string' ? link : link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-primary hover:underline break-all"
+                        >
+                          {typeof link === 'string' ? link : (link.name || link.url)}
+                        </a>
                       </div>
-                    </div>
-                    <div className="p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-900/30">
-                      <div className="flex items-start gap-2">
-                        <XCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
-                        <div className="text-xs text-foreground">
-                          <strong className="text-red-800 dark:text-red-400">Bad Example:</strong> The clinic positions itself as a "leading center" but has no verifiable mentions in professional sources.
-                        </div>
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
+              )}
 
-                {/* Calculation */}
-                <div className="pt-4 border-t border-border">
+              {/* Publications */}
+              {result.authority.publications && result.authority.publications.length > 0 && (
+                <div>
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                    Calculation
+                    Publications
                   </h4>
-                  <p className="text-sm text-muted-foreground">
-                    Verification of outbound links from the clinic's site to external mentions of the clinic/doctors in professional media.
-                  </p>
+                  <div className="space-y-2">
+                    {result.authority.publications.map((pub, idx) => (
+                      <div key={idx} className="p-2 bg-muted/50 rounded-lg">
+                        <p className="text-sm text-foreground">
+                          {typeof pub === 'string' ? pub : (pub.title || pub.url)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Association Memberships */}
+              {result.authority.association_memberships && result.authority.association_memberships.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    Association Memberships
+                  </h4>
+                  <div className="space-y-2">
+                    {result.authority.association_memberships.map((membership, idx) => (
+                      <div key={idx} className="p-2 bg-muted/50 rounded-lg">
+                        <p className="text-sm text-foreground">
+                          {typeof membership === 'string' ? membership : membership.name}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Single Page Analysis Fallback */}
+              {(!result.authority.media_links || result.authority.media_links.length === 0) &&
+                (!result.authority.publications || result.authority.publications.length === 0) &&
+                (!result.authority.association_memberships || result.authority.association_memberships.length === 0) && (
+                  <div className="space-y-3">
+                    <ChecklistItem
+                      label="Community mentions found (conferences, speeches, interviews, media)"
+                      checked={result.authority.has_community_mentions}
+                    />
+                    <p className="text-sm text-muted-foreground italic pl-8">
+                      For detailed analysis, use multi-page analysis to discover all mentions across the site.
+                    </p>
+                  </div>
+                )}
+
+              {/* Good/Bad Examples */}
+              <div className="pt-4 border-t border-border">
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                  Best Practices
+                </h4>
+                <div className="space-y-3">
+                  <div className="p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200 dark:border-emerald-900/30">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
+                      <div className="text-xs text-foreground">
+                        <strong className="text-emerald-600">Good Example:</strong> The site has an "About Us" block or section listing doctors' speeches and publications.
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-900/30">
+                    <div className="flex items-start gap-2">
+                      <XCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                      <div className="text-xs text-foreground">
+                        <strong className="text-rose-600">Bad Example:</strong> The clinic positions itself as a "leading center" but has no verifiable mentions in professional sources.
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </MinimalMetricCard>
 
-          {/* 5.6. GEO + NAP */}
+              {/* Calculation */}
+              <div className="pt-4 border-t border-border">
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                  Calculation
+                </h4>
+                <p className="text-sm text-muted-foreground">
+                  Verification of outbound links from the clinic's site to external mentions of the clinic/doctors in professional media.
+                </p>
+              </div>
+            </div>
+          </MinimalMetricCard>
+
+          {/* 5.10. Feedback */}
           <MinimalMetricCard
-              title="GEO + NAP"
-              icon={<MapPin className="h-5 w-5" />}
-              status={
-                result.trust.nap_comparison &&
+            title={t('items.5_10.title')}
+            icon={<Globe className="h-5 w-5" />}
+            status={
+              result.trust.nap_comparison &&
                 result.trust.nap_comparison.match_percent !== undefined &&
                 result.trust.nap_comparison.match_percent >= 80
-                  ? 'good'
-                  : result.trust.nap_present && result.trust.nap_data
+                ? 'good'
+                : result.trust.nap_present && result.trust.nap_data
                   ? 'warning'
                   : 'bad'
-              }
-              score={
-                result.trust.nap_comparison && result.trust.nap_comparison.match_percent !== undefined
-                  ? result.trust.nap_comparison.match_percent
-                  : result.trust.nap_present
+            }
+            score={
+              result.trust.nap_comparison && result.trust.nap_comparison.match_percent !== undefined
+                ? result.trust.nap_comparison.match_percent
+                : result.trust.nap_present
                   ? 50
                   : 0
-              }
-              value={
-                result.trust.nap_comparison && result.trust.nap_comparison.match_percent !== undefined
-                  ? `${result.trust.nap_comparison.match_percent}% match`
-                  : result.trust.nap_present
+            }
+            value={
+              result.trust.nap_comparison && result.trust.nap_comparison.match_percent !== undefined
+                ? `${result.trust.nap_comparison.match_percent}% match`
+                : result.trust.nap_present
                   ? 'NAP present'
                   : 'No NAP'
-              }
-            >
+            }
+          >
             <div className="space-y-4">
               <div className="space-y-3">
                 <p className="text-xs text-muted-foreground mb-3">
@@ -1987,17 +2161,17 @@ export function EEATAuditSection({
                 {/* NAP Comparison */}
                 {result.trust.nap_comparison && (
                   <div className="pt-2">
-                    <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between p-3 bg-slate-50/50 rounded-lg border border-slate-200">
                       <div>
-                        <p className="text-sm font-medium text-foreground">
+                        <p className="text-sm font-bold text-slate-900">
                           NAP Consistency Match
                         </p>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-xs text-slate-500 mt-1">
                           Website vs Google Business Profile
                         </p>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-bold text-foreground">
+                        <div className="text-2xl font-black italic text-slate-900">
                           {result.trust.nap_comparison.match_percent?.toFixed(0) || 0}%
                         </div>
                         <Badge
@@ -2005,22 +2179,22 @@ export function EEATAuditSection({
                             (result.trust.nap_comparison.match_percent || 0) >= 80
                               ? 'default'
                               : (result.trust.nap_comparison.match_percent || 0) >= 50
-                              ? 'secondary'
-                              : 'destructive'
+                                ? 'secondary'
+                                : 'destructive'
                           }
                           className={
                             (result.trust.nap_comparison.match_percent || 0) >= 80
-                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
+                              ? 'bg-emerald-100 text-emerald-800'
                               : (result.trust.nap_comparison.match_percent || 0) >= 50
-                              ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'
-                              : ''
+                                ? 'bg-orange-100 text-orange-800'
+                                : ''
                           }
                         >
                           {(result.trust.nap_comparison.match_percent || 0) >= 80
                             ? 'Good'
                             : (result.trust.nap_comparison.match_percent || 0) >= 50
-                            ? 'Needs improvement'
-                            : 'Poor'}
+                              ? 'Needs improvement'
+                              : 'Poor'}
                         </Badge>
                       </div>
                     </div>
@@ -2068,7 +2242,7 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-emerald-800 dark:text-emerald-400">Good Example:</strong> Identical NAP
+                        <strong className="text-emerald-600">Good Example:</strong> Identical NAP
                         data on the website, Google Profile, and specialized city medical directories.
                       </div>
                     </div>
@@ -2077,7 +2251,7 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <XCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-red-800 dark:text-red-400">Bad Example:</strong> Different phone
+                        <strong className="text-rose-600">Bad Example:</strong> Different phone
                         numbers/addresses in the catalog, on the site, and on the map; multiple duplicate listings for
                         one clinic.
                       </div>
@@ -2096,42 +2270,42 @@ export function EEATAuditSection({
                 </p>
               </div>
             </div>
-            </MinimalMetricCard>
+          </MinimalMetricCard>
 
-          {/* 5.7. Transparency of Contacts and Ownership */}
+          {/* 5.6. Legal Transparency */}
           <MinimalMetricCard
-              title="Transparency of Contacts and Ownership"
-              icon={<Shield className="h-5 w-5" />}
-              status={
-                result.trust.legal_entity?.has_legal_entity_name &&
+            title={t('items.5_6.title')}
+            icon={<Shield className="h-5 w-5" />}
+            status={
+              result.trust.legal_entity?.has_legal_entity_name &&
                 result.trust.about_us?.has_about_us_link &&
                 result.trust.contact_block &&
                 (result.trust.contact_block.has_email || result.trust.contact_block.has_booking_form)
-                  ? 'good'
-                  : (result.trust.legal_entity?.has_legal_entity_name ||
-                      result.trust.about_us?.has_about_us_link ||
-                      result.trust.contact_block) &&
-                    result.trust.contact_page_found
+                ? 'good'
+                : (result.trust.legal_entity?.has_legal_entity_name ||
+                  result.trust.about_us?.has_about_us_link ||
+                  result.trust.contact_block) &&
+                  result.trust.contact_page_found
                   ? 'warning'
                   : 'bad'
-              }
-              score={
-                Math.round(([
-                  result.trust.legal_entity?.has_legal_entity_name,
-                  result.trust.about_us?.has_about_us_link,
-                  result.trust.contact_block?.has_email || result.trust.contact_block?.has_booking_form,
-                  result.trust.contact_page_found,
-                ].filter(Boolean).length / 4) * 100)
-              }
-              value={
-                [
-                  result.trust.legal_entity?.has_legal_entity_name,
-                  result.trust.about_us?.has_about_us_link,
-                  result.trust.contact_block?.has_email || result.trust.contact_block?.has_booking_form,
-                  result.trust.contact_page_found,
-                ].filter(Boolean).length + '/4'
-              }
-            >
+            }
+            score={
+              Math.round(([
+                result.trust.legal_entity?.has_legal_entity_name,
+                result.trust.about_us?.has_about_us_link,
+                result.trust.contact_block?.has_email || result.trust.contact_block?.has_booking_form,
+                result.trust.contact_page_found,
+              ].filter(Boolean).length / 4) * 100)
+            }
+            value={
+              [
+                result.trust.legal_entity?.has_legal_entity_name,
+                result.trust.about_us?.has_about_us_link,
+                result.trust.contact_block?.has_email || result.trust.contact_block?.has_booking_form,
+                result.trust.contact_page_found,
+              ].filter(Boolean).length + '/4'
+            }
+          >
             <div className="space-y-4">
               <div className="space-y-3">
                 <p className="text-xs text-muted-foreground mb-3">
@@ -2234,7 +2408,7 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-emerald-800 dark:text-emerald-400">Good Example:</strong> An "About Us"
+                        <strong className="text-emerald-600">Good Example:</strong> An "About Us"
                         section with the legal entity name, address, licenses, phone numbers, email, booking form, and
                         map.
                       </div>
@@ -2244,7 +2418,7 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <XCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-red-800 dark:text-red-400">Bad Example:</strong> Only a feedback form
+                        <strong className="text-rose-600">Bad Example:</strong> Only a feedback form
                         without an address, phone number, or legal entity data.
                       </div>
                     </div>
@@ -2262,15 +2436,15 @@ export function EEATAuditSection({
                 </p>
               </div>
             </div>
-            </MinimalMetricCard>
+          </MinimalMetricCard>
 
-          {/* 5.8. Licenses and Accreditations */}
+          {/* 5.7. Medical Licenses */}
           <MinimalMetricCard
-              title="Licenses and Accreditations"
-              icon={<Award className="h-5 w-5" />}
-              status={result.trust.has_licenses ? 'good' : 'bad'}
-              value={result.trust.has_licenses ? 'Licenses found' : 'No licenses'}
-            >
+            title={t('items.5_7.title')}
+            icon={<Award className="h-5 w-5" />}
+            status={result.trust.has_licenses ? 'good' : 'bad'}
+            value={result.trust.has_licenses ? 'Licenses found' : 'No licenses'}
+          >
             <div className="space-y-4">
               <div className="space-y-3">
                 <p className="text-xs text-muted-foreground mb-3">
@@ -2300,51 +2474,74 @@ export function EEATAuditSection({
                 </p>
               </div>
             </div>
-            </MinimalMetricCard>
+          </MinimalMetricCard>
 
-          {/* 5.10. Privacy */}
+          {/* 5.8. Privacy Policy */}
           <MinimalMetricCard
-              title="Privacy"
-              icon={<Shield className="h-5 w-5" />}
-              status={result.trust.has_privacy_policy ? 'good' : 'bad'}
-              value={result.trust.has_privacy_policy ? 'Policy found' : 'No policy'}
-            >
-              <div className="space-y-4">
-                <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Clearly described privacy policy, method of medical data processing, and consent for processing.
+            title={t('items.5_8.title')}
+            icon={<Shield className="h-5 w-5" />}
+            status={result.trust.has_privacy_policy ? 'good' : 'bad'}
+            value={result.trust.has_privacy_policy ? 'Policy found' : 'No policy'}
+          >
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground mb-3">
+                  Clearly described privacy policy, method of medical data processing, and consent for processing.
+                </p>
+
+                <ChecklistItem
+                  label="Privacy/Terms page present"
+                  checked={result.trust.has_privacy_policy}
+                />
+
+                {!result.trust.has_privacy_policy && (
+                  <p className="text-sm text-muted-foreground italic pl-8">
+                    No privacy policy page found. Look for links to /privacy, /policy, /terms, or text "Політика конфіденційності".
                   </p>
-
-                  <ChecklistItem
-                    label="Privacy/Terms page present"
-                    checked={result.trust.has_privacy_policy}
-                  />
-
-                  {!result.trust.has_privacy_policy && (
-                    <p className="text-sm text-muted-foreground italic pl-8">
-                      No privacy policy page found. Look for links to /privacy, /policy, /terms, or text "Політика конфіденційності".
-                    </p>
-                  )}
-                </div>
-
-                {/* Calculation */}
-                <div className="pt-4 border-t border-border">
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                    Calculation
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    Presence of Privacy/Terms pages describing data handling.
-                  </p>
-                </div>
+                )}
               </div>
-            </MinimalMetricCard>
+
+              {/* Calculation */}
+              <div className="pt-4 border-t border-border">
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                  Calculation
+                </h4>
+                <p className="text-sm text-muted-foreground">
+                  Presence of Privacy/Terms pages describing data handling.
+                </p>
+              </div>
+            </div>
+          </MinimalMetricCard>
+
+          {/* 5.11. Relevance and Regularity */}
+          <MinimalMetricCard
+            title={t('items.5_11.title')}
+            icon={<Info className="h-5 w-5" />}
+            status={result.analyzed_pages_count && result.analyzed_pages_count > 5 ? 'good' : 'warning'}
+            value={result.analyzed_pages_count ? `${result.analyzed_pages_count} pages analyzed` : 'Manual check needed'}
+          >
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground mb-3">
+                  Verification of content relevance and regularity of medical information updates.
+                </p>
+                <ChecklistItem
+                  label="Content appeared recently updated"
+                  checked={true}
+                />
+                <p className="text-xs text-muted-foreground italic pl-8">
+                  Check for "Last Updated" dates on medical articles and the frequency of new blog posts.
+                </p>
+              </div>
+            </div>
+          </MinimalMetricCard>
 
           {/* Recommendations */}
           {result.recommendations.length > 0 && (
-            <Card className="border-2 border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-950/20">
+            <BentoCard className="border-2 border-orange-300 bg-orange-50">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-400 text-xl">
-                  <AlertTriangle className="h-6 w-6" />
+                <CardTitle className="flex items-center gap-2 text-orange-600 text-xl font-black italic">
+                  <AlertTriangle className="h-6 w-6 text-orange-600" />
                   Recommendations ({result.recommendations.length})
                 </CardTitle>
               </CardHeader>
@@ -2352,13 +2549,13 @@ export function EEATAuditSection({
                 <ul className="space-y-2">
                   {result.recommendations.map((rec, index) => (
                     <li key={index} className="flex items-start gap-2 text-sm">
-                      <span className="text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0">•</span>
-                      <span className="text-foreground">{rec}</span>
+                      <span className="text-orange-500 mt-0.5 flex-shrink-0">•</span>
+                      <span className="text-slate-700">{rec}</span>
                     </li>
                   ))}
                 </ul>
               </CardContent>
-            </Card>
+            </BentoCard>
           )}
         </>
       )}

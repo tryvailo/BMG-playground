@@ -30,7 +30,7 @@ export function EmailPasswordSignUpContainer({
   onSignUp,
   emailRedirectTo,
   displayTermsCheckbox,
-  appHomePath = '/home',
+  appHomePath = '/home', // Explicitly set to '/home' - NOT '/onboarding'
 }: EmailPasswordSignUpContainerProps) {
   const { captchaToken, resetCaptchaToken } = useCaptchaToken();
   const router = useRouter();
@@ -55,7 +55,7 @@ export function EmailPasswordSignUpContainer({
         });
 
         // If session exists, user is automatically logged in (email confirmation disabled)
-        // Redirect to the app home page
+        // Redirect to the app home page (NOT onboarding)
         if (data.session) {
           redirecting.current = true;
           
@@ -63,7 +63,9 @@ export function EmailPasswordSignUpContainer({
             onSignUp(data.user?.id);
           }
 
-          router.push(appHomePath);
+          // Explicitly redirect to /home, not onboarding
+          const homePath = appHomePath || '/home';
+          router.push(homePath);
           return;
         }
 

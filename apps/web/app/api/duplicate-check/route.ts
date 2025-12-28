@@ -90,6 +90,30 @@ export async function POST(request: NextRequest): Promise<NextResponse<Duplicate
     } catch (error) {
       console.error('[DuplicateChecker] Crawl failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown crawl error';
+      
+      // Check for specific Firecrawl API errors
+      if (errorMessage.includes('Payment required') || errorMessage.includes('subscription')) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Firecrawl API: Payment required - Check your subscription. Please provide a valid API key or check your Firecrawl account.',
+            code: 'FIRECRAWL_PAYMENT_REQUIRED',
+          },
+          { status: 402 }, // 402 Payment Required
+        );
+      }
+      
+      if (errorMessage.includes('API key') || errorMessage.includes('FIRECRAWL_API_KEY')) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Firecrawl API key is required. Please provide it in the request or set FIRECRAWL_API_KEY in environment variables.',
+            code: 'MISSING_API_KEY',
+          },
+          { status: 400 },
+        );
+      }
+      
       return NextResponse.json(
         {
           success: false,

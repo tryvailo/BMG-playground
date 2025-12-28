@@ -95,11 +95,10 @@ export default function PricingPage() {
               return (
                 <div
                   key={plan.id}
-                  className={`relative bg-white rounded-2xl border-2 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 ${
-                    plan.popular
+                  className={`relative bg-white rounded-2xl border-2 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 ${plan.popular
                       ? 'border-indigo-500 shadow-xl scale-105 md:scale-110'
                       : 'border-slate-200 shadow-lg'
-                  }`}
+                    }`}
                 >
                   {plan.popular && (
                     <div className="absolute -top-4 left-1/2 -translate-x-1/2">
@@ -113,11 +112,10 @@ export default function PricingPage() {
                     {/* Plan Header */}
                     <div className="flex items-center gap-3 mb-4">
                       <div
-                        className={`p-3 rounded-xl ${
-                          plan.popular
+                        className={`p-3 rounded-xl ${plan.popular
                             ? 'bg-indigo-100 text-indigo-600'
                             : 'bg-slate-100 text-slate-600'
-                        }`}
+                          }`}
                       >
                         <Icon size={24} />
                       </div>
@@ -141,9 +139,8 @@ export default function PricingPage() {
                         <li key={index} className="flex items-start gap-3">
                           <CheckCircle2
                             size={20}
-                            className={`flex-shrink-0 mt-0.5 ${
-                              plan.popular ? 'text-indigo-600' : 'text-green-500'
-                            }`}
+                            className={`flex-shrink-0 mt-0.5 ${plan.popular ? 'text-indigo-600' : 'text-green-500'
+                              }`}
                           />
                           <span className="text-slate-700">{feature}</span>
                         </li>
@@ -152,12 +149,11 @@ export default function PricingPage() {
 
                     {/* CTA Button */}
                     <Link
-                      href={`/checkout/${plan.id}`}
-                      className={`block w-full text-center py-4 px-6 rounded-xl font-semibold transition-all ${
-                        plan.popular
+                      href="/onboarding"
+                      className={`block w-full text-center py-4 px-6 rounded-xl font-semibold transition-all ${plan.popular
                           ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg hover:shadow-xl'
                           : 'bg-slate-900 hover:bg-slate-800 text-white'
-                      }`}
+                        }`}
                     >
                       Get Started
                     </Link>

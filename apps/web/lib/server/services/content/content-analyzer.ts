@@ -110,10 +110,10 @@ const TRUSTED_DOMAINS = [
 function extractTextContent($: CheerioAPI): string {
   // Remove script and style elements
   $('script, style, noscript').remove();
-  
+
   // Get text content
   const text = $('body').text() || $('html').text();
-  
+
   // Clean up whitespace
   return text
     .replace(/\s+/g, ' ')
@@ -129,17 +129,17 @@ function calculateWateriness(text: string): number {
     .toLowerCase()
     .split(/\s+/)
     .filter((word) => word.length > 0);
-  
+
   if (words.length === 0) {
     return 0;
   }
-  
+
   const stopWordsCount = words.filter((word) => {
     // Remove punctuation for comparison
     const cleanWord = word.replace(/[^\p{L}\p{N}]/gu, '');
     return STOP_WORDS.has(cleanWord);
   }).length;
-  
+
   const wateriness = (stopWordsCount / words.length) * 100;
   return Math.round(wateriness * 100) / 100; // Round to 2 decimal places
 }
@@ -151,20 +151,21 @@ function calculateWateriness(text: string): number {
 function detectDoctorPages($: CheerioAPI): boolean {
   // Check for links to doctor pages
   let hasDoctorLink = false;
-  
+
   $('a[href]').each((_, element) => {
     const href = $(element).attr('href')?.toLowerCase() || '';
-    if (href.includes('/doctors/') || href.includes('/team/') || 
-        href.includes('/врачи/') || href.includes('/лікарі/')) {
+    // Look for patterns like /doctors/id, /team/member, /vrachi/name
+    if (/[\/\.](doctors|team|vrachi|likari|specialists)[\/\.]/i.test(href) ||
+      /[\/\.](doctor|likar|vrach)[\/\.]/i.test(href)) {
       hasDoctorLink = true;
       return false; // Break loop
     }
   });
-  
+
   if (hasDoctorLink) {
     return true;
   }
-  
+
   // Check for doctor-related text in content
   const bodyText = extractTextContent($).toLowerCase();
   const doctorTextPatterns = [
@@ -174,11 +175,11 @@ function detectDoctorPages($: CheerioAPI): boolean {
     'команда лікарів',
     'команда врачей',
   ];
-  
-  const hasDoctorText = doctorTextPatterns.some((pattern) => 
+
+  const hasDoctorText = doctorTextPatterns.some((pattern) =>
     bodyText.includes(pattern.toLowerCase())
   );
-  
+
   return hasDoctorText;
 }
 
@@ -187,19 +188,132 @@ function detectDoctorPages($: CheerioAPI): boolean {
  * Checks for /services/, /napryamki/ links
  */
 function detectServicePages($: CheerioAPI): boolean {
-  // Check for links to service pages
-  let hasServiceLink = false;
-  
+  let uniqueServiceUrls = new Set<string>();
+
   $('a[href]').each((_, element) => {
     const href = $(element).attr('href')?.toLowerCase() || '';
-    if (href.includes('/services/') || href.includes('/napryamki/') || 
-        href.includes('/послуги/') || href.includes('/услуги/')) {
-      hasServiceLink = true;
-      return false; // Break loop
+    // Look for service-like URL patterns
+    if (/[\/\.](services|poslugi|uslugi)[\/\.]/i.test(href)) {
+      uniqueServiceUrls.add(href);
     }
   });
-  
-  return hasServiceLink;
+
+  return uniqueServiceUrls.size > 0;
+}
+
+/**
+ * Detect direction pages count
+ */
+function detectDirectionPagesCount($: CheerioAPI): number {
+  let uniqueDirectionUrls = new Set<string>();
+
+  $('a[href]').each((_, element) => {
+    const href = $(element).attr('href')?.toLowerCase() || '';
+    // Look for direction-like URL patterns
+    if (/[\/\.](napryamki|directions|specials|otdeleniya|viddilennya)[\/\.]/i.test(href)) {
+      uniqueDirectionUrls.add(href);
+    }
+  });
+
+  return uniqueDirectionUrls.size;
+}
+
+/**
+ * Count unique service pages
+ */
+function countServicePages($: CheerioAPI): number {
+  let uniqueServiceUrls = new Set<string>();
+
+  $('a[href]').each((_, element) => {
+    const href = $(element).attr('href')?.toLowerCase() || '';
+    if (/[\/\.](services|poslugi|uslugi)[\/\.]/i.test(href)) {
+      uniqueServiceUrls.add(href);
+    }
+  });
+
+  return uniqueServiceUrls.size;
+}
+
+/**
+ * Detect doctor details (photos, bio, etc.)
+ */
+function detectDoctorDetails($: CheerioAPI): {
+  has_photos: boolean;
+  has_bio: boolean;
+  has_experience: boolean;
+  has_certificates: boolean;
+} {
+  const content = extractTextContent($).toLowerCase();
+
+  const has_photos = $('img[alt*="лікар" i], img[alt*="врач" i], img[alt*="doctor" i], img[src*="doctor" i]').length > 0;
+
+  const has_bio = content.includes('біографія') || content.includes('биография') ||
+    content.includes('про лікаря') || content.includes('о враче') ||
+    content.includes('освіта') || content.includes('образование');
+
+  const has_experience = content.includes('досвід') || content.includes('опыт') ||
+    content.includes('стаж') || /\d+\s*(років|року|літ|лет|years)/i.test(content);
+
+  const has_certificates = content.includes('сертифікат') || content.includes('сертификат') ||
+    content.includes('диплом') || content.includes('грамота') ||
+    content.includes('award') || content.includes('certificate');
+
+  return { has_photos, has_bio, has_experience, has_certificates };
+}
+
+/**
+ * Detect blog metrics
+ */
+function detectBlogMetrics($: CheerioAPI): {
+  posts_count: number;
+  is_regularly_updated: boolean;
+  avg_article_length: number;
+} {
+  const posts = $('article, [class*="post"], [class*="article"]').length;
+
+  // Try to find dates of posts to estimate update frequency
+  const dates: Date[] = [];
+  $('time, [class*="date"], [class*="time"]').each((_, el) => {
+    const dateStr = $(el).attr('datetime') || $(el).text();
+    const date = new Date(dateStr);
+    if (!isNaN(date.getTime())) {
+      dates.push(date);
+    }
+  });
+
+  let is_regularly_updated = false;
+  if (dates.length > 1) {
+    const sortedDates = dates.sort((a, b) => b.getTime() - a.getTime());
+    const mostRecent = sortedDates[0]!;
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    is_regularly_updated = mostRecent > oneMonthAgo;
+  }
+
+  // Estimate average article length if multiple articles are present
+  const bodyText = extractTextContent($);
+  const wordCount = bodyText.split(/\s+/).length;
+  const avg_article_length = posts > 0 ? Math.round(wordCount / posts) : wordCount;
+
+  return {
+    posts_count: posts || (detectBlogPresence($) ? 5 : 0), // Use heuristic if elements not clear
+    is_regularly_updated,
+    avg_article_length
+  };
+}
+
+/**
+ * Detect circular linking
+ * Doctor -> Service -> Branch cycle
+ */
+function detectCircularLinking($: CheerioAPI): boolean {
+  // Check if we have links to both doctor AND service on the same page
+  // This is a proxy for "circularity" in a single-page analysis context
+  const hasDoctorLink = detectDoctorPages($);
+  const hasServiceLink = detectServicePages($);
+  const hasBranchLink = $('[class*="location"], [class*="branch"], a[href*="філія"], a[href*="филиал"]').length > 0;
+
+  return hasDoctorLink && hasServiceLink && hasBranchLink;
 }
 
 /**
@@ -208,26 +322,26 @@ function detectServicePages($: CheerioAPI): boolean {
 function detectDepartmentPages($: CheerioAPI): boolean {
   // Check for links to department pages
   let hasDepartmentLink = false;
-  
+
   $('a[href]').each((_, element) => {
     const href = $(element).attr('href')?.toLowerCase() || '';
-    if (href.includes('/departments/') || href.includes('/відділення/') || 
-        href.includes('/отделения/')) {
+    if (href.includes('/departments/') || href.includes('/відділення/') ||
+      href.includes('/отделения/')) {
       hasDepartmentLink = true;
       return false; // Break loop
     }
   });
-  
+
   if (hasDepartmentLink) {
     return true;
   }
-  
+
   // Check for department keywords in content
   const bodyText = extractTextContent($).toLowerCase();
-  const hasDepartmentKeywords = MEDICAL_DEPARTMENTS.some((dept) => 
+  const hasDepartmentKeywords = MEDICAL_DEPARTMENTS.some((dept) =>
     bodyText.includes(dept.toLowerCase())
   );
-  
+
   return hasDepartmentKeywords;
 }
 
@@ -237,18 +351,18 @@ function detectDepartmentPages($: CheerioAPI): boolean {
 function detectBlogPresence($: CheerioAPI): boolean {
   // Check for links to blog pages
   let hasBlogLink = false;
-  
+
   $('a[href]').each((_, element) => {
     const href = $(element).attr('href')?.toLowerCase() || '';
-    if (href.includes('/blog/') || href.includes('/news/') || 
-        href.includes('/articles/') || href.includes('/новини/') || 
-        href.includes('/новости/') || href.includes('/статті/') || 
-        href.includes('/статьи/')) {
+    if (href.includes('/blog/') || href.includes('/news/') ||
+      href.includes('/articles/') || href.includes('/новини/') ||
+      href.includes('/новости/') || href.includes('/статті/') ||
+      href.includes('/статьи/')) {
       hasBlogLink = true;
       return false; // Break loop
     }
   });
-  
+
   return hasBlogLink;
 }
 
@@ -260,18 +374,18 @@ function calculateArchitectureScore($: CheerioAPI, url: string): number {
   try {
     const baseUrl = new URL(url);
     const baseDomain = baseUrl.hostname;
-    
+
     // Find navigation and footer links
     const navLinks = $('nav a[href], header a[href], footer a[href]').toArray();
     const linkDepths: number[] = [];
-    
+
     navLinks.forEach((element) => {
       const href = $(element).attr('href');
       if (!href) return;
-      
+
       try {
         const linkUrl = new URL(href, url);
-        
+
         // Only count internal links
         if (linkUrl.hostname === baseDomain || !linkUrl.hostname) {
           const pathParts = linkUrl.pathname.split('/').filter((part) => part.length > 0);
@@ -281,19 +395,19 @@ function calculateArchitectureScore($: CheerioAPI, url: string): number {
         // Invalid URL, skip
       }
     });
-    
+
     if (linkDepths.length === 0) {
       return 50; // Default score if no links found
     }
-    
+
     // Calculate average depth
     const avgDepth = linkDepths.reduce((sum, depth) => sum + depth, 0) / linkDepths.length;
     const maxDepth = Math.max(...linkDepths);
-    
+
     // Score based on depth: 2-3 levels is optimal (80-100), 
     // 1 level is too flat (60), 4+ is too deep (40-60)
     let score = 70;
-    
+
     if (avgDepth >= 2 && avgDepth <= 3 && maxDepth <= 4) {
       score = 85 + Math.min(15, (3 - avgDepth) * 5); // 85-100 for optimal depth
     } else if (avgDepth < 2) {
@@ -301,12 +415,12 @@ function calculateArchitectureScore($: CheerioAPI, url: string): number {
     } else if (avgDepth > 3) {
       score = Math.max(40, 80 - (avgDepth - 3) * 10); // 40-80 for too deep
     }
-    
+
     // Bonus for having many internal links (good structure)
     if (linkDepths.length > 10) {
       score = Math.min(100, score + 5);
     }
-    
+
     return Math.round(Math.max(0, Math.min(100, score)));
   } catch {
     return 50; // Default score on error
@@ -330,24 +444,24 @@ function getDomain(url: string): string | null {
  */
 function isTrustedAuthorityDomain(domain: string | null): boolean {
   if (!domain) return false;
-  
+
   const normalizedDomain = domain.toLowerCase();
-  
+
   // Check exact matches
   if (TRUSTED_DOMAINS.some((trusted) => normalizedDomain === trusted)) {
     return true;
   }
-  
+
   // Check subdomain matches (e.g., www.pubmed.ncbi.nlm.nih.gov matches pubmed.ncbi.nlm.nih.gov)
   if (TRUSTED_DOMAINS.some((trusted) => normalizedDomain.endsWith(`.${trusted}`))) {
     return true;
   }
-  
+
   // Check .edu.ua and .gov.ua domains (Education and Government)
   if (normalizedDomain.endsWith('.edu.ua') || normalizedDomain.endsWith('.gov.ua')) {
     return true;
   }
-  
+
   return false;
 }
 
@@ -357,18 +471,18 @@ function isTrustedAuthorityDomain(domain: string | null): boolean {
 function countAuthorityLinks($: CheerioAPI, baseUrl: string): number {
   let count = 0;
   const seenDomains = new Set<string>();
-  
+
   try {
     const baseDomain = getDomain(baseUrl);
-    
+
     $('a[href]').each((_, element) => {
       const href = $(element).attr('href');
       if (!href) return;
-      
+
       try {
         const linkUrl = new URL(href, baseUrl);
         const linkDomain = getDomain(linkUrl.toString());
-        
+
         // Only count external links (different domain)
         if (linkDomain && linkDomain !== baseDomain) {
           // Check if it's a trusted domain and we haven't counted it yet
@@ -384,7 +498,7 @@ function countAuthorityLinks($: CheerioAPI, baseUrl: string): number {
   } catch {
     // Error parsing base URL, return 0
   }
-  
+
   return count;
 }
 
@@ -397,7 +511,7 @@ function hasValidPhone($: CheerioAPI): boolean {
   if (telLinks.length > 0) {
     return true;
   }
-  
+
   // Also check for phone patterns in text content
   const textContent = extractTextContent($);
   // Ukrainian phone patterns: +380, 0XX, (0XX)
@@ -410,7 +524,7 @@ function hasValidPhone($: CheerioAPI): boolean {
     /\+7\s?\d{3}\s?\d{3}\s?\d{2}\s?\d{2}/, // +7 XXX XXX XX XX
     /8\s?\d{3}\s?\d{3}\s?\d{2}\s?\d{2}/, // 8 XXX XXX XX XX
   ];
-  
+
   return phonePatterns.some((pattern) => pattern.test(textContent));
 }
 
@@ -420,7 +534,7 @@ function hasValidPhone($: CheerioAPI): boolean {
  */
 function hasValidAddress($: CheerioAPI): boolean {
   const textContent = extractTextContent($);
-  
+
   // Ukrainian address patterns
   const addressPatterns = [
     // "вул. [Street Name], [Number], м. [City]"
@@ -436,7 +550,7 @@ function hasValidAddress($: CheerioAPI): boolean {
     // Common city names with street indicators
     /(?:Kyiv|Київ|Киев|Lviv|Львів|Львов|Kharkiv|Харків|Харьков|Odesa|Одеса|Одесса).*(?:вул\.|ул\.|Street|St|проспект|пр\.)/i,
   ];
-  
+
   return addressPatterns.some((pattern) => pattern.test(textContent));
 }
 
@@ -448,7 +562,7 @@ function parseJsonLd(content: string): unknown {
   if (!content || !content.trim()) {
     return null;
   }
-  
+
   try {
     return JSON.parse(content.trim());
   } catch {
@@ -461,24 +575,24 @@ function parseJsonLd(content: string): unknown {
  */
 function extractSchemaTypes(schema: unknown): string[] {
   const types: string[] = [];
-  
+
   if (Array.isArray(schema)) {
     for (const item of schema) {
       types.push(...extractSchemaTypes(item));
     }
     return types;
   }
-  
+
   if (typeof schema === 'object' && schema !== null) {
     const obj = schema as Record<string, unknown>;
-    
+
     // Handle @graph
     if ('@graph' in obj && Array.isArray(obj['@graph'])) {
       for (const item of obj['@graph']) {
         types.push(...extractSchemaTypes(item));
       }
     }
-    
+
     // Extract @type or type field
     const typeValue = obj['@type'] || obj['type'];
     if (typeValue) {
@@ -489,7 +603,7 @@ function extractSchemaTypes(schema: unknown): string[] {
       }
     }
   }
-  
+
   return types;
 }
 
@@ -498,29 +612,29 @@ function extractSchemaTypes(schema: unknown): string[] {
  */
 function hasFAQPageSchema($: CheerioAPI): boolean {
   const jsonLdScripts = $('script[type="application/ld+json"]');
-  
+
   let hasFAQ = false;
-  
+
   jsonLdScripts.each((_, element) => {
     const content = $(element).html();
     if (!content || !content.trim()) return;
-    
+
     const parsed = parseJsonLd(content);
     if (!parsed) return;
-    
+
     const types = extractSchemaTypes(parsed);
     const normalizedTypes = types.map((t) => t.toLowerCase().trim());
-    
-    if (normalizedTypes.some((type) => 
-      type === 'faqpage' || 
-      type.includes('faqpage') || 
+
+    if (normalizedTypes.some((type) =>
+      type === 'faqpage' ||
+      type.includes('faqpage') ||
       type.endsWith('/faqpage')
     )) {
       hasFAQ = true;
       return false; // Break loop
     }
   });
-  
+
   return hasFAQ;
 }
 
@@ -530,7 +644,7 @@ function hasFAQPageSchema($: CheerioAPI): boolean {
  */
 function countFAQItems($: CheerioAPI): number {
   let count = 0;
-  
+
   // Check for elements with FAQ-related class names
   const faqSelectors = [
     '[class*="faq"]',
@@ -540,7 +654,7 @@ function countFAQItems($: CheerioAPI): number {
     '[id*="faq"]',
     '[id*="FAQ"]',
   ];
-  
+
   // Try to find FAQ containers
   for (const selector of faqSelectors) {
     const elements = $(selector);
@@ -549,7 +663,7 @@ function countFAQItems($: CheerioAPI): number {
       // Common patterns: dt/dd, h3/p, div.question/div.answer, etc.
       const questions = elements.find('dt, h3, h4, [class*="question"], [class*="Question"]');
       const answers = elements.find('dd, p, [class*="answer"], [class*="Answer"]');
-      
+
       // Count pairs or individual items
       const itemCount = Math.max(questions.length, answers.length);
       if (itemCount >= 3) {
@@ -558,7 +672,7 @@ function countFAQItems($: CheerioAPI): number {
       }
     }
   }
-  
+
   // Alternative: Check for structured FAQ patterns
   if (count === 0) {
     // Look for definition lists (dt/dd) which are commonly used for FAQs
@@ -571,7 +685,7 @@ function countFAQItems($: CheerioAPI): number {
       }
     });
   }
-  
+
   return count;
 }
 
@@ -584,21 +698,21 @@ function countFAQs($: CheerioAPI): number {
     // If schema exists, try to count items in it
     const jsonLdScripts = $('script[type="application/ld+json"]');
     let schemaFAQCount = 0;
-    
+
     jsonLdScripts.each((_, element) => {
       const content = $(element).html();
       if (!content || !content.trim()) return;
-      
+
       const parsed = parseJsonLd(content);
       if (!parsed || typeof parsed !== 'object') return;
-      
+
       const obj = parsed as Record<string, unknown>;
-      
+
       // Check for mainEntity with questions
       if ('mainEntity' in obj && Array.isArray(obj.mainEntity)) {
         schemaFAQCount = obj.mainEntity.length;
       }
-      
+
       // Check for @graph with FAQPage
       if ('@graph' in obj && Array.isArray(obj['@graph'])) {
         for (const item of obj['@graph']) {
@@ -614,12 +728,12 @@ function countFAQs($: CheerioAPI): number {
         }
       }
     });
-    
+
     if (schemaFAQCount >= 3) {
       return schemaFAQCount;
     }
   }
-  
+
   // Fall back to HTML structure detection
   return countFAQItems($);
 }
@@ -633,7 +747,7 @@ function generateRecommendations(
   authority: ContentAuditResult['authority'],
 ): string[] {
   const recommendations: string[] = [];
-  
+
   // Wateriness recommendations
   if (textQuality.wateriness_score >= 25) {
     recommendations.push(
@@ -644,49 +758,49 @@ function generateRecommendations(
       `Wateriness is ${textQuality.wateriness_score.toFixed(1)}%, consider reducing it further to <20% for optimal content quality.`
     );
   }
-  
+
   // Architecture recommendations
   if (structure.architecture_score < 60) {
     recommendations.push(
       `Site architecture score is ${structure.architecture_score}. Improve navigation structure with 2-3 levels of depth for better SEO.`
     );
   }
-  
+
   // Doctor pages recommendations
   if (!structure.has_doctor_pages) {
     recommendations.push(
       'No doctor pages detected. Consider adding doctor profiles with education, experience, and certifications.'
     );
   }
-  
+
   // Service pages recommendations
   if (!structure.has_service_pages) {
     recommendations.push(
       'No service pages detected. Add dedicated service pages to improve site structure and SEO.'
     );
   }
-  
+
   // Department pages recommendations
   if (!structure.has_department_pages) {
     recommendations.push(
       'No department pages detected. Consider adding department-specific landing pages to improve site architecture.'
     );
   }
-  
+
   // Blog recommendations
   if (!structure.has_blog) {
     recommendations.push(
       'No blog section detected. Consider adding a blog with medical articles to improve content marketing and SEO.'
     );
   }
-  
+
   // Uniqueness recommendations (placeholder for future Copyleaks integration)
   if (textQuality.uniqueness_score < 90) {
     recommendations.push(
       `Content uniqueness is ${textQuality.uniqueness_score}%. Ensure content is original and not duplicated from other sources.`
     );
   }
-  
+
   // Authority recommendations
   if (authority.authority_links_count === 0) {
     recommendations.push(
@@ -697,20 +811,20 @@ function generateRecommendations(
       `Only ${authority.authority_links_count} authority link(s) found. Consider adding more links to trusted medical organizations and evidence-based sources.`
     );
   }
-  
+
   // Contact info recommendations
   if (!authority.has_valid_phone) {
     recommendations.push(
       'No valid phone number detected. Add a clickable phone number (tel: link) for better user experience and local SEO.'
     );
   }
-  
+
   if (!authority.has_valid_address) {
     recommendations.push(
       'No valid physical address detected. Add a complete address with city and street information for local SEO and trust signals.'
     );
   }
-  
+
   // FAQ recommendations
   if (authority.faq_count === 0) {
     recommendations.push(
@@ -721,7 +835,7 @@ function generateRecommendations(
       `Only ${authority.faq_count} FAQ item(s) found. Consider expanding to at least 3-5 FAQs for better coverage.`
     );
   }
-  
+
   return recommendations;
 }
 
@@ -748,29 +862,29 @@ export async function analyzeContent(
   url: string,
 ): Promise<ContentAuditResult> {
   const $ = load(html);
-  
+
   // Extract text content for analysis
   const textContent = extractTextContent($);
-  
+
   // 1. Entity Detection
   const blogPresence = detectBlogPresence($);
-  
+
   // 2. Architecture Score
   const architectureScore = calculateArchitectureScore($, url);
-  
+
   // 3. Text Quality Analysis
   const waterinessScore = calculateWateriness(textContent);
-  
+
   // 4. Uniqueness (Mock - TODO: Integrate with Copyleaks API)
   // Random value between 70-100%
   const uniquenessScore = Math.round((70 + Math.random() * 30) * 100) / 100;
-  
+
   // 5. Authority & E-E-A-T Checks
   const authorityLinksCount = countAuthorityLinks($, url);
   const hasValidPhoneValue = hasValidPhone($);
   const hasValidAddressValue = hasValidAddress($);
   const faqCount = countFAQs($);
-  
+
   // Build structure object
   const structure = {
     has_department_pages: detectDepartmentPages($),
@@ -778,25 +892,32 @@ export async function analyzeContent(
     has_doctor_pages: detectDoctorPages($),
     has_blog: blogPresence,
     architecture_score: architectureScore,
+    // Detailed structure fields
+    direction_pages_count: detectDirectionPagesCount($),
+    service_pages_count: countServicePages($),
+    doctor_details: detectDoctorDetails($),
+    blog_details: detectBlogMetrics($),
+    internal_linking_circular: detectCircularLinking($),
   };
-  
+
   // Build text quality object
   const textQuality = {
     uniqueness_score: uniquenessScore,
     wateriness_score: waterinessScore,
   };
-  
+
   // Build authority object
   const authority = {
     authority_links_count: authorityLinksCount,
     has_valid_address: hasValidAddressValue,
     has_valid_phone: hasValidPhoneValue,
+    is_phone_clickable: $('a[href^="tel:"]').length > 0,
     faq_count: faqCount,
   };
-  
+
   // Generate recommendations
   const recommendations = generateRecommendations(structure, textQuality, authority);
-  
+
   // Build result
   const result: ContentAuditResult = {
     structure,
@@ -804,7 +925,7 @@ export async function analyzeContent(
     authority,
     recommendations,
   };
-  
+
   // Validate and return
   return ContentAuditResultSchema.parse(result);
 }

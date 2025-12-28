@@ -20,23 +20,35 @@ export function usePersonalAccountData(
       return null;
     }
 
-    const response = await client
-      .from('accounts')
-      .select(
-        `
+    try {
+      const response = await client
+        .from('accounts')
+        .select(
+          `
         id,
         name,
         picture_url
     `,
-      )
-      .eq('id', userId)
-      .single();
+        )
+        .eq('id', userId)
+        .single();
 
-    if (response.error) {
-      throw response.error;
+      if (response.error) {
+        // If table doesn't exist (404) or other non-critical errors, return null instead of throwing
+        if (response.error.code === 'PGRST116' || response.status === 404) {
+          console.warn('[usePersonalAccountData] Accounts table not found or user account not found:', response.error.message);
+          return null;
+        }
+        // For other errors, still throw to maintain error visibility
+        throw response.error;
+      }
+
+      return response.data;
+    } catch (error) {
+      // Handle network errors or other unexpected errors gracefully
+      console.warn('[usePersonalAccountData] Error fetching account data:', error);
+      return null;
     }
-
-    return response.data;
   };
 
   return useQuery({
@@ -45,6 +57,7 @@ export function usePersonalAccountData(
     enabled: !!userId,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
+    retry: false, // Don't retry on 404 errors
     initialData: partialAccount?.id
       ? {
           id: partialAccount.id,

@@ -30,6 +30,8 @@ const ConfigurationFormSchema = z.object({
   apiKeyGooglePageSpeed: z.string().optional(),
   apiKeyGooglePlaces: z.string().optional(),
   apiKeyFirecrawl: z.string().optional(),
+  apiKeyGoogleCustomSearch: z.string().optional(),
+  googleCustomSearchEngineId: z.string().optional(),
   domain: z.string().optional(),
   city: z.string().optional(),
   clinicName: z.string().optional(),
@@ -46,6 +48,8 @@ const STORAGE_KEYS = {
   API_KEY_GOOGLE_PAGESPEED: 'configuration_api_key_google_pagespeed',
   API_KEY_GOOGLE_PLACES: 'configuration_api_key_google_places',
   API_KEY_FIRECRAWL: 'configuration_api_key_firecrawl',
+  API_KEY_GOOGLE_CUSTOM_SEARCH: 'configuration_api_key_google_custom_search',
+  GOOGLE_CUSTOM_SEARCH_ENGINE_ID: 'configuration_google_custom_search_engine_id',
   DOMAIN: 'configuration_domain',
   CITY: 'configuration_city',
   CLINIC_NAME: 'configuration_clinic_name',
@@ -87,6 +91,8 @@ export default function ConfigurationPage() {
       apiKeyGooglePageSpeed: '',
       apiKeyGooglePlaces: '',
       apiKeyFirecrawl: '',
+      apiKeyGoogleCustomSearch: '',
+      googleCustomSearchEngineId: '',
       domain: '',
       city: '',
       clinicName: '',
@@ -103,6 +109,8 @@ export default function ConfigurationPage() {
     const savedGooglePageSpeed = getStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_PAGESPEED);
     const savedGooglePlaces = getStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_PLACES);
     const savedFirecrawl = getStoredValue(STORAGE_KEYS.API_KEY_FIRECRAWL);
+    const savedGoogleCustomSearch = getStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_CUSTOM_SEARCH);
+    const savedGoogleCustomSearchEngineId = getStoredValue(STORAGE_KEYS.GOOGLE_CUSTOM_SEARCH_ENGINE_ID);
     const savedDomain = getStoredValue(STORAGE_KEYS.DOMAIN);
     const savedCity = getStoredValue(STORAGE_KEYS.CITY);
     const savedClinicName = getStoredValue(STORAGE_KEYS.CLINIC_NAME);
@@ -113,6 +121,8 @@ export default function ConfigurationPage() {
       savedGooglePageSpeed ||
       savedGooglePlaces ||
       savedFirecrawl ||
+      savedGoogleCustomSearch ||
+      savedGoogleCustomSearchEngineId ||
       savedDomain ||
       savedCity ||
       savedClinicName
@@ -123,6 +133,8 @@ export default function ConfigurationPage() {
         apiKeyGooglePageSpeed: savedGooglePageSpeed || '',
         apiKeyGooglePlaces: savedGooglePlaces || '',
         apiKeyFirecrawl: savedFirecrawl || '',
+        apiKeyGoogleCustomSearch: savedGoogleCustomSearch || '',
+        googleCustomSearchEngineId: savedGoogleCustomSearchEngineId || '',
         domain: savedDomain || '',
         city: savedCity || '',
         clinicName: savedClinicName || '',
@@ -147,6 +159,8 @@ export default function ConfigurationPage() {
         setStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_PAGESPEED, values.apiKeyGooglePageSpeed || '');
         setStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_PLACES, values.apiKeyGooglePlaces || '');
         setStoredValue(STORAGE_KEYS.API_KEY_FIRECRAWL, values.apiKeyFirecrawl || '');
+        setStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_CUSTOM_SEARCH, values.apiKeyGoogleCustomSearch || '');
+        setStoredValue(STORAGE_KEYS.GOOGLE_CUSTOM_SEARCH_ENGINE_ID, values.googleCustomSearchEngineId || '');
         setStoredValue(STORAGE_KEYS.DOMAIN, values.domain || '');
         setStoredValue(STORAGE_KEYS.CITY, values.city || '');
         setStoredValue(STORAGE_KEYS.CLINIC_NAME, values.clinicName || '');
@@ -170,6 +184,8 @@ export default function ConfigurationPage() {
     setStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_PAGESPEED, values.apiKeyGooglePageSpeed || '');
     setStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_PLACES, values.apiKeyGooglePlaces || '');
     setStoredValue(STORAGE_KEYS.API_KEY_FIRECRAWL, values.apiKeyFirecrawl || '');
+    setStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_CUSTOM_SEARCH, values.apiKeyGoogleCustomSearch || '');
+    setStoredValue(STORAGE_KEYS.GOOGLE_CUSTOM_SEARCH_ENGINE_ID, values.googleCustomSearchEngineId || '');
     setStoredValue(STORAGE_KEYS.DOMAIN, values.domain || '');
     setStoredValue(STORAGE_KEYS.CITY, values.city || '');
     setStoredValue(STORAGE_KEYS.CLINIC_NAME, values.clinicName || '');
@@ -316,7 +332,52 @@ export default function ConfigurationPage() {
                               />
                             </FormControl>
                             <FormDescription>
-                              Optional. For web crawling
+                              Optional. For parsing DOC.ua, Helsi, and checking backlinks
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* Google Custom Search API Key */}
+                      <FormField
+                        control={form.control}
+                        name="apiKeyGoogleCustomSearch"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Google Custom Search API Key</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="password"
+                                placeholder="AIzaSy..."
+                                {...field}
+                                disabled={isSaving}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Optional. For finding local backlinks (100 free requests/day)
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* Google Custom Search Engine ID */}
+                      <FormField
+                        control={form.control}
+                        name="googleCustomSearchEngineId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Google Custom Search Engine ID</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="012345678901234567890:abcdefghijk"
+                                {...field}
+                                disabled={isSaving}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Optional. Your Custom Search Engine ID (cx parameter)
                             </FormDescription>
                             <FormMessage />
                           </FormItem>

@@ -38,7 +38,16 @@ interface ExternalLinkAnalysis {
     url: string;
     status: number;
     isTrusted: boolean;
+    rel?: string;
   }>;
+}
+
+/**
+ * Hreflang entry
+ */
+interface HreflangEntry {
+  lang: string;
+  url: string;
 }
 
 /**
@@ -56,6 +65,7 @@ export interface PageParseResult {
     robots: string | null;
     viewport: boolean;
     lang: string | null;
+    hreflangs: HreflangEntry[];
   };
   // Links
   links: string[];
@@ -70,8 +80,8 @@ export interface PageParseResult {
 /**
  * JSON-LD schema object (can be in various formats)
  */
-type JsonLdSchema = 
-  | { '@type'?: string | string[]; '@graph'?: JsonLdSchema[]; type?: string | string[]; [key: string]: unknown }
+type JsonLdSchema =
+  | { '@type'?: string | string[]; '@graph'?: JsonLdSchema[]; type?: string | string[];[key: string]: unknown }
   | JsonLdSchema[];
 
 /*
@@ -82,11 +92,39 @@ type JsonLdSchema =
 
 /**
  * Safely parse JSON-LD content
+ * Handles various formats including escaped HTML entities
  */
 function parseJsonLd(content: string): JsonLdSchema | null {
   try {
-    const parsed = JSON.parse(content);
-    return parsed as JsonLdSchema;
+    // Clean up content - remove HTML entities and whitespace
+    let cleanedContent = content.trim();
+    
+    // Remove HTML comments if present
+    cleanedContent = cleanedContent.replace(/<!--[\s\S]*?-->/g, '');
+    
+    // Try to parse directly
+    try {
+      const parsed = JSON.parse(cleanedContent);
+      return parsed as JsonLdSchema;
+    } catch (directParseError) {
+      // If direct parse fails, try to unescape HTML entities
+      // Some sites embed JSON-LD with HTML entities
+      const unescaped = cleanedContent
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&');
+      
+      try {
+        const parsed = JSON.parse(unescaped);
+        return parsed as JsonLdSchema;
+      } catch (unescapedParseError) {
+        console.warn('[HTMLParser] Failed to parse JSON-LD after unescaping:', unescapedParseError);
+        console.warn('[HTMLParser] Original content preview:', content.substring(0, 200));
+        return null;
+      }
+    }
   } catch (error) {
     // Malformed JSON - return null instead of throwing
     console.warn('[HTMLParser] Failed to parse JSON-LD:', error);
@@ -96,35 +134,63 @@ function parseJsonLd(content: string): JsonLdSchema | null {
 
 /**
  * Extract schema types from a JSON-LD object
- * Handles various formats: @type, type, arrays, @graph
+ * Handles various formats: @type, type, arrays, @graph, nested objects
  */
-function extractSchemaTypes(schema: JsonLdSchema): string[] {
+function extractSchemaTypes(schema: JsonLdSchema, visited = new Set<unknown>()): string[] {
   const types: string[] = [];
+
+  // Prevent infinite recursion
+  if (visited.has(schema)) {
+    return types;
+  }
+  visited.add(schema);
 
   // Handle arrays
   if (Array.isArray(schema)) {
     for (const item of schema) {
-      types.push(...extractSchemaTypes(item));
+      types.push(...extractSchemaTypes(item, visited));
     }
     return types;
   }
 
-  // Handle @graph
+  // Handle objects
   if (typeof schema === 'object' && schema !== null) {
+    // Handle @graph (array of schema objects)
     if ('@graph' in schema && Array.isArray(schema['@graph'])) {
       for (const item of schema['@graph']) {
-        types.push(...extractSchemaTypes(item));
+        types.push(...extractSchemaTypes(item, visited));
       }
     }
 
-    // Extract @type or type field
+    // Extract @type or type field (primary type)
     const typeValue = schema['@type'] || schema['type'];
-    
+
     if (typeValue) {
       if (Array.isArray(typeValue)) {
         types.push(...typeValue.map((t) => String(t)));
       } else {
         types.push(String(typeValue));
+      }
+    }
+
+    // Also check nested objects that might have types
+    // This handles cases like: { "@type": "Organization", "member": { "@type": "Physician" } }
+    for (const key in schema) {
+      if (key === '@type' || key === 'type' || key === '@graph' || key === '@context') {
+        continue; // Skip already processed fields
+      }
+      
+      const value = schema[key];
+      if (typeof value === 'object' && value !== null) {
+        // Recursively extract types from nested objects
+        types.push(...extractSchemaTypes(value, visited));
+      } else if (Array.isArray(value)) {
+        // Check if array contains objects with types
+        for (const item of value) {
+          if (typeof item === 'object' && item !== null) {
+            types.push(...extractSchemaTypes(item, visited));
+          }
+        }
       }
     }
   }
@@ -134,15 +200,33 @@ function extractSchemaTypes(schema: JsonLdSchema): string[] {
 
 /**
  * Check if schema types match any of the target types
+ * Handles various formats:
+ * - "MedicalOrganization"
+ * - "https://schema.org/MedicalOrganization"
+ * - "http://schema.org/MedicalOrganization"
+ * - "schema.org/MedicalOrganization"
  */
 function hasSchemaType(types: string[], targetTypes: string[]): boolean {
-  const normalizedTypes = types.map((t) => t.toLowerCase().trim());
-  const normalizedTargets = targetTypes.map((t) => t.toLowerCase().trim());
+  const normalizedTypes = types.map((t) => {
+    const trimmed = t.toLowerCase().trim();
+    // Remove schema.org URL prefix if present
+    return trimmed.replace(/^https?:\/\/schema\.org\//, '').replace(/^schema\.org\//, '');
+  });
   
-  return normalizedTypes.some((type) => 
-    normalizedTargets.some((target) => 
-      type === target || type.endsWith(`/${target}`) || type.includes(target)
-    )
+  const normalizedTargets = targetTypes.map((t) => t.toLowerCase().trim());
+
+  return normalizedTypes.some((type) =>
+    normalizedTargets.some((target) => {
+      // Exact match
+      if (type === target) return true;
+      // Ends with /target (e.g., "schema.org/MedicalOrganization")
+      if (type.endsWith(`/${target}`)) return true;
+      // Contains target (e.g., "MedicalOrganizationType")
+      if (type.includes(target)) return true;
+      // Handle namespace prefixes (e.g., "schema:MedicalOrganization")
+      if (type.includes(`:${target}`)) return true;
+      return false;
+    })
   );
 }
 
@@ -165,22 +249,34 @@ function analyzeSchemaMarkup($: CheerioAPI): SchemaAnalysis {
   const jsonLdScripts = $('script[type="application/ld+json"]');
 
   if (jsonLdScripts.length === 0) {
+    console.debug('[SchemaAnalysis] No JSON-LD script tags found');
     return result;
   }
+
+  console.debug(`[SchemaAnalysis] Found ${jsonLdScripts.length} JSON-LD script tag(s)`);
 
   // Collect all schema types from all JSON-LD blocks
   const allTypes: string[] = [];
 
   jsonLdScripts.each((_, element) => {
     const content = $(element).html();
-    if (!content) return;
+    if (!content) {
+      console.debug('[SchemaAnalysis] Empty JSON-LD script tag content');
+      return;
+    }
 
     const parsed = parseJsonLd(content);
-    if (!parsed) return;
+    if (!parsed) {
+      console.debug('[SchemaAnalysis] Failed to parse JSON-LD content');
+      return;
+    }
 
     const types = extractSchemaTypes(parsed);
+    console.debug(`[SchemaAnalysis] Extracted types from JSON-LD:`, types);
     allTypes.push(...types);
   });
+
+  console.debug(`[SchemaAnalysis] All extracted types:`, allTypes);
 
   // Check for specific schema types
   // MedicalOrganization
@@ -188,6 +284,7 @@ function analyzeSchemaMarkup($: CheerioAPI): SchemaAnalysis {
     'MedicalOrganization',
     'Organization',
   ]);
+  console.debug(`[SchemaAnalysis] hasMedicalOrganization: ${result.hasMedicalOrganization}`);
 
   // LocalBusiness (often used by medical clinics)
   result.hasLocalBusiness = hasSchemaType(allTypes, [
@@ -198,6 +295,7 @@ function analyzeSchemaMarkup($: CheerioAPI): SchemaAnalysis {
     'Hospital',
     'Clinic',
   ]);
+  console.debug(`[SchemaAnalysis] hasLocalBusiness: ${result.hasLocalBusiness}`);
 
   // Physician
   result.hasPhysician = hasSchemaType(allTypes, [
@@ -205,23 +303,27 @@ function analyzeSchemaMarkup($: CheerioAPI): SchemaAnalysis {
     'Doctor',
     'MedicalPerson',
   ]);
+  console.debug(`[SchemaAnalysis] hasPhysician: ${result.hasPhysician}`);
 
   // MedicalSpecialty
   result.hasMedicalSpecialty = hasSchemaType(allTypes, [
     'MedicalSpecialty',
     'Specialty',
   ]);
+  console.debug(`[SchemaAnalysis] hasMedicalSpecialty: ${result.hasMedicalSpecialty}`);
 
   // MedicalProcedure
   result.hasMedicalProcedure = hasSchemaType(allTypes, [
     'MedicalProcedure',
     'Procedure',
   ]);
+  console.debug(`[SchemaAnalysis] hasMedicalProcedure: ${result.hasMedicalProcedure}`);
 
   // FAQPage
   result.hasFAQPage = hasSchemaType(allTypes, [
     'FAQPage',
   ]);
+  console.debug(`[SchemaAnalysis] hasFAQPage: ${result.hasFAQPage}`);
 
   // Review
   result.hasReview = hasSchemaType(allTypes, [
@@ -229,11 +331,13 @@ function analyzeSchemaMarkup($: CheerioAPI): SchemaAnalysis {
     'AggregateRating',
     'Rating',
   ]);
+  console.debug(`[SchemaAnalysis] hasReview: ${result.hasReview}`);
 
   // BreadcrumbList
   result.hasBreadcrumbList = hasSchemaType(allTypes, [
     'BreadcrumbList',
   ]);
+  console.debug(`[SchemaAnalysis] hasBreadcrumbList: ${result.hasBreadcrumbList}`);
 
   return result;
 }
@@ -279,6 +383,29 @@ function extractLinks($: CheerioAPI, baseUrl: string): string[] {
   });
 
   return links;
+}
+
+/**
+ * Extract hreflang tags from the page
+ */
+function extractHreflangs($: CheerioAPI, baseUrl: string): HreflangEntry[] {
+  const hreflangs: HreflangEntry[] = [];
+
+  $('link[rel="alternate"][hreflang]').each((_, element) => {
+    const lang = $(element).attr('hreflang');
+    const href = $(element).attr('href');
+
+    if (lang && href) {
+      try {
+        const absoluteUrl = new URL(href, baseUrl).toString();
+        hreflangs.push({ lang, url: absoluteUrl });
+      } catch {
+        // Skip invalid URLs
+      }
+    }
+  });
+
+  return hreflangs;
 }
 
 /**
@@ -338,9 +465,19 @@ function isTrustedDomain(domain: string | null): boolean {
   ];
 
   const normalizedDomain = domain.toLowerCase();
-  return trustedDomains.some((trusted) => 
+  return trustedDomains.some((trusted) =>
     normalizedDomain === trusted || normalizedDomain.endsWith(`.${trusted}`)
   );
+}
+
+/**
+ * Extract rel attribute and other link metadata
+ */
+function getLinkMetadata($: CheerioAPI, url: string): { rel?: string } {
+  const link = $(`a[href="${url}"]`).first();
+  return {
+    rel: link.attr('rel'),
+  };
 }
 
 /**
@@ -348,6 +485,7 @@ function isTrustedDomain(domain: string | null): boolean {
  * Limits to max 15 links to avoid timeouts
  */
 async function checkLinksStatus(
+  $: CheerioAPI,
   links: string[],
   targetDomain: string,
 ): Promise<ExternalLinkAnalysis> {
@@ -380,6 +518,7 @@ async function checkLinksStatus(
   const checkPromises = linksToCheck.map(async (url) => {
     const domain = getDomain(url);
     const isTrusted = isTrustedDomain(domain);
+    const { rel } = getLinkMetadata($, url);
 
     try {
       const response = await fetch(url, {
@@ -394,6 +533,7 @@ async function checkLinksStatus(
         url,
         status: response.status,
         isTrusted,
+        rel,
       };
     } catch (error) {
       // If fetch fails, assume it's broken (404 or network error)
@@ -407,7 +547,7 @@ async function checkLinksStatus(
 
   // Wait for all checks to complete (or fail)
   const results = await Promise.allSettled(checkPromises);
-  
+
   results.forEach((result) => {
     if (result.status === 'fulfilled') {
       linkResults.push(result.value);
@@ -474,6 +614,9 @@ export async function parseHtml(html: string, url: string): Promise<PageParseRes
   // Extract links
   const links = extractLinks($, url);
 
+  // Extract and analyze hreflangs
+  const hreflangs = extractHreflangs($, url);
+
   // Analyze images
   const images = analyzeImages($);
 
@@ -481,7 +624,7 @@ export async function parseHtml(html: string, url: string): Promise<PageParseRes
   const schema = analyzeSchemaMarkup($);
 
   // Analyze external links (async)
-  const externalLinks = await checkLinksStatus(links, url);
+  const externalLinks = await checkLinksStatus($, links, url);
 
   return {
     meta: {
@@ -494,6 +637,7 @@ export async function parseHtml(html: string, url: string): Promise<PageParseRes
       robots,
       viewport,
       lang,
+      hreflangs,
     },
     links,
     images,

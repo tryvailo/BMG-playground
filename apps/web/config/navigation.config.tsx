@@ -1,4 +1,4 @@
-import { Home, User, Shield, Settings, FileText, MapPin, Briefcase, Cog } from 'lucide-react';
+import { Home, User, Shield, Settings, FileText, MapPin, Briefcase, Cog, Zap } from 'lucide-react';
 import { z } from 'zod';
 
 import { NavigationConfigSchema } from '@kit/ui/navigation-schema';
@@ -18,40 +18,44 @@ const routes = [
         end: true,
       },
       {
-        label: 'Services Management',
+        label: 'common:routes.servicesManagement',
         path: pathsConfig.app.servicesManagement,
         Icon: <Briefcase className={iconClasses} />,
         end: true,
       },
       {
-        label: 'Technical Audit',
+        label: 'common:routes.technicalAudit',
         path: pathsConfig.app.techAudit,
         Icon: <Settings className={iconClasses} />,
         end: true,
       },
       {
-        label: 'Content Optimization',
+        label: 'common:routes.contentOptimization',
         path: pathsConfig.app.contentOptimization,
         Icon: <FileText className={iconClasses} />,
         end: true,
       },
       {
-        label: 'E-E-A-T Assessment',
+        label: 'common:routes.eeatAssessment',
         path: pathsConfig.app.eeatAssessment,
         Icon: <Shield className={iconClasses} />,
         end: true,
       },
       {
-        label: 'Local Indicators',
+        label: 'common:routes.localIndicators',
         path: pathsConfig.app.localIndicators,
         Icon: <MapPin className={iconClasses} />,
         end: true,
       },
       {
-        label: 'Configuration',
+        label: 'common:routes.competitors',
+        path: pathsConfig.app.competitors,
+        Icon: <Zap className={iconClasses} />,
+      },
+      {
+        label: 'common:routes.configuration',
         path: pathsConfig.app.configuration,
         Icon: <Cog className={iconClasses} />,
-        end: true,
       },
     ],
   },

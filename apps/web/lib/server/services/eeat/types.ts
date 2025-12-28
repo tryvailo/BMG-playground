@@ -27,6 +27,8 @@ export const ArticleAuthorInfoSchema = z.object({
   has_author_profile_link: z.boolean(),
   /** Author profile URL if found */
   author_profile_url: z.string().optional(),
+  /** Whether the author is a medical expert (has medical qualifications) */
+  is_medical_author: z.boolean().optional(),
 });
 
 /**
@@ -55,6 +57,8 @@ export const AuthorMetricsSchema = z.object({
   total_articles: z.number().int().nonnegative(),
   /** Articles with authors */
   articles_with_author: z.number().int().nonnegative(),
+  /** Percentage of blog pages with medical author */
+  blog_pages_with_medical_author_percent: z.number().min(0).max(100).optional(),
 });
 
 /**

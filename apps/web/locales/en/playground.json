@@ -1,0 +1,154 @@
+{
+  "title": "Dashboard Playground",
+  "description": "Test your queries and see how they would appear in the dashboard before adding them to your project.",
+  "configuration": "Configuration",
+  "configurationDescription": "Enter your API keys and test parameters to simulate a dashboard view",
+  "openAiApiKey": "OpenAI API Key",
+  "openAiApiKeyDescription": "Your OpenAI API key for GPT models",
+  "perplexityApiKey": "Perplexity API Key",
+  "perplexityApiKeyDescription": "Your Perplexity AI API key",
+  "projectDomain": "Project Domain",
+  "projectDomainDescription": "Your clinic or medical facility domain",
+  "locationCity": "Location (City)",
+  "locationCityDescription": "City for location-based searches",
+  "keywordQuery": "Keyword/Query",
+  "keywordQueryDescription": "The medical service or query to test (e.g., \"dental implants\", \"best cardiologist\")",
+  "runningSimulation": "Running Simulation...",
+  "simulateDashboard": "Simulate Dashboard",
+  "dashboardPreview": "Dashboard Preview",
+  "simulatedDashboardView": "Simulated dashboard view based on your test query",
+  "runningLiveAudit": "Running live audit and analysis...",
+  "runSimulationToSee": "Run a simulation to see the dashboard preview",
+  "liveAuditInProgress": "Live Audit in Progress",
+  "runningComprehensiveAnalysis": "Running comprehensive analysis of your domain and query...",
+  "simulationPreview": "This is a simulation preview. Results are not saved to your project.",
+  "serviceAnalysis": "Service Analysis",
+  "readyToSimulate": "Ready to Simulate",
+  "fillInConfiguration": "Fill in the configuration above and click \"Simulate Dashboard\" to see results",
+  "simulationCompleted": "Dashboard simulation completed successfully!",
+  "invalidApiKeys": "Invalid API keys. Please check your OpenAI and Perplexity API keys.",
+  "failedToRunSimulation": "Failed to run simulation: {errorMessage}",
+  "calculatedServices": "Calculated {count} service(s)",
+  "techAudit": {
+    "title": "Technical Audit",
+    "groups": {
+      "ai": "3. Technical Optimization (AI & Search)",
+      "compliance": "Basic Compliance",
+      "schema": "Structured Data (Schema.org)",
+      "seo": "SEO & Indexing",
+      "performance": "Speed & Content"
+    },
+    "items": {
+      "3_1": {
+        "title": "3.1. llms.txt File Presence",
+        "description": "Check for llms.txt file to help AI systems."
+      },
+      "3_2": {
+        "title": "3.2. llms.txt Optimization",
+        "description": "Analyze llms.txt content for completeness and structure recommendations."
+      },
+      "3_3": {
+        "title": "3.3. robots.txt Presence",
+        "description": "File helps search and AI robots properly index the site."
+      },
+      "3_4": {
+        "title": "3.4. robots.txt Configuration",
+        "description": "Check access rules and sitemap presence."
+      },
+      "3_5": {
+        "title": "3.5. HTTPS",
+        "description": "Secure data transfer protocol. Critical for medical sites."
+      },
+      "3_6": {
+        "title": "3.6. Mobile Responsiveness",
+        "description": "Correct display on mobile devices (mobile-first)."
+      },
+      "3_7": {
+        "title": "3.7. MedicalOrganization Schema",
+        "description": "Special markup for medical organizations."
+      },
+      "3_8": {
+        "title": "3.8. LocalBusiness Schema",
+        "description": "Data about name, address, phone and business hours."
+      },
+      "3_9": {
+        "title": "3.9. Physician Schema",
+        "description": "Markup for individual doctors, their specializations and achievements."
+      },
+      "3_10": {
+        "title": "3.10. MedicalSpecialty Schema",
+        "description": "Classification of specific medical fields of the clinic."
+      },
+      "3_11": {
+        "title": "3.11. MedicalProcedure Schema",
+        "description": "Description of diagnostic and treatment procedures."
+      },
+      "3_12": {
+        "title": "3.12. FAQ Schema",
+        "description": "Markup for frequently asked questions for rich snippets."
+      },
+      "3_13": {
+        "title": "3.13. Review Schema",
+        "description": "Helps AI identify reviews and ratings."
+      },
+      "3_14": {
+        "title": "3.14. BreadcrumbList Schema",
+        "description": "Navigation structure (\"breadcrumbs\")."
+      },
+      "3_15": {
+        "title": "3.15. Lang",
+        "description": "Content language attribute for browsers and AI."
+      },
+      "3_16": {
+        "title": "3.16. Hreflang",
+        "description": "Indication of language or regional page versions."
+      },
+      "3_17": {
+        "title": "3.17. External Links",
+        "description": "Quality and relevance of links to external resources."
+      },
+      "3_18": {
+        "title": "3.18. Titles",
+        "description": "Page titles: length, uniqueness and keywords."
+      },
+      "3_19": {
+        "title": "3.19. Descriptions",
+        "description": "Meta descriptions: uniqueness and click appeal (CTR)."
+      },
+      "3_20": {
+        "title": "3.20. Canonicals",
+        "description": "Indication of priority page version to avoid duplicates."
+      },
+      "3_21": {
+        "title": "3.21. Noindex",
+        "description": "Hiding technical or low-value pages from indexing."
+      },
+      "3_22": {
+        "title": "3.22. Nofollow",
+        "description": "Managing link weight transfer to external resources."
+      },
+      "3_23": {
+        "title": "3.23. Content Duplicates",
+        "description": "Search for pages with content similarity over 80%."
+      },
+      "3_24": {
+        "title": "3.24. Desktop Speed",
+        "description": "Loading speed on computers (Desktop)."
+      },
+      "3_25": {
+        "title": "3.25. Mobile Speed",
+        "description": "Loading speed on smartphones (Mobile)."
+      }
+    }
+  },
+  "validation": {
+    "openAiApiKeyRequired": "OpenAI API key is required",
+    "perplexityApiKeyRequired": "Perplexity API key is required",
+    "domainRequired": "Domain is required",
+    "domainInvalid": "Please enter a valid domain (e.g., mayoclinic.org)",
+    "cityRequired": "City is required",
+    "keywordQueryRequired": "Keyword/Query is required"
+  }
+}
+
+

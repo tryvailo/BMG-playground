@@ -18,6 +18,21 @@ const StructureSchema = z.object({
   has_doctor_pages: z.boolean(),
   has_blog: z.boolean(),
   architecture_score: z.number().min(0).max(100),
+  // Detailed structure fields
+  direction_pages_count: z.number().int().nonnegative().optional(),
+  service_pages_count: z.number().int().nonnegative().optional(),
+  doctor_details: z.object({
+    has_photos: z.boolean(),
+    has_bio: z.boolean(),
+    has_experience: z.boolean(),
+    has_certificates: z.boolean(),
+  }).optional(),
+  blog_details: z.object({
+    posts_count: z.number().int().nonnegative(),
+    is_regularly_updated: z.boolean(),
+    avg_article_length: z.number().int().nonnegative(),
+  }).optional(),
+  internal_linking_circular: z.boolean().optional(), // Doctor -> Service -> Branch cycle
 });
 
 /**
@@ -37,6 +52,7 @@ const AuthoritySchema = z.object({
   authority_links_count: z.number().int().nonnegative(),
   has_valid_address: z.boolean(),
   has_valid_phone: z.boolean(),
+  is_phone_clickable: z.boolean().optional(),
   faq_count: z.number().int().nonnegative(),
 });
 

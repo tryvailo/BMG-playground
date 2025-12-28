@@ -1,33 +1,74 @@
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState } from 'react';
 import {
   FileText,
   CheckCircle2,
   XCircle,
-  Loader2,
   AlertTriangle,
   Link2,
   Phone,
   MapPin,
   HelpCircle,
   ChevronDown,
-  Settings,
   Info,
   AlertCircle,
-  Type,
-  Layout,
   Shield,
+  Users,
+  Layout,
+  BookOpen,
+  Hash,
+  Droplets,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@kit/ui/card';
-import { Button } from '@kit/ui/button';
-import { Input } from '@kit/ui/input';
-import { Alert, AlertDescription, AlertTitle } from '@kit/ui/alert';
+import { Alert, AlertDescription } from '@kit/ui/alert';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@kit/ui/collapsible';
 import { cn } from '@kit/ui/utils';
+
 import { performContentAudit } from '~/lib/actions/content-audit';
 import type { ContentAuditResult } from '~/lib/server/services/content/types';
+
+// --- Premium 2026 Light Tokens ---
+const TOKENS = {
+    colors: {
+        you: '#f43f5e', // Ruby
+        c1: '#3b82f6', // Blue
+        c2: '#8b5cf6', // Violet
+        c3: '#10b981', // Emerald
+        c4: '#f59e0b', // Amber
+        c5: '#0ea5e9', // Sky
+        c6: '#6366f1', // Indigo
+        c7: '#d946ef', // Fuchsia
+        c8: '#f97316', // Orange
+        c9: '#14b8a6', // Teal
+        c10: '#64748b', // Slate
+        marketAvg: '#cbd5e1',
+    },
+    shadows: {
+        soft: 'shadow-[0_8px_30px_rgb(0,0,0,0.04)]',
+        deep: 'shadow-[0_20px_50px_rgba(0,0,0,0.06)]',
+    }
+};
+
+// --- Custom Modern Components ---
+const BentoCard = ({ children, className, title, subtitle }: any) => (
+    <Card className={cn(
+        "border border-slate-200 bg-white shadow-[0_8px_32px_0_rgba(15,23,42,0.04)] overflow-hidden transition-all duration-300 hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] group",
+        className
+    )}>
+        {(title || subtitle) && (
+            <CardHeader className="pb-2">
+                {title && <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 group-hover:text-primary transition-colors">{title}</h3>}
+                {subtitle && <p className="text-sm font-bold text-slate-900">{subtitle}</p>}
+            </CardHeader>
+        )}
+        <CardContent className={cn("p-6", (title || subtitle) && "pt-2")}>
+            {children}
+        </CardContent>
+    </Card>
+);
 
 interface ContentAuditSectionProps {
   /** Optional URL from parent context. If provided, will be used as default */
@@ -50,36 +91,36 @@ interface ProgressBarProps {
 
 function ProgressBar({ value, max = 100, label, showValue = true, size = 'md' }: ProgressBarProps) {
   const percentage = Math.min(100, Math.max(0, (value / max) * 100));
-  
+
   const getColor = () => {
-    if (percentage < 50) return 'bg-red-500';
+    if (percentage < 50) return 'bg-red-600';
     if (percentage < 90) return 'bg-orange-500';
-    return 'bg-emerald-500';
+    return 'bg-emerald-600';
   };
 
   const heightClasses = {
-    sm: 'h-2',
-    md: 'h-2.5',
-    lg: 'h-3',
+    sm: 'h-2.5',
+    md: 'h-3',
+    lg: 'h-4',
   };
 
   return (
     <div className="w-full">
       {label && (
         <div className="flex justify-between items-center mb-1.5">
-          <span className="text-sm font-medium text-foreground">{label}</span>
+          <span className="text-sm font-bold text-slate-700">{label}</span>
           {showValue && (
-            <span className="text-sm font-semibold text-muted-foreground">
+            <span className="text-sm font-black text-slate-900">
               {Math.round(percentage)}%
             </span>
           )}
         </div>
       )}
-      <div className={cn('w-full bg-muted rounded-full overflow-hidden relative', heightClasses[size])}>
+      <div className={cn('w-full bg-slate-200 rounded-full overflow-hidden relative border border-slate-300', heightClasses[size])}>
         <div
-          className={cn('transition-all duration-500 ease-out rounded-full', getColor())}
-          style={{ 
-            width: `${percentage}%`, 
+          className={cn('transition-all duration-500 ease-out rounded-full shadow-sm', getColor())}
+          style={{
+            width: `${percentage}%`,
             height: '100%',
             minWidth: percentage > 0 ? '4px' : '0',
             minHeight: '100%'
@@ -95,6 +136,7 @@ function ProgressBar({ value, max = 100, label, showValue = true, size = 'md' }:
  */
 interface MinimalMetricCardProps {
   title: string;
+  description?: string;
   icon?: React.ReactNode;
   status: 'good' | 'bad' | 'warning' | 'neutral';
   value?: string | number | React.ReactNode;
@@ -103,90 +145,95 @@ interface MinimalMetricCardProps {
   defaultOpen?: boolean;
 }
 
-function MinimalMetricCard({ 
-  title, 
-  icon, 
-  status, 
-  value, 
+function MinimalMetricCard({
+  title,
+  description,
+  icon,
+  status,
+  value,
   score,
-  children, 
-  defaultOpen = false 
+  children,
+  defaultOpen = false
 }: MinimalMetricCardProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   // Auto-calculate score from status if score is not provided
-  const calculatedScore = score !== undefined && score !== null 
-    ? score 
-    : status === 'good' 
-      ? 100 
-      : status === 'warning' 
-        ? 50 
-        : status === 'bad' 
-          ? 0 
+  const calculatedScore = score !== undefined && score !== null
+    ? score
+    : status === 'good'
+      ? 100
+      : status === 'warning'
+        ? 50
+        : status === 'bad'
+          ? 0
           : null;
 
   const getStatusIcon = () => {
     switch (status) {
       case 'good':
-        return <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />;
+        return <CheckCircle2 className="h-5 w-5 text-emerald-600" />;
       case 'bad':
-        return <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />;
+        return <XCircle className="h-5 w-5 text-red-600" />;
       case 'warning':
-        return <AlertCircle className="h-5 w-5 text-orange-600 dark:text-orange-400" />;
+        return <AlertCircle className="h-5 w-5 text-orange-600" />;
       default:
-        return <Info className="h-5 w-5 text-muted-foreground" />;
+        return <Info className="h-5 w-5 text-slate-400" />;
     }
   };
 
   const getStatusColor = () => {
     switch (status) {
       case 'good':
-        return 'border-l-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20';
+        return 'bg-emerald-50 border-emerald-300';
       case 'bad':
-        return 'border-l-red-500 bg-red-50/50 dark:bg-red-950/20';
+        return 'bg-red-50 border-red-300';
       case 'warning':
-        return 'border-l-orange-500 bg-orange-50/50 dark:bg-orange-950/20';
+        return 'bg-orange-50 border-orange-300';
       default:
-        return 'border-l-border bg-muted/30';
+        return 'bg-white border-slate-200';
     }
   };
 
   return (
-    <Card className={cn(
-      'hover:shadow-lg transition-all border-l-4',
-      getStatusColor()
-    )}>
+    <BentoCard className={cn('border-2', getStatusColor())}>
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+          <CardHeader className="cursor-pointer hover:bg-slate-50/50 transition-colors">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 {icon || getStatusIcon()}
-                <CardTitle className="text-base font-semibold text-foreground">
-                  {title}
-                </CardTitle>
+                <div>
+                  <CardTitle className="text-base font-bold text-slate-900">
+                    {title}
+                  </CardTitle>
+                  {description && (
+                    <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
+                      {description}
+                    </p>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-4">
                 {calculatedScore !== null && calculatedScore !== undefined ? (
                   <div className="flex items-center gap-2">
                     <span className={cn(
-                      'text-lg font-bold',
-                      calculatedScore >= 90 ? 'text-emerald-600 dark:text-emerald-400' :
-                      calculatedScore >= 50 ? 'text-orange-600 dark:text-orange-400' :
-                      'text-red-600 dark:text-red-400'
+                      'text-lg font-black italic',
+                      calculatedScore >= 90 ? 'text-emerald-500' :
+                        calculatedScore >= 50 ? 'text-orange-500' :
+                          'text-rose-500'
                     )}>
                       {calculatedScore}
                     </span>
-                    <span className="text-sm text-muted-foreground">/100</span>
+                    <span className="text-sm text-slate-500">/100</span>
                   </div>
                 ) : null}
                 {value && (
-                  <span className="text-base font-semibold text-foreground">
+                  <span className="text-base font-bold text-slate-900">
                     {value}
                   </span>
                 )}
                 <ChevronDown className={cn(
-                  'h-5 w-5 text-muted-foreground transition-transform',
+                  'h-5 w-5 text-slate-400 transition-transform',
                   isOpen && 'rotate-180'
                 )} />
               </div>
@@ -196,7 +243,7 @@ function MinimalMetricCard({
                 <ProgressBar value={calculatedScore} size="sm" showValue={false} />
               </div>
             ) : (
-              <div className="mt-3 h-2 w-full bg-muted rounded-full" />
+              <div className="mt-3 h-2.5 w-full bg-slate-100 rounded-full border border-slate-200" />
             )}
           </CardHeader>
         </CollapsibleTrigger>
@@ -208,30 +255,7 @@ function MinimalMetricCard({
           </CollapsibleContent>
         )}
       </Collapsible>
-    </Card>
-  );
-}
-
-/**
- * Category Section Component
- */
-interface CategorySectionProps {
-  title: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-}
-
-function CategorySection({ title, icon, children }: CategorySectionProps) {
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-3 pb-2 border-b border-border">
-        {icon}
-        <h2 className="text-xl font-bold text-foreground">{title}</h2>
-      </div>
-      <div className="grid grid-cols-1 gap-4">
-        {children}
-      </div>
-    </div>
+    </BentoCard>
   );
 }
 
@@ -265,426 +289,335 @@ function calculateOverallScore(data: ContentAuditResult): number {
   return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
 }
 
-/**
- * Calculate Category Scores
- */
-function calculateCategoryScores(data: ContentAuditResult) {
-  const textQualityScores: number[] = [];
-  const structureScores: number[] = [];
-  const authorityScores: number[] = [];
-
-  // Text Quality
-  textQualityScores.push(100 - data.text_quality.wateriness_score); // Invert wateriness
-  textQualityScores.push(data.text_quality.uniqueness_score);
-
-  // Structure
-  structureScores.push(data.structure.architecture_score);
-  if (data.structure.has_doctor_pages) structureScores.push(100);
-  if (data.structure.has_service_pages) structureScores.push(100);
-  if (data.structure.has_department_pages) structureScores.push(100);
-  if (data.structure.has_blog) structureScores.push(100);
-
-  // Authority
-  if (data.authority.has_valid_phone) authorityScores.push(100);
-  if (data.authority.has_valid_address) authorityScores.push(100);
-  if (data.authority.authority_links_count > 0) {
-    authorityScores.push(Math.min(100, data.authority.authority_links_count * 20));
-  }
-  if (data.authority.faq_count >= 3) authorityScores.push(100);
-  else if (data.authority.faq_count > 0) authorityScores.push(50);
-
-  return {
-    textQuality: textQualityScores.length > 0
-      ? Math.round(textQualityScores.reduce((a, b) => a + b, 0) / textQualityScores.length)
-      : null,
-    structure: structureScores.length > 0
-      ? Math.round(structureScores.reduce((a, b) => a + b, 0) / structureScores.length)
-      : null,
-    authority: authorityScores.length > 0
-      ? Math.round(authorityScores.reduce((a, b) => a + b, 0) / authorityScores.length)
-      : null,
-  };
-}
-
-export function ContentAuditSection({ defaultUrl, result: externalResult, className }: ContentAuditSectionProps) {
-  const [url, setUrl] = useState(defaultUrl || '');
-  const [internalResult, setInternalResult] = useState<ContentAuditResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
-
-  // Use external result if provided, otherwise use internal result
-  const result = externalResult !== undefined ? externalResult : internalResult;
-
-  // Update URL when defaultUrl changes
-  React.useEffect(() => {
-    if (defaultUrl) {
-      setUrl(defaultUrl);
-    }
-  }, [defaultUrl]);
-
-  const handleAnalyze = () => {
-    if (!url.trim()) {
-      toast.error('Please enter a URL');
-      return;
-    }
-
-    setError(null);
-    setInternalResult(null);
-
-    startTransition(async () => {
-      try {
-        const auditResult = await performContentAudit({ url: url.trim() });
-        setInternalResult(auditResult);
-        toast.success('Content audit completed successfully!');
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-        setError(errorMessage);
-        toast.error(`Content audit failed: ${errorMessage}`);
-      }
-    });
-  };
+export function ContentAuditSection({ result, className }: ContentAuditSectionProps) {
+  const t = useTranslations('Playground.contentAudit');
 
   if (!result) {
     return null;
   }
 
   const overallScore = calculateOverallScore(result);
-  const categoryScores = calculateCategoryScores(result);
 
   const getScoreColor = (score: number) => {
-    if (score >= 90) return 'text-emerald-600 dark:text-emerald-400';
-    if (score >= 50) return 'text-orange-600 dark:text-orange-400';
-    return 'text-red-600 dark:text-red-400';
+    if (score >= 90) return 'text-emerald-700';
+    if (score >= 50) return 'text-orange-600';
+    return 'text-red-600';
   };
 
   const getScoreBgColor = (score: number) => {
-    if (score >= 90) return 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800';
-    if (score >= 50) return 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800';
-    return 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800';
+    if (score >= 90) return 'bg-emerald-50 border-emerald-300';
+    if (score >= 50) return 'bg-orange-50 border-orange-300';
+    return 'bg-red-50 border-red-300';
   };
 
-  return (
-    <div className={cn('space-y-8', className)}>
-      {/* Error State */}
-      {error && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+  // Calculate category scores
+  const categoryScores = {
+    structure: result.structure.architecture_score,
+    textQuality: (result.text_quality.uniqueness_score + (100 - result.text_quality.wateriness_score)) / 2,
+    authority: (() => {
+      const scores: number[] = [];
+      if (result.authority.has_valid_phone) scores.push(100);
+      if (result.authority.has_valid_address) scores.push(100);
+      if (result.authority.authority_links_count > 0) scores.push(Math.min(100, result.authority.authority_links_count * 20));
+      if (result.authority.faq_count >= 3) scores.push(100);
+      else if (result.authority.faq_count > 0) scores.push(50);
+      return scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+    })(),
+  };
 
-      {/* Loading State */}
-      {isPending && (
-        <Card className="border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20">
+  const s = result.structure;
+  const q = result.text_quality;
+  const a = result.authority;
+
+  return (
+    <div className={cn('space-y-6', className)}>
+      {/* Results Header */}
+      <BentoCard className={cn('border-2 relative overflow-hidden bg-white', getScoreBgColor(overallScore))}>
+        <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
+          <FileText className="w-24 h-24" />
+        </div>
+        <CardHeader>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-3xl font-black italic tracking-tighter text-slate-900 mb-2">
+                {t('title')}
+              </h1>
+              <p className="text-sm font-medium text-slate-700">
+                {t('description')}
+              </p>
+            </div>
+            <div className="text-center">
+              <div className={cn('text-5xl font-black italic tracking-tighter mb-1', getScoreColor(overallScore))}>
+                {overallScore}
+              </div>
+              <div className="text-sm font-bold text-slate-600">
+                / 100
+              </div>
+            </div>
+          </div>
+
+          {/* Category Progress Bars */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+            <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Structure</span>
+                <span className="text-xs font-black text-slate-900">{categoryScores.structure}%</span>
+              </div>
+              <div className="h-3 w-full bg-slate-200 rounded-full overflow-hidden relative border border-slate-300">
+                <div
+                  className={cn(
+                    'transition-all duration-500 ease-out rounded-full shadow-sm h-full',
+                    categoryScores.structure >= 90 ? 'bg-emerald-600' : categoryScores.structure >= 50 ? 'bg-orange-500' : 'bg-red-600'
+                  )}
+                  style={{ width: `${categoryScores.structure}%`, minWidth: categoryScores.structure > 0 ? '4px' : '0' }}
+                />
+              </div>
+            </div>
+            <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Text Quality</span>
+                <span className="text-xs font-black text-slate-900">{Math.round(categoryScores.textQuality)}%</span>
+              </div>
+              <div className="h-3 w-full bg-slate-200 rounded-full overflow-hidden relative border border-slate-300">
+                <div
+                  className={cn(
+                    'transition-all duration-500 ease-out rounded-full shadow-sm h-full',
+                    categoryScores.textQuality >= 90 ? 'bg-emerald-600' : categoryScores.textQuality >= 50 ? 'bg-orange-500' : 'bg-red-600'
+                  )}
+                  style={{ width: `${categoryScores.textQuality}%`, minWidth: categoryScores.textQuality > 0 ? '4px' : '0' }}
+                />
+              </div>
+            </div>
+            <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Authority</span>
+                <span className="text-xs font-black text-slate-900">{categoryScores.authority}%</span>
+              </div>
+              <div className="h-3 w-full bg-slate-200 rounded-full overflow-hidden relative border border-slate-300">
+                <div
+                  className={cn(
+                    'transition-all duration-500 ease-out rounded-full shadow-sm h-full',
+                    categoryScores.authority >= 90 ? 'bg-emerald-600' : categoryScores.authority >= 50 ? 'bg-orange-500' : 'bg-red-600'
+                  )}
+                  style={{ width: `${categoryScores.authority}%`, minWidth: categoryScores.authority > 0 ? '4px' : '0' }}
+                />
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+      </BentoCard>
+
+      {/* Audit Items List */}
+      <div className="space-y-3">
+        {/* 4.1 Direction Pages */}
+        <MinimalMetricCard
+          title={t('items.4_1.title')}
+          description={t('items.4_1.description')}
+          icon={<Layout className="h-5 w-5 text-blue-500" />}
+          status={s.direction_pages_count && s.direction_pages_count > 0 ? 'good' : 'bad'}
+          value={s.direction_pages_count || 0}
+        >
+          <div className="text-sm space-y-2">
+            <p className="text-slate-700">Виявлено <strong className="font-bold text-slate-900">{s.direction_pages_count || 0}</strong> унікальних посилань на сторінки напрямків.</p>
+            <p className="text-slate-500">Наявність окремих сторінок для кожного напрямку допомагає AI краще зрозуміти спеціалізацію клініки.</p>
+          </div>
+        </MinimalMetricCard>
+
+        {/* 4.2 Service Pages */}
+        <MinimalMetricCard
+          title={t('items.4_2.title')}
+          description={t('items.4_2.description')}
+          icon={<Hash className="h-5 w-5 text-indigo-500" />}
+          status={s.service_pages_count && s.service_pages_count > 5 ? 'good' : s.service_pages_count && s.service_pages_count > 0 ? 'warning' : 'bad'}
+          value={s.service_pages_count || 0}
+        >
+          <div className="text-sm space-y-2">
+            <p className="text-slate-700">Знайдено <strong className="font-bold text-slate-900">{s.service_pages_count || 0}</strong> сторінок послуг.</p>
+            <p className="text-slate-500">Рекомендується мати детальну сторінку для кожної конкретної послуги з детальним описом.</p>
+          </div>
+        </MinimalMetricCard>
+
+        {/* 4.3 Doctor Pages */}
+        <MinimalMetricCard
+          title={t('items.4_3.title')}
+          description={t('items.4_3.description')}
+          icon={<Users className="h-5 w-5 text-emerald-500" />}
+          status={s.has_doctor_pages && s.doctor_details?.has_photos && s.doctor_details?.has_bio ? 'good' : s.has_doctor_pages ? 'warning' : 'bad'}
+        >
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="flex items-center gap-2 p-2 bg-slate-50/50 rounded-lg border border-slate-200">
+              {s.doctor_details?.has_photos ? <CheckCircle2 className="h-3 w-3 text-emerald-500" /> : <XCircle className="h-3 w-3 text-red-500" />}
+              <span className="text-slate-700 font-medium">Фото лікарів</span>
+            </div>
+            <div className="flex items-center gap-2 p-2 bg-slate-50/50 rounded-lg border border-slate-200">
+              {s.doctor_details?.has_bio ? <CheckCircle2 className="h-3 w-3 text-emerald-500" /> : <XCircle className="h-3 w-3 text-red-500" />}
+              <span className="text-slate-700 font-medium">Біографія</span>
+            </div>
+            <div className="flex items-center gap-2 p-2 bg-slate-50/50 rounded-lg border border-slate-200">
+              {s.doctor_details?.has_experience ? <CheckCircle2 className="h-3 w-3 text-emerald-500" /> : <XCircle className="h-3 w-3 text-red-500" />}
+              <span className="text-slate-700 font-medium">Досвід роботи</span>
+            </div>
+            <div className="flex items-center gap-2 p-2 bg-slate-50/50 rounded-lg border border-slate-200">
+              {s.doctor_details?.has_certificates ? <CheckCircle2 className="h-3 w-3 text-emerald-500" /> : <XCircle className="h-3 w-3 text-red-500" />}
+              <span className="text-slate-700 font-medium">Сертифікати</span>
+            </div>
+          </div>
+        </MinimalMetricCard>
+
+        {/* 4.4 Site Architecture */}
+        <MinimalMetricCard
+          title={t('items.4_4.title')}
+          description={t('items.4_4.description')}
+          icon={<Layout className="h-5 w-5 text-orange-500" />}
+          status={s.architecture_score >= 80 ? 'good' : s.architecture_score >= 50 ? 'warning' : 'bad'}
+          score={s.architecture_score}
+        >
+          <div className="text-sm space-y-2">
+            <p className="text-slate-700">Оцінка архітектури: <strong className="font-bold text-slate-900">{s.architecture_score}/100</strong>.</p>
+            {s.internal_linking_circular && (
+              <Alert variant="warning" className="py-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-xs">Виявлено ознаки кругового лінкування (Лікар ↔ Послуга ↔ Філія).</AlertDescription>
+              </Alert>
+            )}
+            <p className="text-slate-500">Гарна архітектура дозволяє користувачеві знайти будь-яку послугу за 2-3 кліки від головної.</p>
+          </div>
+        </MinimalMetricCard>
+
+        {/* 4.5 Blog */}
+        <MinimalMetricCard
+          title={t('items.4_5.title')}
+          description={t('items.4_5.description')}
+          icon={<BookOpen className="h-5 w-5 text-purple-500" />}
+          status={s.has_blog && s.blog_details?.is_regularly_updated ? 'good' : s.has_blog ? 'warning' : 'bad'}
+        >
+          {s.has_blog ? (
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="p-3 bg-slate-50/50 rounded-lg border border-slate-200">
+                <p className="text-xs text-slate-400 mb-1">Кількість статей</p>
+                <p className="font-black text-slate-900">{s.blog_details?.posts_count || 0}</p>
+              </div>
+              <div className="p-3 bg-slate-50/50 rounded-lg border border-slate-200">
+                <p className="text-xs text-slate-400 mb-1">Середня довжина</p>
+                <p className="font-black text-slate-900">{s.blog_details?.avg_article_length || 0} слів</p>
+              </div>
+              <div className="col-span-2 p-3 bg-slate-50/50 rounded-lg border border-slate-200">
+                <p className="text-xs text-slate-400 mb-1">Регулярність оновлень</p>
+                <div className="flex items-center gap-2">
+                  <div className={cn("h-2 w-2 rounded-full", s.blog_details?.is_regularly_updated ? "bg-emerald-500" : "bg-red-500")} />
+                  <span className="text-xs font-medium text-slate-700">{s.blog_details?.is_regularly_updated ? "Активно оновлюється" : "Давно не було нових статей"}</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">Блог не знайдено. Статті допомагають будувати E-E-A-T.</p>
+          )}
+        </MinimalMetricCard>
+
+        {/* 4.6 Uniqueness */}
+        <MinimalMetricCard
+          title={t('items.4_6.title')}
+          description={t('items.4_6.description')}
+          icon={<FileText className="h-5 w-5 text-cyan-500" />}
+          status={q.uniqueness_score >= 90 ? 'good' : q.uniqueness_score >= 70 ? 'warning' : 'bad'}
+          value={`${q.uniqueness_score.toFixed(0)}%`}
+        >
+          <div className="space-y-3">
+            <ProgressBar value={q.uniqueness_score} size="sm" />
+            <p className="text-xs text-slate-500 italic">Примітка: Унікальність базово оцінена на основі структури контенту та повторів.</p>
+          </div>
+        </MinimalMetricCard>
+
+        {/* 4.7 Wateriness */}
+        <MinimalMetricCard
+          title={t('items.4_7.title')}
+          description={t('items.4_7.description')}
+          icon={<Droplets className="h-5 w-5 text-blue-400" />}
+          status={q.wateriness_score < 20 ? 'good' : q.wateriness_score < 25 ? 'warning' : 'bad'}
+          value={`${q.wateriness_score.toFixed(1)}%`}
+        >
+          <p className="text-sm text-slate-700">Показник водянистості: <strong className="font-bold text-slate-900">{q.wateriness_score.toFixed(1)}%</strong>.</p>
+          <p className="text-xs text-slate-500 mt-1">Норма — до 25%. Високий показник означає багато "стоп-слів" та мало корисної інформації.</p>
+        </MinimalMetricCard>
+
+        {/* 4.8 Link Authority */}
+        <MinimalMetricCard
+          title={t('items.4_8.title')}
+          description={t('items.4_8.description')}
+          icon={<Shield className="h-5 w-5 text-slate-700" />}
+          status={a.authority_links_count >= 3 ? 'good' : a.authority_links_count > 0 ? 'warning' : 'bad'}
+          value={a.authority_links_count}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <Link2 className="h-4 w-4 text-slate-400" />
+            <span className="text-sm text-slate-700">Знайдено <strong className="font-bold text-slate-900">{a.authority_links_count}</strong> посилань на трастові домени.</span>
+          </div>
+          <p className="text-xs text-slate-500">Трастові домени: ВООЗ, МОЗ, NIH, PubMed та медичні асоціації.</p>
+        </MinimalMetricCard>
+
+        {/* 4.9 FAQ */}
+        <MinimalMetricCard
+          title={t('items.4_9.title')}
+          description={t('items.4_9.description')}
+          icon={<HelpCircle className="h-5 w-5 text-yellow-500" />}
+          status={a.faq_count >= 3 ? 'good' : a.faq_count > 0 ? 'warning' : 'bad'}
+          value={a.faq_count}
+        >
+          <p className="text-sm text-slate-700">Кількість питань у розділі FAQ: <strong className="font-bold text-slate-900">{a.faq_count}</strong>.</p>
+          <p className="text-xs text-slate-500 mt-1">FAQ допомагає отримати розширені результати (Rich Snippets) у пошуку.</p>
+        </MinimalMetricCard>
+
+        {/* 4.10 Address */}
+        <MinimalMetricCard
+          title={t('items.4_10.title')}
+          description={t('items.4_10.description')}
+          icon={<MapPin className="h-5 w-5 text-red-500" />}
+          status={a.has_valid_address ? 'good' : 'bad'}
+        >
+          <p className="text-sm text-slate-700">Статус адреси: {a.has_valid_address ? <span className="text-emerald-600 font-bold">Знайдено</span> : <span className="text-red-600 font-bold">Відсутня</span>}.</p>
+          <p className="text-xs text-slate-500 mt-1">Чітка адреса критично важлива для локальної видимості (Local SEO).</p>
+        </MinimalMetricCard>
+
+        {/* 4.11 Phone */}
+        <MinimalMetricCard
+          title={t('items.4_11.title')}
+          description={t('items.4_11.description')}
+          icon={<Phone className="h-5 w-5 text-green-500" />}
+          status={a.has_valid_phone && a.is_phone_clickable ? 'good' : a.has_valid_phone ? 'warning' : 'bad'}
+        >
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span>Наявність телефону:</span>
+              <span>{a.has_valid_phone ? "✅ Так" : "❌ Ні"}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span>Можливість кліку (tel:):</span>
+              <span>{a.is_phone_clickable ? "✅ Так" : "❌ Ні"}</span>
+            </div>
+          </div>
+        </MinimalMetricCard>
+      </div>
+
+      {/* Recommendations */}
+      {result.recommendations.length > 0 && (
+        <BentoCard className="border-2 border-orange-300 bg-orange-50">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              Content Optimization Audit in Progress
+            <CardTitle className="flex items-center gap-2 text-orange-600 text-xl font-black italic">
+              <AlertTriangle className="h-6 w-6 text-orange-600" />
+              Рекомендації ({result.recommendations.length})
             </CardTitle>
           </CardHeader>
-        </Card>
-      )}
-
-      {/* Results */}
-      {result && !isPending && (
-        <>
-          {/* Hero Section */}
-          <Card className={cn('border-2', getScoreBgColor(overallScore))}>
-            <CardHeader>
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h1 className="text-2xl font-bold text-foreground mb-2">
-                    Content Optimization Results
-                  </h1>
-                  <p className="text-sm text-muted-foreground">
-                    Overall assessment of your website's content quality and structure
-                  </p>
-                </div>
-                <div className="text-center">
-                  <div className={cn('text-5xl font-bold mb-1', getScoreColor(overallScore))}>
-                    {overallScore}
-                  </div>
-                  <div className="text-sm font-medium text-muted-foreground">
-                    / 100
-                  </div>
-                </div>
-              </div>
-              
-              {/* Category Progress Bars */}
-              <div className="space-y-3 mt-6">
-                {categoryScores.textQuality !== null && (
-                  <ProgressBar 
-                    value={categoryScores.textQuality} 
-                    label="Text Quality" 
-                    size="md"
-                  />
-                )}
-                {categoryScores.structure !== null && (
-                  <ProgressBar 
-                    value={categoryScores.structure} 
-                    label="Site Structure" 
-                    size="md"
-                  />
-                )}
-                {categoryScores.authority !== null && (
-                  <ProgressBar 
-                    value={categoryScores.authority} 
-                    label="Authority & Trust" 
-                    size="md"
-                  />
-                )}
-              </div>
-            </CardHeader>
-          </Card>
-
-          {/* Text Quality Category */}
-          <CategorySection 
-            title="Text Quality" 
-            icon={<Type className="h-6 w-6 text-primary" />}
-          >
-            <MinimalMetricCard
-              title="Text Wateriness"
-              icon={<FileText className="h-5 w-5" />}
-              status={result.text_quality.wateriness_score < 25 ? 'good' : 'bad'}
-              score={100 - result.text_quality.wateriness_score}
-              value={`${result.text_quality.wateriness_score.toFixed(1)}%`}
-            >
-              <div className="space-y-3 text-sm text-muted-foreground">
-                <div className="space-y-2">
-                  <p>
-                    <strong className="text-foreground">Target:</strong> &lt; 25% is considered good. Lower wateriness indicates more meaningful content.
-                  </p>
-                  <p>
-                    <strong className="text-foreground">Current:</strong> {result.text_quality.wateriness_score.toFixed(1)}%
-                    {result.text_quality.wateriness_score >= 25 && (
-                      <span className="text-orange-600 dark:text-orange-400 ml-2">
-                        ⚠️ Above recommended threshold
-                      </span>
-                    )}
-                  </p>
-                </div>
-              </div>
-            </MinimalMetricCard>
-
-            <MinimalMetricCard
-              title="Content Uniqueness"
-              icon={<FileText className="h-5 w-5" />}
-              status={result.text_quality.uniqueness_score >= 90 ? 'good' : result.text_quality.uniqueness_score >= 70 ? 'warning' : 'bad'}
-              score={result.text_quality.uniqueness_score}
-              value={`${result.text_quality.uniqueness_score.toFixed(1)}%`}
-            >
-              <div className="space-y-3 text-sm text-muted-foreground">
-                <div className="space-y-2">
-                  <p>
-                    <strong className="text-foreground">Target:</strong> &gt; 90% is considered excellent. Higher uniqueness reduces duplicate content penalties.
-                  </p>
-                  <p>
-                    <strong className="text-foreground">Current:</strong> {result.text_quality.uniqueness_score.toFixed(1)}%
-                    {result.text_quality.uniqueness_score < 90 && (
-                      <span className="text-orange-600 dark:text-orange-400 ml-2">
-                        ⚠️ Below recommended threshold
-                      </span>
-                    )}
-                  </p>
-                  <p className="text-muted-foreground italic mt-2">
-                    Note: Currently using mock data. Integration with Copyleaks API pending.
-                  </p>
-                </div>
-              </div>
-            </MinimalMetricCard>
-          </CategorySection>
-
-          {/* Site Structure Category */}
-          <CategorySection 
-            title="Site Structure" 
-            icon={<Layout className="h-6 w-6 text-primary" />}
-          >
-            <MinimalMetricCard
-              title="Site Architecture"
-              icon={<Settings className="h-5 w-5" />}
-              status={result.structure.architecture_score >= 70 ? 'good' : result.structure.architecture_score >= 50 ? 'warning' : 'bad'}
-              score={result.structure.architecture_score}
-              value={`${result.structure.architecture_score}/100`}
-            >
-              <div className="space-y-3 text-sm text-muted-foreground">
-                <div className="space-y-2">
-                  <p>
-                    <strong className="text-foreground">Score:</strong> {result.structure.architecture_score}/100
-                  </p>
-                  <p>
-                    <strong className="text-foreground">Evaluation:</strong> Based on navigation depth, internal linking structure, and content organization.
-                  </p>
-                  <p>
-                    Higher scores indicate better site structure and user navigation.
-                  </p>
-                </div>
-              </div>
-            </MinimalMetricCard>
-
-            <MinimalMetricCard
-              title="Doctor Pages"
-              icon={<FileText className="h-5 w-5" />}
-              status={result.structure.has_doctor_pages ? 'good' : 'bad'}
-              value={result.structure.has_doctor_pages ? 'Found' : 'Missing'}
-            >
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <p>
-                  <strong className="text-foreground">Status:</strong> {result.structure.has_doctor_pages ? 'Doctor pages detected' : 'Doctor pages not found'}
-                </p>
-                <p>
-                  Doctor pages help establish expertise and authority for medical professionals on your website.
-                </p>
-              </div>
-            </MinimalMetricCard>
-
-            <MinimalMetricCard
-              title="Service Pages"
-              icon={<FileText className="h-5 w-5" />}
-              status={result.structure.has_service_pages ? 'good' : 'bad'}
-              value={result.structure.has_service_pages ? 'Found' : 'Missing'}
-            >
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <p>
-                  <strong className="text-foreground">Status:</strong> {result.structure.has_service_pages ? 'Service pages detected' : 'Service pages not found'}
-                </p>
-                <p>
-                  Service pages help users understand what medical services you offer.
-                </p>
-              </div>
-            </MinimalMetricCard>
-
-            <MinimalMetricCard
-              title="Department Pages"
-              icon={<FileText className="h-5 w-5" />}
-              status={result.structure.has_department_pages ? 'good' : 'bad'}
-              value={result.structure.has_department_pages ? 'Found' : 'Missing'}
-            >
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <p>
-                  <strong className="text-foreground">Status:</strong> {result.structure.has_department_pages ? 'Department pages detected' : 'Department pages not found'}
-                </p>
-                <p>
-                  Department pages organize medical services by specialty and improve site structure.
-                </p>
-              </div>
-            </MinimalMetricCard>
-
-            <MinimalMetricCard
-              title="Blog Presence"
-              icon={<FileText className="h-5 w-5" />}
-              status={result.structure.has_blog ? 'good' : 'bad'}
-              value={result.structure.has_blog ? 'Found' : 'Missing'}
-            >
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <p>
-                  <strong className="text-foreground">Status:</strong> {result.structure.has_blog ? 'Blog section detected' : 'Blog section not found'}
-                </p>
-                <p>
-                  A blog helps demonstrate expertise, improve SEO, and engage with your audience.
-                </p>
-              </div>
-            </MinimalMetricCard>
-          </CategorySection>
-
-          {/* Authority & Trust Category */}
-          <CategorySection 
-            title="Authority & Trust" 
-            icon={<Shield className="h-6 w-6 text-primary" />}
-          >
-            <MinimalMetricCard
-              title="Authority Links"
-              icon={<Link2 className="h-5 w-5" />}
-              status={result.authority.authority_links_count > 0 ? 'good' : 'bad'}
-              value={result.authority.authority_links_count > 0 ? `${result.authority.authority_links_count}` : 'None'}
-              score={result.authority.authority_links_count > 0 ? Math.min(100, result.authority.authority_links_count * 20) : 0}
-            >
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <p>
-                  <strong className="text-foreground">Count:</strong> {result.authority.authority_links_count} trusted domain{result.authority.authority_links_count !== 1 ? 's' : ''}
-                </p>
-                <p>
-                  <strong className="text-foreground">Trusted Sources:</strong> WHO, NIH, CDC, medical associations, educational institutions (.edu.ua, .gov.ua)
-                </p>
-                <p>
-                  Links to authoritative medical sources improve E-E-A-T signals.
-                </p>
-              </div>
-            </MinimalMetricCard>
-
-            <MinimalMetricCard
-              title="Valid Phone"
-              icon={<Phone className="h-5 w-5" />}
-              status={result.authority.has_valid_phone ? 'good' : 'bad'}
-              value={result.authority.has_valid_phone ? 'Found' : 'Missing'}
-            >
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <p>
-                  <strong className="text-foreground">Status:</strong> {result.authority.has_valid_phone ? 'Phone number detected (tel: link or pattern match)' : 'Phone number not found'}
-                </p>
-                <p>
-                  Phone number is part of NAP (Name, Address, Phone) data important for local SEO.
-                </p>
-              </div>
-            </MinimalMetricCard>
-
-            <MinimalMetricCard
-              title="Valid Address"
-              icon={<MapPin className="h-5 w-5" />}
-              status={result.authority.has_valid_address ? 'good' : 'bad'}
-              value={result.authority.has_valid_address ? 'Found' : 'Missing'}
-            >
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <p>
-                  <strong className="text-foreground">Status:</strong> {result.authority.has_valid_address ? 'Address detected (city + street pattern)' : 'Address not found'}
-                </p>
-                <p>
-                  Physical address is part of NAP (Name, Address, Phone) data important for local SEO.
-                </p>
-              </div>
-            </MinimalMetricCard>
-
-            <MinimalMetricCard
-              title="FAQ Items"
-              icon={<HelpCircle className="h-5 w-5" />}
-              status={result.authority.faq_count >= 3 ? 'good' : result.authority.faq_count > 0 ? 'warning' : 'bad'}
-              value={result.authority.faq_count > 0 ? `${result.authority.faq_count}` : 'None'}
-              score={result.authority.faq_count >= 3 ? 100 : result.authority.faq_count > 0 ? 50 : 0}
-            >
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <p>
-                  <strong className="text-foreground">Count:</strong> {result.authority.faq_count} item{result.authority.faq_count !== 1 ? 's' : ''} found
-                  {result.authority.faq_count >= 3 ? ' (Good)' : result.authority.faq_count > 0 ? ' (Minimum 3 recommended)' : ' (Not found)'}
-                </p>
-                <p>
-                  FAQ sections help answer common questions and can display rich snippets in search results.
-                </p>
-              </div>
-            </MinimalMetricCard>
-          </CategorySection>
-
-          {/* Recommendations */}
-          {result.recommendations.length > 0 && (
-            <Card className="border-2 border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-950/20">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-400 text-xl">
-                  <AlertTriangle className="h-6 w-6" />
-                  Recommendations ({result.recommendations.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  {result.recommendations.map((rec, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm">
-                      <span className="text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0">•</span>
-                      <span className="text-foreground">{rec}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          )}
-        </>
+          <CardContent>
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+              {result.recommendations.map((rec, index) => (
+                <li key={index} className="flex items-start gap-2 text-sm">
+                  <span className="text-orange-500 mt-0.5 flex-shrink-0">•</span>
+                  <span className="text-slate-700 leading-relaxed">{rec}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </BentoCard>
       )}
     </div>
   );

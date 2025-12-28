@@ -63,7 +63,20 @@
     "dashboard": "Dashboard",
     "settings": "Settings",
     "profile": "Profile",
-    "application": "Application"
+    "application": "Application",
+    "servicesManagement": "Services Management",
+    "technicalAudit": "Technical Audit",
+    "contentOptimization": "Content Optimization",
+    "eeatAssessment": "E-E-A-T Assessment",
+    "localIndicators": "Local Indicators",
+    "competitors": "Competitors",
+    "configuration": "Configuration"
+  },
+  "tabs": {
+    "dashboard": "Dashboard",
+    "explorer": "Explorer",
+    "reports": "Reports",
+    "design": "Design"
   },
   "roles": {
     "owner": {
