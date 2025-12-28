@@ -43,7 +43,7 @@ export const KpiCard: React.FC<KpiCardProps> = ({
 
   const isPositive = trend !== undefined && trend >= 0;
   const trendAbs = trend !== undefined ? Math.abs(trend) : 0;
-  const trendDisplay = trendAbs > 0 ? `${isPositive ? '+' : ''}${trend.toFixed(1)}%` : null;
+  const trendDisplay = trendAbs > 0 && trend !== undefined ? `${isPositive ? '+' : ''}${trend.toFixed(1)}%` : null;
 
   return (
     <Card className={cn(
