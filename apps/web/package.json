@@ -11,6 +11,7 @@
     "clean": "git clean -xdf .next .turbo node_modules",
     "dev": "pnpm with-env next dev --turbo | pino-pretty -c",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "format": "prettier --check \"**/*.{js,cjs,mjs,ts,tsx,md,json}\"",
     "start": "pnpm with-env next start",
     "start:test": "NODE_ENV=test pnpm with-env:test next start",
