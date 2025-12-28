@@ -167,18 +167,35 @@ export function countPhotos(photos?: Array<{ photo_reference: string }>): number
 }
 
 /**
+ * Type for opening hours periods
+ */
+type OpeningHoursPeriod = {
+  open: { day: number; time: string };
+  close?: { day: number; time: string };
+};
+
+/**
+ * Type for opening hours
+ */
+type OpeningHours = {
+  open_now?: boolean;
+  weekday_text?: string[];
+  periods?: OpeningHoursPeriod[];
+};
+
+/**
  * Check if business hours are set for all days
  */
 export function hasAllDaysHours(
-  openingHours?: PlaceDetailsResponse['result']['opening_hours'] | PlaceDetailsResponse['result']['current_opening_hours'],
+  openingHours?: OpeningHours,
 ): boolean {
-  if (!openingHours?.periods) {
+  if (!openingHours?.periods || openingHours.periods.length === 0) {
     return false;
   }
 
   // Check if we have periods for all 7 days (0-6)
-  const daysWithHours = new Set(
-    openingHours.periods.map((period) => period.open.day),
+  const daysWithHours = new Set<number>(
+    openingHours.periods.map((period: OpeningHoursPeriod) => period.open.day),
   );
   
   // If we have 7 unique days, all days have hours

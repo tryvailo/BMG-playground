@@ -886,9 +886,13 @@ async function analyzeLocalBacklinks(
                     const { load } = await import('cheerio');
                     
                     const pages = await crawlSiteContent(fullUrl, 1, firecrawlApiKey);
-                    if (pages.length === 0) continue;
+                    if (pages.length === 0 || !pages[0]) continue;
                     
-                    const $ = load(pages[0].html || pages[0].markdown || '');
+                    const firstPage = pages[0];
+                    const pageContent = firstPage.content || firstPage.markdown || '';
+                    if (!pageContent) continue;
+                    
+                    const $ = load(pageContent);
                     
                     // Look for links that might mention the clinic
                     // Check if page contains clinic name

@@ -94,13 +94,17 @@ export function extractArticleAuthor($: CheerioAPI): ArticleAuthorInfo {
       const nameText = authorElement.text();
       if (nameText && !authorName) {
         // Clean up name (remove common prefixes)
-        authorName = nameText
+        const cleanedName = nameText
           .trim()
           .replace(/^(Автор|Author|By):?\s*/i, '')
           .trim()
           .split('\n')[0]
           .split(',')[0]
           .trim();
+        
+        if (cleanedName) {
+          authorName = cleanedName;
+        }
       }
 
       // Check for author profile link

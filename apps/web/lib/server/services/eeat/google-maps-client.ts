@@ -14,13 +14,13 @@ export function extractPlaceIdFromUrl(url: string): string | null {
     // Try to extract from URL patterns
     // Pattern 1: https://www.google.com/maps/place/.../@lat,lng,zoom/data=...
     const placeMatch = url.match(/\/place\/([^/@]+)/);
-    if (placeMatch) {
+    if (placeMatch && placeMatch[1]) {
       return placeMatch[1];
     }
 
     // Pattern 2: https://maps.google.com/?cid=...
     const cidMatch = url.match(/[?&]cid=([^&]+)/);
-    if (cidMatch) {
+    if (cidMatch && cidMatch[1]) {
       return cidMatch[1];
     }
 

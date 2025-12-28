@@ -71,15 +71,18 @@ export async function fetchAggregatorRating(
             // Try to find any element that looks like a 4.x or 5.0 rating
             const genericRatingMatch = html.match(/ratingValue["']:\s*["']?(\d[.,]\d)["']?/i) ||
                 html.match(/(\d[.,]\d)\s*(?:зірок|stars|rating)/i);
-            if (genericRatingMatch) {
+            if (genericRatingMatch && genericRatingMatch[1]) {
                 rating = parseFloat(genericRatingMatch[1].replace(',', '.'));
             }
         }
 
         if (reviewCount === undefined || isNaN(reviewCount)) {
             const genericReviewsMatch = html.match(/reviewCount["']:\s*["']?(\d+)["']?/i);
-            if (genericReviewsMatch) {
-                reviewCount = parseInt(genericReviewsMatch[1], 10);
+            if (genericReviewsMatch && genericReviewsMatch[1]) {
+                const parsedCount = parseInt(genericReviewsMatch[1], 10);
+                if (!isNaN(parsedCount)) {
+                    reviewCount = parsedCount;
+                }
             }
         }
 

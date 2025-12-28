@@ -123,11 +123,19 @@ export async function checkBacklink(
     // Get page content
     const pages = await crawlSiteContent(url, 1, firecrawlApiKey);
     
-    if (pages.length === 0) {
+    if (pages.length === 0 || !pages[0]) {
       return { has_backlink: false };
     }
     
-    const $ = load(pages[0].html || pages[0].markdown || '');
+    const firstPage = pages[0];
+    // Use content or markdown, fallback to empty string
+    const pageContent = firstPage.content || firstPage.markdown || '';
+    
+    if (!pageContent) {
+      return { has_backlink: false };
+    }
+    
+    const $ = load(pageContent);
     const clinicDomain = new URL(clinicUrl).hostname.replace(/^www\./, '');
     
     // Look for links to clinic website
@@ -163,8 +171,8 @@ export async function checkBacklink(
     
     return {
       has_backlink: foundLink !== null,
-      anchor_text: foundLink?.anchor_text,
-      link_type: foundLink?.link_type,
+      anchor_text: foundLink !== null ? foundLink.anchor_text : undefined,
+      link_type: foundLink !== null ? foundLink.link_type : undefined,
     };
   } catch (error) {
     console.warn('[GoogleCustomSearch] Failed to check backlink:', error);

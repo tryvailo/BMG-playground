@@ -1276,11 +1276,13 @@ export const runLiveDashboardTest = enhanceAction(
         llmLogs: visibilityResult.llmLogs || [],
       };
 
-      return {
+      const result: DashboardData & { serviceAnalysis: ServiceAnalysisData; techAudit: null } = {
         ...dashboardData,
         serviceAnalysis,
         techAudit: null, // Tech audit is run separately via "Run Technical Audit" button
       };
+      
+      return result;
     } catch (error) {
       console.error('[runLiveDashboardTest] Error running live test:', error);
       console.error('[runLiveDashboardTest] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
