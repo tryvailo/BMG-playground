@@ -145,7 +145,7 @@ async function BlogPage() {
       />
 
       <div className={'container flex flex-col space-y-8 pb-16'}>
-        {frontmatter.title ? (
+        {frontmatter.title && typeof frontmatter.title === 'string' ? (
           <article className="max-w-4xl mx-auto">
             <Link
               href="/"
@@ -158,12 +158,12 @@ async function BlogPage() {
             <div className="prose prose-slate dark:prose-invert max-w-none">
               <h1 className="text-4xl font-bold mb-4">{frontmatter.title}</h1>
               
-              {frontmatter.excerpt && (
+              {frontmatter.excerpt && typeof frontmatter.excerpt === 'string' && (
                 <p className="text-xl text-muted-foreground mb-6">{frontmatter.excerpt}</p>
               )}
 
               <div className="flex items-center gap-4 text-sm text-muted-foreground mb-8">
-                {frontmatter.date && (
+                {frontmatter.date && typeof frontmatter.date === 'string' && (
                   <time dateTime={frontmatter.date}>
                     {new Date(frontmatter.date).toLocaleDateString('en-US', {
                       year: 'numeric',
@@ -174,14 +174,16 @@ async function BlogPage() {
                 )}
                 {frontmatter.tags && Array.isArray(frontmatter.tags) && frontmatter.tags.length > 0 && (
                   <div className="flex gap-2">
-                    {frontmatter.tags.map((tag: string) => (
-                      <span
-                        key={tag}
-                        className="px-2 py-1 bg-muted rounded-md text-xs"
-                      >
-                        {tag}
-                      </span>
-                    ))}
+                    {frontmatter.tags
+                      .filter((tag): tag is string => typeof tag === 'string')
+                      .map((tag) => (
+                        <span
+                          key={tag}
+                          className="px-2 py-1 bg-muted rounded-md text-xs"
+                        >
+                          {tag}
+                        </span>
+                      ))}
                   </div>
                 )}
               </div>
