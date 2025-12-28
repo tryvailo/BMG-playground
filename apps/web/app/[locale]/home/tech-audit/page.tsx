@@ -135,6 +135,14 @@ export default function TechAuditPage() {
     loadAuditData();
   }, [loadAuditData]);
 
+  // Cleanup timeouts on unmount
+  React.useEffect(() => {
+    return () => {
+      timeoutRef.current.forEach(timeout => clearTimeout(timeout));
+      timeoutRef.current = [];
+    };
+  }, []);
+
   const handleRunAudit = async () => {
     setIsPending(true);
     setIsDeepAnalysisPending(true);
