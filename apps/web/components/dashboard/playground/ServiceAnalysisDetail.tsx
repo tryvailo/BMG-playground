@@ -107,7 +107,7 @@ export function ServiceAnalysisDetail({
     const competitorUrl = competitor.url ? normalizeDomain(competitor.url) : null;
     const competitorName = competitor.name.toLowerCase();
     const domainBase = normalizedDomain.split('.')[0] || '';
-    return (
+    return !!(
       competitorUrl === normalizedDomain ||
       (domainBase && competitorName.includes(domainBase)) ||
       (competitorUrl && competitorUrl.includes(domainBase))

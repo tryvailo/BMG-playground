@@ -46,9 +46,14 @@ async function VerifyPage(props: Props) {
     redirect({ href: pathsConfig.auth.signIn, locale });
   }
 
+  const userId = data?.claims?.sub;
+  if (!userId) {
+    redirect({ href: pathsConfig.auth.signIn, locale });
+  }
+
   return (
     <MultiFactorChallengeContainer
-      userId={data.claims.sub}
+      userId={userId}
       paths={{
         redirectPath,
       }}

@@ -284,7 +284,7 @@ export function CompetitorsOverview() {
                                 <span className="text-xs font-black text-slate-900">{mapData.filter(d => !d.isCurrent).length}</span>
                             </div>
                             <div className="text-xs text-slate-500 mt-1">
-                                {topCompetitors.length > 0 && `Top: ${topCompetitors[0].name}`}
+                                {topCompetitors.length > 0 && topCompetitors[0] && `Top: ${topCompetitors[0].name}`}
                             </div>
                         </div>
                     </div>

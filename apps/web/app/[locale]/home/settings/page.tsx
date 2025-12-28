@@ -31,6 +31,9 @@ export const generateMetadata = async () => {
 
 function PersonalAccountSettingsPage() {
   const user = use(requireUserInServerComponent());
+  if (!user) {
+    return null;
+  }
   const userId = user.id;
 
   return (

@@ -607,10 +607,9 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
                         borderRadius: '8px',
                         padding: '8px 12px',
                       }}
-                      formatter={(value: number | null, name: string, props: any) => {
+                      formatter={(value: number | null, name: string) => {
                         if (value === null) return ['N/A', name];
-                        const unit = props.payload.unit || '';
-                        return [`${formatMetric(value)}${unit}`, name];
+                        return [`${formatMetric(value)}`, name];
                       }}
                     />
                     <Legend 

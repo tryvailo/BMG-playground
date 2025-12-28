@@ -337,10 +337,10 @@ export function TechAuditOverview({ auditData, onRunAudit }: TechAuditOverviewPr
   
   // Check if we have data to show in dialog
   const hasLlmsData = auditData.llms_txt_present && (
-    llmsTxtData.summary ||
+    (typeof llmsTxtData.summary === 'string' && llmsTxtData.summary) ||
     (Array.isArray(llmsTxtData.missing_sections) && llmsTxtData.missing_sections.length > 0) ||
     (Array.isArray(llmsTxtData.recommendations) && llmsTxtData.recommendations.length > 0) ||
-    llmsTxtData.contentPreview
+    (typeof llmsTxtData.contentPreview === 'string' && llmsTxtData.contentPreview)
   );
 
   return (

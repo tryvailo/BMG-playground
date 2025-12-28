@@ -387,6 +387,27 @@ interface ServiceVisibilityResult {
 }
 
 /**
+ * Log entry for LLM request/response
+ */
+export interface LLMRequestLog {
+  provider: 'openai' | 'perplexity';
+  model: string;
+  role: 'scanner' | 'parser';
+  prompt: string;
+  requestBody: any;
+  responseBody: {
+    content: string;
+    model: string;
+    usage?: {
+      prompt_tokens: number;
+      completion_tokens: number;
+      total_tokens: number;
+    };
+  } | null;
+  error?: string;
+}
+
+/**
  * Scan service visibility using OpenAI and Perplexity (с улучшенной обработкой ошибок)
  */
 async function scanServiceVisibility(

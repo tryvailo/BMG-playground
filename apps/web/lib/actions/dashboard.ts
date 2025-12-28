@@ -21,6 +21,7 @@ import {
   type DashboardFilters,
   type DashboardMetricsResponse,
   type HistoryDataPoint,
+  type CompetitorDataPoint,
 } from './dashboard.types';
 
 /*
@@ -86,7 +87,9 @@ export const getDashboardMetrics = enhanceAction(
         if (userProjects && userProjects.length > 0) {
           // Use user's project
           project = userProjects[0];
-          console.log('[Dashboard] ✅ Using user project:', project.id, project.domain);
+          if (project) {
+            console.log('[Dashboard] ✅ Using user project:', project.id, project.domain);
+          }
         } else {
           // User has no project - create one
           console.log('[Dashboard] ⚠️ User has no projects, creating one...');
@@ -136,7 +139,9 @@ export const getDashboardMetrics = enhanceAction(
             
             if (retryProject && !retryError) {
               project = retryProject;
-              console.log('[Dashboard] ✅ Found project after ensuring:', project.id, project.domain);
+              if (project) {
+                console.log('[Dashboard] ✅ Found project after ensuring:', project.id, project.domain);
+              }
             } else {
               console.error('[Dashboard] Still no project after ensuring:', retryError);
               // Fallback to demo project

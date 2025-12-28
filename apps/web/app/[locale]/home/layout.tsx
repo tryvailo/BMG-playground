@@ -36,6 +36,10 @@ function SidebarLayout({ children }: React.PropsWithChildren) {
   const sidebarMinimized = navigationConfig.sidebarCollapsed;
   const [user] = use(Promise.all([requireUserInServerComponent()]));
 
+  if (!user) {
+    return null;
+  }
+
   return (
     <SidebarProvider defaultOpen={sidebarMinimized}>
       <Page style={'sidebar'}>
