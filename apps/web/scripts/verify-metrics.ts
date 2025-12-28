@@ -319,7 +319,7 @@ Important:
     };
     try {
       parsed = JSON.parse(content);
-    } catch {
+    } catch (error) {
       const jsonMatch = content.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/);
       if (jsonMatch) {
         parsed = JSON.parse(jsonMatch[1]!);
@@ -386,7 +386,7 @@ Important:
     }
 
     return result;
-  } catch {
+  } catch (error) {
     const responseTextLower = responseText.toLowerCase();
     const normalizedTarget = normalizeDomain(targetDomain);
     const domainPresent = responseTextLower.includes(normalizedTarget);
@@ -1015,7 +1015,7 @@ async function main() {
     }
 
     console.log('\n✅ Verification complete!\n');
-  } catch {
+  } catch (error) {
     console.error('\n❌ Error during verification:');
     console.error(error instanceof Error ? error.message : String(error));
     if (error instanceof Error && error.stack) {

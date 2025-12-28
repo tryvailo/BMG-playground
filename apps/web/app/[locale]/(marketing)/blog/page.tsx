@@ -132,7 +132,7 @@ async function BlogPage() {
     const parsed = parseFrontmatter(fileContents);
     frontmatter = parsed.frontmatter;
     postContent = parsed.content || '';
-  } catch {
+  } catch (error) {
     console.error('Error reading blog post:', error);
     postContent = '';
   }

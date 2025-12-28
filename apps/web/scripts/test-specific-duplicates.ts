@@ -20,7 +20,7 @@ try {
       }
     }
   });
-} catch {
+} catch (error) {
   console.warn('Could not load .env.local file');
 }
 
@@ -161,7 +161,7 @@ async function testPair(pair: typeof testPairs[0]) {
     }
     
     return { pageA, pageB, analysis, foundPair, simpleSimilarity };
-  } catch {
+  } catch (error) {
     console.error(`\n❌ Error testing pair:`, error);
     if (error instanceof Error) {
       console.error(`   Message: ${error.message}`);

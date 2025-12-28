@@ -181,7 +181,7 @@ Important:
     }
 
     return result;
-  } catch {
+  } catch (error) {
     // Fallback parsing if AI analysis fails
     const responseTextLower = responseText.toLowerCase();
     const normalizedTarget = normalizeDomain(targetDomain);

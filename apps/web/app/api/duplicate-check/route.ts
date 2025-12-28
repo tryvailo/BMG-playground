@@ -87,7 +87,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<Duplicate
       console.log(`[DuplicateChecker] Starting crawl with Firecrawl...`);
       crawledPages = await crawlSiteContent(url, limit, apiKeyFirecrawl);
       console.log(`[DuplicateChecker] Crawl completed. Found ${crawledPages.length} pages`);
-    } catch {
+    } catch (error) {
       console.error('[DuplicateChecker] Crawl failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown crawl error';
       
@@ -142,7 +142,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<Duplicate
       console.log(`[DuplicateChecker] Analyzing ${crawledPages.length} pages for duplicates...`);
       duplicateAnalysis = analyzeContentDuplicates(crawledPages);
       console.log(`[DuplicateChecker] Analysis complete. Found ${duplicateAnalysis.duplicatesFound} duplicates`);
-    } catch {
+    } catch (error) {
       console.error('[DuplicateChecker] Analysis failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown analysis error';
       return NextResponse.json(
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<Duplicate
       crawledPages: crawledPages.length,
       executionTime,
     });
-  } catch {
+  } catch (error) {
     // Catch-all for unexpected errors
     console.error('[DuplicateChecker] Unexpected error:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';

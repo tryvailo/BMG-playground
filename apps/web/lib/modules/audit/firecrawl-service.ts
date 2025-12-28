@@ -76,7 +76,7 @@ async function firecrawlRequest<T>(
     let errorDetails: { success?: boolean; code?: string; error?: string; message?: string } = {};
     try {
       errorDetails = JSON.parse(errorText);
-    } catch {
+    } catch (error) {
       // Not JSON, use raw text
     }
     
@@ -195,7 +195,7 @@ export async function crawlSiteContent(
   // Validate URL
   try {
     new URL(url);
-  } catch {
+  } catch (error) {
     throw new Error(`Invalid URL: ${url}`);
   }
 
@@ -211,7 +211,7 @@ export async function crawlSiteContent(
   try {
     jobId = await startCrawl(url, limit, apiKey);
     console.log(`[Firecrawl] Crawl job started with ID: ${jobId}`);
-  } catch {
+  } catch (error) {
     console.error('[Firecrawl] Failed to start crawl:', error);
     throw error instanceof Error ? error : new Error('Failed to start crawl job');
   }
@@ -265,7 +265,7 @@ export async function crawlSiteContent(
       // Unknown status - log warning and continue
       console.warn(`[Firecrawl] Unknown status: ${statusResponse.status}. Continuing to poll...`);
       
-    } catch {
+    } catch (error) {
       // If it's an error we threw (failed status), re-throw it
       if (error instanceof Error && error.message.includes('Firecrawl crawl failed')) {
         throw error;

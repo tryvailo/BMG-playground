@@ -33,7 +33,7 @@ const getStoredValue = (key: string): string => {
   if (typeof window === 'undefined') return '';
   try {
     return localStorage.getItem(key) || '';
-  } catch {
+  } catch (error) {
     return '';
   }
 };

@@ -14,7 +14,7 @@ export async function i18nResolver(language: string, namespace: string) {
     );
 
     return data.default || data as Record<string, string>;
-  } catch {
+  } catch (error) {
     // Try lowercase version if exact case fails
     try {
       const lowercaseNamespace = namespace.toLowerCase();

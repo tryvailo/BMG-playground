@@ -157,7 +157,7 @@ export const getDashboardMetrics = enhanceAction(
                 }
               }
             }
-          } catch {
+          } catch (error) {
             console.error('[Dashboard] Exception while ensuring project:', error);
             // Fallback to demo project
             if (projectId === 'demo') {
@@ -609,7 +609,7 @@ export const getDashboardMetrics = enhanceAction(
         historyCount: response.history.length,
       });
       return response;
-    } catch {
+    } catch (error) {
       console.error('[Dashboard] Error fetching dashboard metrics:', error);
 
       // Return empty/default data on error

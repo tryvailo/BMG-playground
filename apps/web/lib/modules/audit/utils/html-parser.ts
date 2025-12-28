@@ -125,7 +125,7 @@ function parseJsonLd(content: string): JsonLdSchema | null {
         return null;
       }
     }
-  } catch {
+  } catch (error) {
     // Malformed JSON - return null instead of throwing
     console.warn('[HTMLParser] Failed to parse JSON-LD:', error);
     return null;
@@ -364,7 +364,7 @@ function extractLinks($: CheerioAPI, baseUrl: string): string[] {
         seen.add(absoluteUrl);
         links.push(absoluteUrl);
       }
-    } catch {
+    } catch (error) {
       // Invalid URL - skip
     }
   });
@@ -380,7 +380,7 @@ function extractLinks($: CheerioAPI, baseUrl: string): string[] {
         seen.add(absoluteUrl);
         links.push(absoluteUrl);
       }
-    } catch {
+    } catch (error) {
       // Invalid URL - skip
     }
   });
@@ -402,7 +402,7 @@ function extractHreflangs($: CheerioAPI, baseUrl: string): HreflangEntry[] {
       try {
         const absoluteUrl = new URL(href, baseUrl).toString();
         hreflangs.push({ lang, url: absoluteUrl });
-      } catch {
+      } catch (error) {
         // Skip invalid URLs
       }
     }
@@ -440,7 +440,7 @@ function getDomain(url: string): string | null {
     const urlObj = new URL(url);
     // Remove www. prefix for comparison
     return urlObj.hostname.replace(/^www\./, '');
-  } catch {
+  } catch (error) {
     return null;
   }
 }
@@ -538,7 +538,7 @@ async function checkLinksStatus(
         isTrusted,
         rel,
       };
-    } catch {
+    } catch (error) {
       // If fetch fails, assume it's broken (404 or network error)
       return {
         url,
@@ -600,7 +600,7 @@ export async function parseHtml(html: string, url: string): Promise<PageParseRes
   if (canonicalHref) {
     try {
       canonical = new URL(canonicalHref, url).toString();
-    } catch {
+    } catch (error) {
       canonical = canonicalHref; // Fallback to raw value
     }
   }

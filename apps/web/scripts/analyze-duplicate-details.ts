@@ -25,7 +25,7 @@ try {
       }
     }
   });
-} catch {
+} catch (error) {
   console.warn('Could not load .env.local file');
 }
 
@@ -350,7 +350,7 @@ async function main() {
 
   try {
     await analyzePair(urlA, urlB);
-  } catch {
+  } catch (error) {
     console.error('\n❌ Ошибка при анализе:', error);
     if (error instanceof Error) {
       console.error('   Сообщение:', error.message);

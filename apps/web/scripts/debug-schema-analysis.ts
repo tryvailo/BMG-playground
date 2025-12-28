@@ -72,7 +72,7 @@ async function debugSchemaAnalysis() {
             if (parsed['@graph']) {
               console.log(`   📊 Contains @graph with ${parsed['@graph'].length} items`);
             }
-          } catch {
+          } catch (error) {
             console.log(`   ❌ Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}`);
           }
         }
@@ -127,7 +127,7 @@ async function debugSchemaAnalysis() {
       console.log('   This suggests htmlData might be null or schema extraction failed.');
     }
 
-  } catch {
+  } catch (error) {
     console.error('\n❌ Error during analysis:');
     console.error(error);
     if (error instanceof Error) {

@@ -40,7 +40,7 @@ export async function fetchGoogleBusinessNAP(
     }
 
     return null;
-  } catch {
+  } catch (error) {
     console.warn('[GoogleBusinessClient] Failed to fetch NAP:', error);
     return null;
   }
@@ -77,7 +77,7 @@ export async function findPlaceIdByNAP(
     }
 
     return null;
-  } catch {
+  } catch (error) {
     console.warn('[GoogleBusinessClient] Failed to find place ID:', error);
     return null;
   }

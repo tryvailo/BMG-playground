@@ -73,7 +73,7 @@ async function findDocUaClinicUrl(
     });
     
     return clinicUrl;
-  } catch {
+  } catch (error) {
     console.warn('[ReviewParser] Failed to find DOC.ua clinic URL:', error);
     return null;
   }
@@ -166,7 +166,7 @@ async function parseDocUaReviews(
           response_date: responseDate,
           response_time_hours: responseTimeHours,
         });
-      } catch {
+      } catch (error) {
         console.warn('[ReviewParser] Error parsing DOC.ua review:', error);
       }
     });
@@ -185,7 +185,7 @@ async function parseDocUaReviews(
       negative_reviews_count: negativeReviews.length,
       negative_reviews_responded: negativeReviewsResponded,
     };
-  } catch {
+  } catch (error) {
     console.warn('[ReviewParser] Failed to parse DOC.ua reviews:', error);
     return defaultResult;
   }
@@ -229,7 +229,7 @@ async function findHelsiClinicUrl(
     });
     
     return clinicUrl;
-  } catch {
+  } catch (error) {
     console.warn('[ReviewParser] Failed to find Helsi clinic URL:', error);
     return null;
   }
@@ -321,7 +321,7 @@ async function parseHelsiReviews(
           response_date: responseDate,
           response_time_hours: responseTimeHours,
         });
-      } catch {
+      } catch (error) {
         console.warn('[ReviewParser] Error parsing Helsi review:', error);
       }
     });
@@ -340,7 +340,7 @@ async function parseHelsiReviews(
       negative_reviews_count: negativeReviews.length,
       negative_reviews_responded: negativeReviewsResponded,
     };
-  } catch {
+  } catch (error) {
     console.warn('[ReviewParser] Failed to parse Helsi reviews:', error);
     return defaultResult;
   }
@@ -379,7 +379,7 @@ function parseDate(dateText: string): string | null {
     }
     
     return null;
-  } catch {
+  } catch (error) {
     return null;
   }
 }
@@ -408,7 +408,7 @@ export async function fetchDocUaReviews(
     }
     
     return await parseDocUaReviews(clinicUrl, firecrawlApiKey);
-  } catch {
+  } catch (error) {
     console.warn('[ReviewParser] Failed to fetch DOC.ua reviews:', error);
     return {
       total_reviews: 0,
@@ -445,7 +445,7 @@ export async function fetchHelsiReviews(
     }
     
     return await parseHelsiReviews(clinicUrl, firecrawlApiKey);
-  } catch {
+  } catch (error) {
     console.warn('[ReviewParser] Failed to fetch Helsi reviews:', error);
     return {
       total_reviews: 0,

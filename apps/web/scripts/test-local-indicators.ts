@@ -30,7 +30,7 @@ function loadEnvFile() {
       }
     }
     console.log('✅ Loaded .env.local file');
-  } catch {
+  } catch (error) {
     console.warn('⚠️  Could not load .env.local file:', error);
   }
 }
@@ -239,7 +239,7 @@ async function main() {
     await fs.writeFile(outputPath, JSON.stringify(result, null, 2));
     console.log(`💾 Full results saved to: ${outputPath}\n`);
     
-  } catch {
+  } catch (error) {
     console.error('\n❌ Error during audit:', error);
     if (error instanceof Error) {
       console.error('   Message:', error.message);

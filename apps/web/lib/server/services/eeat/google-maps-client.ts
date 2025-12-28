@@ -27,7 +27,7 @@ export function extractPlaceIdFromUrl(url: string): string | null {
     // Pattern 3: https://www.google.com/maps/search/?api=1&query=...
     // For this case, we'd need to use Geocoding API to find place_id
     return null;
-  } catch {
+  } catch (error) {
     return null;
   }
 }
@@ -58,7 +58,7 @@ async function findPlaceIdByText(
     }
 
     return null;
-  } catch {
+  } catch (error) {
     console.warn('[GoogleMapsClient] Failed to find place ID:', error);
     return null;
   }
@@ -99,7 +99,7 @@ export async function fetchGoogleMapsRating(
     return {
       fetched: false,
     };
-  } catch {
+  } catch (error) {
     console.warn('[GoogleMapsClient] Failed to fetch rating:', error);
     return {
       fetched: false,

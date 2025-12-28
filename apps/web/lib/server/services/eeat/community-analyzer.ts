@@ -75,7 +75,7 @@ export function checkMediaLinks($: CheerioAPI, baseUrl: string): MediaLinkInfo[]
           }
         }
       }
-    } catch {
+    } catch (error) {
       // Invalid URL, skip
     }
   });

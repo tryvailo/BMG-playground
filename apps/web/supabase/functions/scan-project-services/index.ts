@@ -315,7 +315,7 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },
     );
-  } catch {
+  } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Edge function error:', errorMessage);
 
@@ -411,7 +411,7 @@ Important:
     let parsed: ParsedResponse;
     try {
       parsed = JSON.parse(content) as ParsedResponse;
-    } catch {
+    } catch (error) {
       // Fallback: try to extract JSON from markdown code blocks
       const jsonMatch = content.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/);
       if (jsonMatch) {
@@ -466,7 +466,7 @@ Important:
     }
 
     return result;
-  } catch {
+  } catch (error) {
     // Fallback parsing
     const responseTextLower = responseText.toLowerCase();
     const normalizedTarget = normalizeDomain(targetDomain);

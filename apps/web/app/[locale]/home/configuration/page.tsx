@@ -62,7 +62,7 @@ const getStoredValue = (key: string): string => {
   if (typeof window === 'undefined') return '';
   try {
     return localStorage.getItem(key) || '';
-  } catch {
+  } catch (error) {
     return '';
   }
 };
@@ -71,7 +71,7 @@ const setStoredValue = (key: string, value: string): void => {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(key, value);
-  } catch {
+  } catch (error) {
     // Ignore localStorage errors
   }
 };
