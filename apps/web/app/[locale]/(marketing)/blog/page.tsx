@@ -145,38 +145,44 @@ async function BlogPage() {
       />
 
       <div className={'container flex flex-col space-y-8 pb-16'}>
-        {frontmatter.title && typeof frontmatter.title === 'string' ? (
-          <article className="max-w-4xl mx-auto">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span>{t('marketing:backToBlog') || 'Back to blog'}</span>
-            </Link>
+        {(() => {
+          const title = typeof frontmatter.title === 'string' ? frontmatter.title : null;
+          const excerpt = typeof frontmatter.excerpt === 'string' ? frontmatter.excerpt : null;
+          const date = typeof frontmatter.date === 'string' ? frontmatter.date : null;
+          const tags = Array.isArray(frontmatter.tags) 
+            ? frontmatter.tags.filter((tag): tag is string => typeof tag === 'string')
+            : [];
+          
+          return title ? (
+            <article className="max-w-4xl mx-auto">
+              <Link
+                href="/"
+                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>{t('marketing:backToBlog') || 'Back to blog'}</span>
+              </Link>
 
-            <div className="prose prose-slate dark:prose-invert max-w-none">
-              <h1 className="text-4xl font-bold mb-4">{frontmatter.title}</h1>
-              
-              {frontmatter.excerpt && typeof frontmatter.excerpt === 'string' && (
-                <p className="text-xl text-muted-foreground mb-6">{frontmatter.excerpt}</p>
-              )}
-
-              <div className="flex items-center gap-4 text-sm text-muted-foreground mb-8">
-                {frontmatter.date && typeof frontmatter.date === 'string' && (
-                  <time dateTime={frontmatter.date}>
-                    {new Date(frontmatter.date).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
-                  </time>
+              <div className="prose prose-slate dark:prose-invert max-w-none">
+                <h1 className="text-4xl font-bold mb-4">{title}</h1>
+                
+                {excerpt && (
+                  <p className="text-xl text-muted-foreground mb-6">{excerpt}</p>
                 )}
-                {frontmatter.tags && Array.isArray(frontmatter.tags) && frontmatter.tags.length > 0 && (
-                  <div className="flex gap-2">
-                    {frontmatter.tags
-                      .filter((tag): tag is string => typeof tag === 'string')
-                      .map((tag) => (
+
+                <div className="flex items-center gap-4 text-sm text-muted-foreground mb-8">
+                  {date && (
+                    <time dateTime={date}>
+                      {new Date(date).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </time>
+                  )}
+                  {tags.length > 0 && (
+                    <div className="flex gap-2">
+                      {tags.map((tag) => (
                         <span
                           key={tag}
                           className="px-2 py-1 bg-muted rounded-md text-xs"
@@ -184,9 +190,9 @@ async function BlogPage() {
                           {tag}
                         </span>
                       ))}
-                  </div>
-                )}
-              </div>
+                    </div>
+                  )}
+                </div>
 
               <div
                 className="blog-content space-y-4"
