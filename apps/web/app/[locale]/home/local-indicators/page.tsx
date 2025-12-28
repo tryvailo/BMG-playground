@@ -118,7 +118,7 @@ export default function LocalIndicatorsPage() {
         setIsLoading(false);
       }
     }
-  }, [result]);
+  }, []);
 
   // Initial fetch on mount
   useEffect(() => {

@@ -82,6 +82,7 @@ export function EmailPasswordSignUpContainer({
       }
     },
     [
+      appHomePath,
       captchaToken,
       emailRedirectTo,
       loading,

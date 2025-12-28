@@ -345,7 +345,7 @@ export default function CheckoutPage() {
 
               {/* Features List */}
               <div className="mt-6 pt-6 border-t border-slate-200">
-                <p className="text-sm font-semibold text-slate-900 mb-3">What's included:</p>
+                <p className="text-sm font-semibold text-slate-900 mb-3">What&apos;s included:</p>
                 <ul className="space-y-2 text-sm text-slate-600">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 size={16} className="text-green-500 mt-0.5 flex-shrink-0" />
