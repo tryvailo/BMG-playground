@@ -2,10 +2,10 @@
 
 import React, { useMemo } from 'react';
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer,
   ScatterChart, Scatter, ZAxis, Cell
 } from 'recharts';
-import { ArrowUp, ArrowDown, Target, Share2, Zap, List, Settings, FileText, Shield, MapPin, Activity, TrendingUp, Lightbulb } from 'lucide-react';
+import { Target, Share2, Zap, List, Settings, FileText, Shield, MapPin, Activity } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@kit/ui/card';
 import { EmptyState, EmptyStateHeading, EmptyStateText } from '@kit/ui/empty-state';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@kit/ui/chart';

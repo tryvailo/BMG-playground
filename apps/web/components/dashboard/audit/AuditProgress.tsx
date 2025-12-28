@@ -24,7 +24,7 @@ export function AuditProgress({ className }: AuditProgressProps) {
           Scanning...
         </h3>
         <p className="text-sm text-slate-600 dark:text-slate-400 text-center max-w-md">
-          The technical audit is in progress. This may take a few moments while we analyze your site's performance, security, and optimization.
+          The technical audit is in progress. This may take a few moments while we analyze your site&apos;s performance, security, and optimization.
         </p>
       </CardContent>
     </Card>

@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import {
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     ScatterChart, Scatter, ZAxis, Cell, LineChart, Line, BarChart, Bar,
-    Legend, ReferenceLine, AreaChart, Area, LabelList, ComposedChart,
+    ReferenceLine, AreaChart, Area, LabelList, ComposedChart,
     type TooltipProps
 } from 'recharts';
 import {

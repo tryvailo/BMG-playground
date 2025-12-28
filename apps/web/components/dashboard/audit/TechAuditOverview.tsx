@@ -160,7 +160,7 @@ function EmptyState({ onRunAudit }: { onRunAudit?: () => void }) {
         No Technical Audit Yet
       </h3>
       <p className="text-sm text-muted-foreground mb-6 max-w-md">
-        Run a technical audit to analyze your site's performance, security, and optimization.
+        Run a technical audit to analyze your site&apos;s performance, security, and optimization.
       </p>
       {onRunAudit && (
         <Button onClick={onRunAudit} size="lg">
