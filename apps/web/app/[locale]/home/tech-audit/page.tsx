@@ -171,13 +171,14 @@ export default function TechAuditPage() {
 
     try {
       // Run technical audit and optionally deep content analysis
-      const promises: Promise<EphemeralAuditResult | DuplicateAnalysisResult | null>[] = [
-        runPlaygroundTechAudit({
-          domain: domain,
-          apiKeyOpenAI: apiKeyOpenAI || undefined,
-          apiKeyGooglePageSpeed: apiKeyGooglePageSpeed || undefined,
-        }),
-      ];
+      const auditPromise: Promise<EphemeralAuditResult> = runPlaygroundTechAudit({
+        domain: domain,
+        apiKeyOpenAI: apiKeyOpenAI || undefined,
+        apiKeyGooglePageSpeed: apiKeyGooglePageSpeed || undefined,
+      });
+      
+      const promises: [Promise<EphemeralAuditResult>, Promise<DuplicateAnalysisResult | null>] = [
+        auditPromise,
 
       // Add deep content analysis (will use env var if form key is not provided)
       // If env var is also missing, the API will return an error which we'll handle gracefully
@@ -269,7 +270,7 @@ export default function TechAuditPage() {
           // Analysis was skipped due to missing API key
           toast.info('Deep Content Analysis skipped: Firecrawl API key not provided');
         } else {
-          setDuplicateResult(duplicateAnalysisResult.value);
+          setDuplicateResult(duplicateAnalysisResult.value as DuplicateAnalysisResult);
           toast.success('Deep content analysis completed successfully!');
         }
       } else if (duplicateAnalysisResult && duplicateAnalysisResult.status === 'rejected' && 'reason' in duplicateAnalysisResult) {
