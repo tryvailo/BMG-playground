@@ -112,7 +112,7 @@ export default function TechAuditPage() {
           return prevDate;
         });
       }
-    } catch {
+    } catch (error) {
       console.error('[Technical Audit] Error fetching audit data:', error);
     } finally {
       isLoadingRef.current = false;
@@ -300,7 +300,7 @@ export default function TechAuditPage() {
           });
           setAiAnalysis(aiResult);
           toast.success('AI analysis completed successfully!');
-        } catch {
+        } catch (error) {
           console.error('[AI Analysis] Error:', error);
           const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
           toast.error(`AI Analysis failed: ${errorMessage}`);
@@ -315,7 +315,7 @@ export default function TechAuditPage() {
           toast.success('All audits completed successfully!');
         }
       }
-    } catch {
+    } catch (error) {
       console.error('[Technical Audit] Unexpected error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast.error(`Failed to run audits: ${errorMessage}`);

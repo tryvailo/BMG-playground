@@ -101,7 +101,7 @@ export default function ContentOptimizationPage() {
           return prevDate;
         });
       }
-    } catch {
+    } catch (error) {
       console.error('[Content Optimization] Error fetching audit data:', error);
     } finally {
       isLoadingRef.current = false;
@@ -159,7 +159,7 @@ export default function ContentOptimizationPage() {
         loadAuditData();
       }, 1000);
       timeoutRef.current.push(refreshTimeout);
-    } catch {
+    } catch (error) {
       console.error('[Content Optimization] Error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast.error(`Failed to run Content Optimization audit: ${errorMessage}`);

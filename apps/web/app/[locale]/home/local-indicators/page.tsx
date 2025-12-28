@@ -109,7 +109,7 @@ export default function LocalIndicatorsPage() {
           return prevDate;
         });
       }
-    } catch {
+    } catch (error) {
       console.error('[Local Indicators] Error fetching audit data:', error);
       // Don't clear existing data on error
     } finally {
@@ -260,7 +260,7 @@ export default function LocalIndicatorsPage() {
       setTimeout(() => {
         loadAuditData();
       }, 1000);
-    } catch {
+    } catch (error) {
       console.error('[Local Indicators] Error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       
