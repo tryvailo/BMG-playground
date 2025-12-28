@@ -44,7 +44,7 @@ export function TechAudit() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Technical GEO Audit</h1>
-        <p className="text-muted-foreground">Analyze your website's technical readiness for AI search engine indexing.</p>
+        <p className="text-muted-foreground">Analyze your website&apos;s technical readiness for AI search engine indexing.</p>
       </div>
 
       {/* Scanner Input */}
@@ -141,7 +141,7 @@ export function TechAudit() {
                     <div className="bg-emerald-100 p-2 rounded-lg text-emerald-600"><Cpu size={18} /></div>
                     <div>
                         <p className="text-sm font-medium text-foreground">Implement Schema.org</p>
-                        <p className="text-xs text-muted-foreground">Add 'MedicalEntity' and 'Physician' schemas to help AI understand your services.</p>
+                        <p className="text-xs text-muted-foreground">Add &apos;MedicalEntity&apos; and &apos;Physician&apos; schemas to help AI understand your services.</p>
                     </div>
                 </div>
                 <div className="flex items-start gap-3">

@@ -52,7 +52,7 @@ export function VisibilityMonitor() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Visibility Monitor</h1>
-          <p className="text-muted-foreground">Track your brand's presence across AI models.</p>
+          <p className="text-muted-foreground">Track your brand&apos;s presence across AI models.</p>
         </div>
         <button 
           onClick={handleRunScan}

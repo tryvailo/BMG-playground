@@ -6,7 +6,7 @@ interface CompetitorsPageProps {
 }
 
 export default function CompetitorsPage(props: CompetitorsPageProps) {
-    const { locale } = use(props.params);
+    use(props.params); // Extract params to resolve Promise
 
     return (
         <div className="flex-1 flex flex-col space-y-8 p-4 lg:p-8 bg-background">
