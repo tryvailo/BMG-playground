@@ -105,10 +105,8 @@ export default function LocalIndicatorsPage() {
         });
         // Only clear auditDate if we're clearing result
         setAuditDate((prevDate) => {
-          if (result === null) {
-            return null;
-          }
-          return prevDate; // Keep existing date
+          // Keep existing date if we have previous result
+          return prevDate;
         });
       }
     } catch (error) {
@@ -120,7 +118,7 @@ export default function LocalIndicatorsPage() {
         setIsLoading(false);
       }
     }
-  }, []);
+  }, [result]);
 
   // Initial fetch on mount
   useEffect(() => {

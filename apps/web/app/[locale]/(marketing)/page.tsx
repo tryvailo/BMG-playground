@@ -98,7 +98,7 @@ function LandingPage() {
                   {/* User Query */}
                   <div className="flex gap-4 justify-end">
                     <div className="bg-teal-600 text-white p-4 rounded-2xl rounded-tr-sm max-w-[80%] shadow-md">
-                      <p className="text-sm font-medium">"Where is the best place to get dental implants in New York?"</p>
+                      <p className="text-sm font-medium">&quot;Where is the best place to get dental implants in New York?&quot;</p>
                     </div>
                     <div className="w-8 h-8 bg-teal-200 rounded-full flex-shrink-0"></div>
                   </div>
@@ -172,7 +172,7 @@ function LandingPage() {
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">1. Scan Your Keywords</h3>
               <p className="text-slate-600">
-                Enter your medical keywords and we'll check your visibility across ChatGPT, Perplexity, and Gemini.
+                Enter your medical keywords and we&apos;ll check your visibility across ChatGPT, Perplexity, and Gemini.
               </p>
             </div>
 
@@ -182,7 +182,7 @@ function LandingPage() {
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">2. Get Real-Time Insights</h3>
               <p className="text-slate-600">
-                See exactly where you rank, who your competitors are, and what opportunities you're missing.
+                See exactly where you rank, who your competitors are, and what opportunities you&apos;re missing.
               </p>
             </div>
 
@@ -203,7 +203,7 @@ function LandingPage() {
       <section id="comparison" className="py-24 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">SEO is changing. <br />Don't get left behind.</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">SEO is changing. <br />Don&apos;t get left behind.</h2>
             <p className="text-lg text-slate-600">
               Traditional blue links are disappearing. Generative Engine Optimization (GEO) is the new battleground for patient acquisition.
             </p>
@@ -276,7 +276,7 @@ function LandingPage() {
                 </div>
                 <h3 className="text-2xl font-bold text-slate-900 mb-3">Real-Time Visibility Monitor</h3>
                 <p className="text-slate-600">
-                  Stop guessing. We track your "Share of Voice" across ChatGPT, Claude, and Perplexity for hundreds of medical keywords daily.
+                  Stop guessing. We track your &quot;Share of Voice&quot; across ChatGPT, Claude, and Perplexity for hundreds of medical keywords daily.
                 </p>
               </div>
               <div className="absolute right-0 bottom-0 w-1/2 h-48 bg-white rounded-tl-2xl border-t border-l border-slate-200 shadow-sm p-4 translate-x-4 translate-y-4 group-hover:translate-x-2 group-hover:translate-y-2 transition-transform">
@@ -298,14 +298,14 @@ function LandingPage() {
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">Keyword Explorer</h3>
               <p className="text-slate-600 text-sm mb-6">
-                Discover the exact questions patients are asking AI. Find high-opportunity "long-tail" prompts that competitors ignore.
+                Discover the exact questions patients are asking AI. Find high-opportunity &quot;long-tail&quot; prompts that competitors ignore.
               </p>
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-xs bg-slate-50 p-2 rounded border border-slate-100">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div> "cost of veneers nyc"
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div> &quot;cost of veneers nyc&quot;
                 </div>
                 <div className="flex items-center gap-2 text-xs bg-slate-50 p-2 rounded border border-slate-100">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div> "pain free dentist near me"
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div> &quot;pain free dentist near me&quot;
                 </div>
               </div>
             </div>
