@@ -32,7 +32,14 @@ const TOKENS = {
 };
 
 // --- Custom Modern Components ---
-const BentoCard = ({ children, className, title, subtitle }: any) => (
+interface BentoCardProps {
+  children?: React.ReactNode;
+  className?: string;
+  title?: string;
+  subtitle?: string;
+}
+
+const BentoCard = ({ children, className, title, subtitle }: BentoCardProps) => (
   <Card className={cn(
     "border border-slate-200 bg-white shadow-[0_8px_32px_0_rgba(15,23,42,0.04)] overflow-hidden transition-all duration-300 hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] group",
     className
