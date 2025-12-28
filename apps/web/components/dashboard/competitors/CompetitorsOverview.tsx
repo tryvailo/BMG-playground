@@ -8,7 +8,7 @@ import {
     type TooltipProps
 } from 'recharts';
 import {
-    Target, Zap, Activity, BrainCircuit, ChevronRight, Info, AlertCircle,
+    Target, Zap, Activity, BrainCircuit, Info, AlertCircle,
     TrendingUp, TrendingDown, LayoutGrid, Timer, BarChart3, LineChart as LineChartIcon,
     Sparkles, Globe, MousePointerClick, ArrowUpRight, Search
 } from 'lucide-react';
