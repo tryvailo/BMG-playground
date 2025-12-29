@@ -1153,7 +1153,7 @@ function _adaptEphemeralToTechAudit(
  * @returns Object with DashboardData, ServiceAnalysisData, and techAudit
  */
 export const runLiveDashboardTest = enhanceAction(
-  async (input: PlaygroundInput, user?: undefined): Promise<DashboardData & { serviceAnalysis: ServiceAnalysisData; techAudit: null }> => {
+  async (input: PlaygroundInput, _user?: undefined): Promise<DashboardData & { serviceAnalysis: ServiceAnalysisData; techAudit: null }> => {
     try {
       console.log('[runLiveDashboardTest] Starting with input:', {
         domain: input.domain,
