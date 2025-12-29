@@ -8,15 +8,11 @@ import {
     type TooltipProps
 } from 'recharts';
 import {
-    Target, Zap, Activity, BrainCircuit, Info, AlertCircle,
-    TrendingUp, TrendingDown, LayoutGrid, Timer, BarChart3, LineChart as LineChartIcon,
-    Sparkles, Globe, MousePointerClick, ArrowUpRight, Search
+    Target, Zap, Activity, BrainCircuit,
+    LayoutGrid,
+    Sparkles, Globe, ArrowUpRight
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@kit/ui/card';
-import {
-    Table, TableBody, TableCell, TableHead,
-    TableHeader, TableRow
-} from '@kit/ui/table';
+import { Card, CardContent, CardHeader } from '@kit/ui/card';
 import { Badge } from '@kit/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kit/ui/select';
 import { cn } from '@kit/ui/utils';

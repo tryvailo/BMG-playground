@@ -22,7 +22,6 @@ import { twMerge } from 'tailwind-merge';
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
-import { Skeleton } from '@kit/ui/skeleton';
 import { toast } from 'sonner';
 import type { ServiceAnalysisData } from '~/lib/actions/playground-test';
 import { runLiveDashboardTest } from '~/lib/actions/playground-test';

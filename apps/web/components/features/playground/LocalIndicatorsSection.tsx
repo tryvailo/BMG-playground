@@ -33,7 +33,7 @@ import { cn } from '@kit/ui/utils';
 import type { LocalIndicatorsAuditResult } from '~/lib/server/services/local/types';
 
 // --- Premium 2026 Light Tokens ---
-const TOKENS = {
+  const _TOKENS = {
     colors: {
         primary: '#0d9488', // Teal
         emerald: '#10b981',

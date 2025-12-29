@@ -592,8 +592,8 @@ export function EEATAuditSection({
   );
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [multiPage, setMultiPage] = useState(false);
-  const [filterType, setFilterType] = useState<'blog' | 'doctors' | 'articles' | 'all'>('all');
+  const [multiPage] = useState(false);
+  const [filterType] = useState<'blog' | 'doctors' | 'articles' | 'all'>('all');
 
   // Use external result if provided, otherwise use internal result
   const result = externalResult !== undefined ? externalResult : internalResult;

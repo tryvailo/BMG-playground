@@ -8,15 +8,11 @@ import {
     type TooltipProps
 } from 'recharts';
 import {
-    Target, Zap, Activity, BrainCircuit, Info, AlertCircle,
-    TrendingUp, TrendingDown, LayoutGrid, Timer, BarChart3, LineChart as LineChartIcon,
-    Sparkles, Globe, MousePointerClick, ArrowUpRight, Search
+    Target, Zap, Activity, BrainCircuit,
+    LayoutGrid,
+    Sparkles, Globe, ArrowUpRight
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@kit/ui/card';
-import {
-    Table, TableBody, TableCell, TableHead,
-    TableHeader, TableRow
-} from '@kit/ui/table';
+import { Card, CardContent, CardHeader } from '@kit/ui/card';
 import { Badge } from '@kit/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kit/ui/select';
 import { cn } from '@kit/ui/utils';
@@ -45,7 +41,14 @@ const TOKENS = {
 
 // --- Custom Modern Components ---
 
-const BentoCard = ({ children, className, title, subtitle }: any) => (
+interface BentoCardProps {
+  children: React.ReactNode;
+  className?: string;
+  title?: string;
+  subtitle?: string;
+}
+
+const BentoCard = ({ children, className, title, subtitle }: BentoCardProps) => (
     <Card className={cn(
         "border-none bg-white/70 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(15,23,42,0.04)] overflow-hidden transition-all duration-300 hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] group",
         className
@@ -85,7 +88,14 @@ const GlassTooltip = ({ active, payload, label }: TooltipProps<number, string>) 
 };
 
 // Custom label component for scatter points
-const ScatterLabel = (props: any) => {
+interface ScatterLabelProps {
+  x?: number;
+  y?: number;
+  value?: string;
+  payload?: { name?: string };
+}
+
+const ScatterLabel = (props: ScatterLabelProps) => {
     const { x, y, value, payload } = props;
     if (!x || !y) return null;
     
@@ -160,7 +170,7 @@ export function CompetitorsOverview() {
     const dynamics = useMemo(() => {
         const months = ['бер', 'кві', 'тра', 'чер', 'лип', 'сер', 'вер'];
         return months.map((m, mi) => {
-            const row: any = { p: m };
+            const row: Record<string, number | string> = { p: m };
             row.you = 60 + Math.sin(mi) * 10 + (selectedService === 'gynecology' ? 5 : 0);
             competitors.forEach((c, ci) => {
                 row[c.id] = 50 + Math.cos(mi + ci) * 15;
@@ -176,7 +186,7 @@ export function CompetitorsOverview() {
     })), [services]);
 
     const distributionData = useMemo(() => services.map((s, i) => {
-        const row: any = { service: s };
+        const row: Record<string, number | string> = { service: s };
         row.you = [45, 52, 68, 35, 72, 58, 44, 61][i % 8];
         row.c1 = [60, 48, 75, 42, 65, 50, 55, 48][i % 8];
         row.c2 = [30, 85, 40, 92, 25, 70, 68, 35][i % 8];
@@ -509,7 +519,7 @@ export function CompetitorsOverview() {
                                 <YAxis dataKey="service" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#475569' }} width={120} />
                                 <Tooltip cursor={{ fill: 'rgba(0,0,0,0.01)' }} />
                                 <Bar dataKey="you" fill={TOKENS.colors.you} barSize={8} radius={[0, 10, 10, 0]} name="Ви">
-                                    <LabelList dataKey="you" position="right" style={{ fontSize: '9px', fontWeight: 900, fill: TOKENS.colors.you }} formatter={(v: any) => `Ви ${Number(v).toFixed(2)}%`} />
+                                    <LabelList dataKey="you" position="right" style={{ fontSize: '9px', fontWeight: 900, fill: TOKENS.colors.you }} formatter={(v: number | string) => `Ви ${Number(v).toFixed(2)}%`} />
                                 </Bar>
                                 <Bar dataKey="c1" fill="#e2e8f0" barSize={8} radius={[0, 10, 10, 0]} name="Competitor A" />
                                 <Bar dataKey="c2" fill="#f1f5f9" barSize={8} radius={[0, 10, 10, 0]} name="Competitor B" />

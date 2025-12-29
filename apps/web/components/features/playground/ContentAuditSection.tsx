@@ -31,7 +31,7 @@ import { performContentAudit } from '~/lib/actions/content-audit';
 import type { ContentAuditResult } from '~/lib/server/services/content/types';
 
 // --- Premium 2026 Light Tokens ---
-const TOKENS = {
+  const _TOKENS = {
     colors: {
         you: '#f43f5e', // Ruby
         c1: '#3b82f6', // Blue
