@@ -28,7 +28,6 @@ import {
 import { toast } from 'sonner';
 
 import { Badge } from '@kit/ui/badge';
-import { Button } from '@kit/ui/button';
 import {
   Card,
   CardContent,
@@ -36,22 +35,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@kit/ui/card';
-import { Input } from '@kit/ui/input';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@kit/ui/collapsible';
 import { Alert, AlertDescription, AlertTitle } from '@kit/ui/alert';
-import { Checkbox } from '@kit/ui/checkbox';
-import { Label } from '@kit/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@kit/ui/select';
 import { cn } from '@kit/ui/utils';
 
 import { runEEATAudit } from '~/lib/actions/eeat-audit';
@@ -80,7 +69,14 @@ const TOKENS = {
 };
 
 // --- Custom Modern Components ---
-const BentoCard = ({ children, className, title, subtitle }: any) => (
+interface BentoCardProps {
+  children: React.ReactNode;
+  className?: string;
+  title?: string;
+  subtitle?: string;
+}
+
+const BentoCard = ({ children, className, title, subtitle }: BentoCardProps) => (
     <Card className={cn(
         "border border-slate-200 bg-white shadow-[0_8px_32px_0_rgba(15,23,42,0.04)] overflow-hidden transition-all duration-300 hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] group",
         className
@@ -167,7 +163,7 @@ interface CountBadgeProps {
   icon?: React.ElementType;
 }
 
-function CountBadge({ label, count, icon: Icon }: CountBadgeProps) {
+function _CountBadge({ label, count, icon: Icon }: CountBadgeProps) {
   const isGood = count > 0;
   return (
     <Badge
@@ -397,7 +393,7 @@ interface CategorySectionProps {
   children: React.ReactNode;
 }
 
-function CategorySection({ title, icon, children }: CategorySectionProps) {
+function _CategorySection({ title, icon, children }: CategorySectionProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3 pb-2 border-b border-border">
@@ -605,7 +601,7 @@ export function EEATAuditSection({
     }
   }, [defaultUrl]);
 
-  const handleAnalyze = () => {
+  const _handleAnalyze = () => {
     if (!url.trim()) {
       toast.error('Please enter a URL');
       return;
@@ -700,7 +696,7 @@ export function EEATAuditSection({
   ];
 
   // Calculate status for each category
-  const getReputationStatus = () => {
+  const _getReputationStatus = () => {
     if (!result) return 'neutral';
     const totalSignals =
       result.reputation.linked_platforms.length +
@@ -710,7 +706,7 @@ export function EEATAuditSection({
     return 'bad';
   };
 
-  const getTrustStatus = () => {
+  const _getTrustStatus = () => {
     if (!result) return 'neutral';
     const checks = [
       result.trust.has_privacy_policy,
@@ -724,7 +720,7 @@ export function EEATAuditSection({
     return 'bad';
   };
 
-  const getAuthorityStatus = () => {
+  const _getAuthorityStatus = () => {
     if (!result) return 'neutral';
     const hasScientific = result.authority.scientific_sources_count > 0;
     const hasCommunity = result.authority.has_community_mentions;
@@ -733,7 +729,7 @@ export function EEATAuditSection({
     return 'bad';
   };
 
-  const getExpertiseStatus = () => {
+  const _getExpertiseStatus = () => {
     if (!result) return 'neutral';
     const checks = [
       result.authorship.has_author_blocks,
@@ -1296,7 +1292,7 @@ export function EEATAuditSection({
                       % of doctor pages with verified medical credentials (diplomas, certificates, association memberships).
                     </p>
                     <p className="text-sm text-muted-foreground italic mt-2">
-                      For accurate calculation, use multi-page analysis with "Doctors Only" filter.
+                      For accurate calculation, use multi-page analysis with &quot;Doctors Only&quot; filter.
                     </p>
                   </div>
                 </>
@@ -1407,8 +1403,8 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-emerald-600">Good Example:</strong> "Laser Vision
-                        Correction" page featuring data: "15 years of experience, 5000+ surgeries."
+                        <strong className="text-emerald-600">Good Example:</strong> &quot;Laser Vision
+                        Correction&quot; page featuring data: &quot;15 years of experience, 5000+ surgeries.&quot;
                       </div>
                     </div>
                   </div>
@@ -1416,8 +1412,8 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <XCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-rose-600">Bad Example:</strong> Generic text like "We
-                        are a professional clinic," without specifics or figures regarding experience.
+                        <strong className="text-rose-600">Bad Example:</strong> Generic text like &quot;We
+                        are a professional clinic,&quot; without specifics or figures regarding experience.
                       </div>
                     </div>
                   </div>
@@ -1758,8 +1754,8 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-emerald-600">Good Example:</strong> On the "Chronic
-                        Gastritis Treatment" page, there is a separate "Patient Story" block: a concise description of
+                        <strong className="text-emerald-600">Good Example:</strong> On the &quot;Chronic
+                        Gastritis Treatment&quot; page, there is a separate &quot;Patient Story&quot; block: a concise description of
                         the situation before the visit, the examination, the prescribed treatment, the condition dynamics
                         over 3 months, and the result (without PII/identifying data); added doctor's commentary on
                         tactic selection.
@@ -1770,8 +1766,8 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <XCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-rose-600">Bad Example:</strong> Vague text like "We
-                        have many patients we cured" without specific stories, treatment stages, timelines, or metrics;
+                        <strong className="text-rose-600">Bad Example:</strong> Vague text like &quot;We
+                        have many patients we cured&quot; without specific stories, treatment stages, timelines, or metrics;
                         OR publication of a story with full personal patient data without consent.
                       </div>
                     </div>
@@ -2074,7 +2070,7 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-emerald-600">Good Example:</strong> The site has an "About Us" block or section listing doctors' speeches and publications.
+                        <strong className="text-emerald-600">Good Example:</strong> The site has an &quot;About Us&quot; block or section listing doctors&apos; speeches and publications.
                       </div>
                     </div>
                   </div>
@@ -2082,7 +2078,7 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <XCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-rose-600">Bad Example:</strong> The clinic positions itself as a "leading center" but has no verifiable mentions in professional sources.
+                        <strong className="text-rose-600">Bad Example:</strong> The clinic positions itself as a &quot;leading center&quot; but has no verifiable mentions in professional sources.
                       </div>
                     </div>
                   </div>
@@ -2408,7 +2404,7 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-emerald-600">Good Example:</strong> An "About Us"
+                        <strong className="text-emerald-600">Good Example:</strong> An &quot;About Us&quot;
                         section with the legal entity name, address, licenses, phone numbers, email, booking form, and
                         map.
                       </div>
