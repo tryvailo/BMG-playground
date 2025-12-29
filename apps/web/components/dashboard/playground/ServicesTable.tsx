@@ -162,24 +162,6 @@ const generateMockResults = (domain: string): Map<string, ServiceCalculationResu
     const cScore = 70;
     const aivScore = isVisibleVal * (isVisibleVal * 100 * 0.3 + pScore * 0.25 + cScore * 0.2);
 
-    const analysisData: ServiceAnalysisData = {
-      query: service.search_query,
-      location: service.location_city,
-      foundUrl: isVisible ? `https://${domain}${service.path}` : null,
-      position: position,
-      totalResults: totalResults,
-      aiEngine: 'Simulated AI Analysis',
-      competitors: [
-        { rank: 1, name: 'Competitor A', strengths: 'High ratings' },
-        { rank: 2, name: 'Competitor B', strengths: 'Fast response' },
-        { rank: 3, name: 'Competitor C', strengths: 'Modern equipment' }
-      ],
-      recommendationText: isVisible
-        ? `Your clinic is visible at position #${position}. To improve, focus on customer reviews.`
-        : `Your clinic is not visible for this query. Improve your local SEO signal.`,
-      llmLogs: []
-    };
-
     mockResults.set(service.id, {
       serviceId: service.id,
       serviceName: service.name,

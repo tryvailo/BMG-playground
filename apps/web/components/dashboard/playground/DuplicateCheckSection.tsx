@@ -8,7 +8,6 @@ import {
   ExternalLink,
   Loader2,
   ChevronDown,
-  Copy,
   XCircle,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@kit/ui/card';
@@ -183,7 +182,7 @@ export function DuplicateCheckSection({
   const [status, setStatus] = useState<Status>(initialStatus);
   const [data, setData] = useState<DuplicateAnalysisResult | null>(initialData);
   const [error, setError] = useState<string | null>(initialError);
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   // Update state when initial props change
   React.useEffect(() => {

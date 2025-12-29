@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import {
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     ScatterChart, Scatter, ZAxis, Cell, LineChart, Line, BarChart, Bar,
-    Legend, ReferenceLine, AreaChart, Area, LabelList, ComposedChart,
+    ReferenceLine, AreaChart, Area, LabelList, ComposedChart,
     type TooltipProps
 } from 'recharts';
 import {
@@ -41,7 +41,14 @@ const TOKENS = {
 
 // --- Custom Modern Components ---
 
-const BentoCard = ({ children, className, title, subtitle }: any) => (
+interface BentoCardProps {
+  children: React.ReactNode;
+  className?: string;
+  title?: string;
+  subtitle?: string;
+}
+
+const BentoCard = ({ children, className, title, subtitle }: BentoCardProps) => (
     <Card className={cn(
         "border-none bg-white/70 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(15,23,42,0.04)] overflow-hidden transition-all duration-300 hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] group",
         className
@@ -58,7 +65,13 @@ const BentoCard = ({ children, className, title, subtitle }: any) => (
     </Card>
 );
 
-const GlassTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
+interface GlassTooltipProps {
+  active?: boolean;
+  payload?: Array<{ name?: string; value?: number; color?: string }>;
+  label?: string;
+}
+
+const GlassTooltip = ({ active, payload, label }: GlassTooltipProps) => {
     if (active && payload && payload.length) {
         return (
             <div className="bg-white/95 backdrop-blur-xl border border-slate-100 p-4 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] animate-in fade-in zoom-in-95">
@@ -125,10 +138,17 @@ export function CompetitorsOverview() {
         }))
     ], [competitors]);
 
+    interface DynamicsRow {
+      p: string;
+      you: number;
+      market: number;
+      [key: string]: string | number; // For dynamic competitor IDs
+    }
+
     const dynamics = useMemo(() => {
         const months = ['бер', 'кві', 'тра', 'чер', 'лип', 'сер', 'вер'];
         return months.map((m, mi) => {
-            const row: any = { p: m };
+            const row: DynamicsRow = { p: m, you: 0, market: 0 };
             row.you = 60 + Math.sin(mi) * 10 + (selectedService === 'gynecology' ? 5 : 0);
             competitors.forEach((c, ci) => {
                 row[c.id] = 50 + Math.cos(mi + ci) * 15;
@@ -143,8 +163,15 @@ export function CompetitorsOverview() {
         diff: [22, -15, 10, -25, 18, -12][i % 6]
     })), [services]);
 
+    interface DistributionRow {
+      service: string;
+      you: number;
+      c1: number;
+      c2: number;
+    }
+
     const distributionData = useMemo(() => services.map((s, i) => {
-        const row: any = { service: s };
+        const row: DistributionRow = { service: s, you: 0, c1: 0, c2: 0 };
         row.you = [45, 52, 68, 35, 72, 58, 44, 61][i % 8];
         row.c1 = [60, 48, 75, 42, 65, 50, 55, 48][i % 8];
         row.c2 = [30, 85, 40, 92, 25, 70, 68, 35][i % 8];
@@ -323,7 +350,7 @@ export function CompetitorsOverview() {
                                 <YAxis dataKey="service" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#475569' }} width={120} />
                                 <Tooltip cursor={{ fill: 'rgba(0,0,0,0.01)' }} />
                                 <Bar dataKey="you" fill={TOKENS.colors.you} barSize={8} radius={[0, 10, 10, 0]} name="Ви">
-                                    <LabelList dataKey="you" position="right" style={{ fontSize: '9px', fontWeight: 900, fill: TOKENS.colors.you }} formatter={(v: any) => `Ви ${Number(v).toFixed(2)}%`} />
+                                    <LabelList dataKey="you" position="right" style={{ fontSize: '9px', fontWeight: 900, fill: TOKENS.colors.you }} formatter={(v: number) => `Ви ${Number(v).toFixed(2)}%`} />
                                 </Bar>
                                 <Bar dataKey="c1" fill="#e2e8f0" barSize={8} radius={[0, 10, 10, 0]} name="Competitor A" />
                                 <Bar dataKey="c2" fill="#f1f5f9" barSize={8} radius={[0, 10, 10, 0]} name="Competitor B" />
