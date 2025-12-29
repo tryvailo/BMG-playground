@@ -1064,7 +1064,7 @@ function findSocialProfile($: CheerioAPI, platform: 'facebook' | 'instagram'): s
  * Note: This would require fetching the social media profile page
  * and parsing it. For now, we just check if profile exists.
  */
-function checkSocialNAP(profileUrl: string | null, businessName?: string, address?: string, phone?: string): boolean {
+function checkSocialNAP(profileUrl: string | null, _businessName?: string, _address?: string, _phone?: string): boolean {
   // TODO: Fetch profile page and check for NAP data
   // For now, if profile exists, assume NAP might be present
   return profileUrl !== null;
@@ -1132,7 +1132,7 @@ function analyzeLocalSocialMedia(
  */
 async function analyzeLocalBusinessSchema(
   $: CheerioAPI,
-  url: string,
+  _url: string,
 ): Promise<LocalBusinessSchema> {
   const jsonLdScripts = $('script[type="application/ld+json"]');
   

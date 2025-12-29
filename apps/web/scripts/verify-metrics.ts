@@ -447,7 +447,7 @@ async function scanServiceVisibility(
       model: PERPLEXITY_MODELS.ONLINE_PRO, // sonar-pro - основная мощная модель
       messages: [{ role: 'user', content: userPrompt }],
       temperature: 0.2, // Рекомендуется для sonar моделей
-    }).catch(async (err1) => {
+    }).catch(async (_err1) => {
       // Fallback: try sonar (fast) if sonar-pro fails
       console.log('⚠️  Perplexity sonar-pro model failed, trying sonar (fast)...');
       try {

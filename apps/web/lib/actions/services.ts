@@ -86,7 +86,7 @@ export const getServices = enhanceAction(
  * Create a new service
  */
 export const createService = enhanceAction(
-  async (params: CreateServiceInput, _user?: undefined) => {
+  async (params: CreateServiceInput) => {
     const supabase = getSupabaseServerClient();
 
     // Note: Using 'as any' because services table is not in the generated Supabase types yet
@@ -118,7 +118,7 @@ export const createService = enhanceAction(
  * Update a service
  */
 export const updateService = enhanceAction(
-  async (params: z.infer<typeof UpdateServiceActionSchema>, _user?: undefined) => {
+  async (params: z.infer<typeof UpdateServiceActionSchema>) => {
     const { id, data } = params;
     const supabase = getSupabaseServerClient();
 
