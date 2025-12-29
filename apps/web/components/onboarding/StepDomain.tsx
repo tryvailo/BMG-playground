@@ -23,11 +23,11 @@ export function StepDomain({ onContinue }: StepDomainProps) {
     return (
         <div className="flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
             <h1 className="text-4xl font-bold text-slate-900 mb-6 leading-tight">
-                Let's start by analyzing your clinic's visibility
+                Let&apos;s start by analyzing your clinic&apos;s visibility
             </h1>
 
             <p className="text-lg text-slate-500 mb-10 leading-relaxed font-medium">
-                Enter your website domain to see how you're currently performing in AI search engines.
+                Enter your website domain to see how you&apos;re currently performing in AI search engines.
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-8 mb-12">

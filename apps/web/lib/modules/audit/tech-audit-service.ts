@@ -159,7 +159,6 @@ async function fetchPageSpeed(
         ? (audits['server-response-time'] as { numericValue: number }).numericValue 
         : undefined,
       tbt: audits['total-blocking-time']?.numericValue || undefined,
-      si: audits['speed-index']?.numericValue || undefined,
     };
 
     return {
