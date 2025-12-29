@@ -76,7 +76,7 @@ async function firecrawlRequest<T>(
     let errorDetails: { success?: boolean; code?: string; error?: string; message?: string } = {};
     try {
       errorDetails = JSON.parse(errorText);
-    } catch (error) {
+    } catch (_error) {
       // Not JSON, use raw text
     }
     

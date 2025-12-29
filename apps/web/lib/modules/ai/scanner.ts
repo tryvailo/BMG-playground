@@ -114,7 +114,7 @@ Important:
     let parsed: ParsedAIResponse;
     try {
       parsed = JSON.parse(content) as ParsedAIResponse;
-    } catch (parseError) {
+    } catch (_parseError) {
       // Fallback: try to extract JSON from markdown code blocks
       const jsonMatch = content.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/);
       if (jsonMatch) {

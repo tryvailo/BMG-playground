@@ -106,7 +106,7 @@ function parseJsonLd(content: string): JsonLdSchema | null {
     try {
       const parsed = JSON.parse(cleanedContent);
       return parsed as JsonLdSchema;
-    } catch (directParseError) {
+    } catch (_directParseError) {
       // If direct parse fails, try to unescape HTML entities
       // Some sites embed JSON-LD with HTML entities
       const unescaped = cleanedContent
@@ -402,7 +402,7 @@ function extractHreflangs($: CheerioAPI, baseUrl: string): HreflangEntry[] {
       try {
         const absoluteUrl = new URL(href, baseUrl).toString();
         hreflangs.push({ lang, url: absoluteUrl });
-      } catch (error) {
+      } catch (_error) {
         // Skip invalid URLs
       }
     }

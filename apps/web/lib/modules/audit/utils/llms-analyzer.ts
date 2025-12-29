@@ -118,7 +118,7 @@ function parseJsonResponse(content: string): LlmsTxtAnalysis {
           missing_sections: Array.isArray(parsed.missing_sections) ? parsed.missing_sections : [],
           recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : [],
         };
-      } catch (error) {
+      } catch (_error) {
         // Fall through to default
       }
     }

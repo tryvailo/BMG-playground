@@ -123,7 +123,7 @@ function parseJsonResponse(content: string): TechAuditAnalysis {
           strengths: Array.isArray(parsed.strengths) ? parsed.strengths : [],
           quickWins: Array.isArray(parsed.quickWins) ? parsed.quickWins : [],
         };
-      } catch (error) {
+      } catch (_error) {
         // Fall through to default
       }
     }
