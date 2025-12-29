@@ -81,6 +81,7 @@ export const performContentAudit = enhanceAction(
           hasResult: !!insertData.audit_result,
         });
         
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: savedData, error: saveError } = await (supabase as any)
           .from('content_audits')
           .insert(insertData)
@@ -145,6 +146,7 @@ export const getLatestContentAudit = enhanceAction(
       console.log('[ContentAudit] Fetching latest audit from database:', { url: normalizedUrl });
       
       // Try exact match first
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let { data, error } = await (supabase as any)
         .from('content_audits')
         .select('audit_result, created_at, id, url')
@@ -156,6 +158,7 @@ export const getLatestContentAudit = enhanceAction(
       // If no exact match, try without protocol (for flexibility)
       if (!data && !error) {
         const urlWithoutProtocol = normalizedUrl.replace(/^https?:\/\//, '');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: dataAlt, error: errorAlt } = await (supabase as any)
           .from('content_audits')
           .select('audit_result, created_at, id, url')

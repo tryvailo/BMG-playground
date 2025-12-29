@@ -73,7 +73,7 @@ export const getDashboardMetrics = enhanceAction(
         console.log('[Dashboard] Looking for user project, user ID:', user.sub);
         
         // Try to find user's first project
-        const { data: userProjects, error: userProjectsError } = await (supabase as any)
+        const { data: userProjects, error: userProjectsError } = await (supabase as unknown as { from: (table: string) => { select: (columns: string) => { eq: (column: string, value: string) => { limit: (count: number) => Promise<{ data: unknown; error: unknown }> } } } } })
           .from('projects')
           .select('*')
           .eq('organization_id', user.sub)
@@ -94,6 +94,7 @@ export const getDashboardMetrics = enhanceAction(
           console.log('[Dashboard] ⚠️ User has no projects, creating one...');
           try {
             // Ensure account exists first
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const { data: accountCheck } = await (supabase as any)
               .from('accounts')
               .select('id')
@@ -103,6 +104,7 @@ export const getDashboardMetrics = enhanceAction(
             if (!accountCheck) {
               console.log('[Dashboard] Account does not exist, creating...');
               // Account should be created by trigger, but if not, create it
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const { error: accountError } = await (supabase as any)
                 .from('accounts')
                 .insert({
@@ -119,6 +121,7 @@ export const getDashboardMetrics = enhanceAction(
             }
             
             // Call the function to ensure user has a project
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const { data: projectIdResult, error: rpcError } = await (supabase as any)
               .rpc('ensure_user_has_project', { account_id: user.sub });
             
@@ -129,6 +132,7 @@ export const getDashboardMetrics = enhanceAction(
             }
             
             // Try to fetch the project again
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const { data: retryProject, error: retryError } = await (supabase as any)
               .from('projects')
               .select('*')
