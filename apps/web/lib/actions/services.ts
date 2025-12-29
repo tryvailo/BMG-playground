@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { enhanceAction } from '@kit/next/actions';
 import { getSupabaseServerClient } from '@kit/supabase/server-client';
-import { CreateServiceSchema, UpdateServiceSchema, type CreateServiceInput, type UpdateServiceInput } from '~/lib/types/domain';
+import { CreateServiceSchema, UpdateServiceSchema, type CreateServiceInput } from '~/lib/types/domain';
 
 /*
  * -------------------------------------------------------
@@ -26,7 +26,7 @@ const DeleteServiceSchema = z.object({
   id: z.string().uuid('Service ID must be a valid UUID'),
 });
 
-const CalculateAllServicesSchema = z.object({
+const _CalculateAllServicesSchema = z.object({
   projectId: z.string().uuid('Project ID must be a valid UUID'),
   apiKeyOpenAI: z.string().min(1, 'OpenAI API key is required'),
   apiKeyPerplexity: z.string().min(1, 'Perplexity API key is required'),

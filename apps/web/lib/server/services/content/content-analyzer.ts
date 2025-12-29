@@ -59,7 +59,7 @@ const MEDICAL_DEPARTMENTS = [
 /**
  * Doctor-related keywords (Ukrainian, Russian, English)
  */
-const DOCTOR_KEYWORDS = [
+const _DOCTOR_KEYWORDS = [
   'education', 'освіта', 'образование',
   'experience', 'досвід', 'опыт',
   'certificate', 'сертифікат', 'сертификат',

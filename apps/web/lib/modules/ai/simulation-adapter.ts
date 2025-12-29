@@ -198,7 +198,7 @@ export function mapLiveScanToDashboard(
   // Calculate KPIs
   const visibility = visible ? 100 : 0; // 100% if found, 0% if not
   const avgPosition = position && position > 0 ? position : null;
-  const trackedServices = 1; // Single test scan
+  const _trackedServices = 1; // Single test scan
 
   // If tech audit data is available, we can show additional insights in the UI
   // For now, the score already incorporates tech data from calculateImprovedClinicAIScore

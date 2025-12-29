@@ -67,7 +67,7 @@ export interface PageAudit {
 /**
  * Google PageSpeed API Response Types
  */
-interface PageSpeedMetrics {
+interface _PageSpeedMetrics {
   lcp?: number;
   cls?: number;
   fid?: number;
@@ -121,7 +121,7 @@ function normalizeUrl(url: string): string {
 async function fetchPageSpeed(
   url: string,
   strategy: 'mobile' | 'desktop',
-): Promise<{ score: number | null; metrics: PageSpeedMetrics }> {
+): Promise<{ score: number | null; metrics: { lcp?: number; cls?: number; fcp?: number; tbt?: number; ttfb?: number } }> {
   const apiKey = process.env.GOOGLE_PAGESPEED_API_KEY;
 
   if (!apiKey) {
@@ -151,7 +151,7 @@ async function fetchPageSpeed(
 
     // Extract Core Web Vitals and other metrics
     const audits = data.lighthouseResult?.audits || {};
-    const metrics: PageSpeedMetrics = {
+    const metrics: { lcp?: number; cls?: number; fcp?: number; tbt?: number; ttfb?: number } = {
       lcp: audits['largest-contentful-paint']?.numericValue || undefined,
       cls: audits['cumulative-layout-shift']?.numericValue || undefined,
       fcp: audits['first-contentful-paint']?.numericValue || undefined,

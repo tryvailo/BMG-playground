@@ -11,7 +11,6 @@ import {
   calculateVisibilityRate,
   calculateAveragePosition,
   countVisibleServices,
-  countTotalServices,
   aggregateCompetitorStats,
   type ClinicAIScoreInputs,
 } from '~/lib/modules/analytics/calculator';

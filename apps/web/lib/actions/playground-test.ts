@@ -1040,7 +1040,7 @@ function generateRecommendationText(
 /**
  * Calculate ClinicAI Score using real tech audit data and E-E-A-T/Local scores
  */
-function calculateImprovedClinicAIScore(
+function _calculateImprovedClinicAIScore(
   visibility: number,
   techAudit: TechAuditResult,
   trustScore: number, // 1-10 from AI analysis
@@ -1105,7 +1105,7 @@ export interface ServiceAnalysisData {
  * Adapter function to convert EphemeralAuditResult to TechAuditResult format
  * for backward compatibility with mapLiveScanToDashboard
  */
-function adaptEphemeralToTechAudit(
+function _adaptEphemeralToTechAudit(
   ephemeral: EphemeralAuditResult,
   url: string,
 ): {
