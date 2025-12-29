@@ -576,7 +576,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
         <div className="space-y-4">
           <div className="space-y-3">
             <p className="text-sm font-medium text-slate-600 mb-4 leading-relaxed">
-              The speed and quality of the clinic's responses to new reviews on Google, DOC.ua, and Helsi.
+              The speed and quality of the clinic&apos;s responses to new reviews on Google, DOC.ua, and Helsi.
             </p>
             
             <div className="grid grid-cols-2 gap-4">
@@ -700,7 +700,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
         <div className="space-y-4">
           <div className="space-y-3">
             <p className="text-sm font-medium text-slate-600 mb-4 leading-relaxed">
-              The number of times the clinic's profile appeared in search or on the map (Impressions), and the actions users took: website clicks, direction requests, calls, photo views, bookings.
+              The number of times the clinic&apos;s profile appeared in search or on the map (Impressions), and the actions users took: website clicks, direction requests, calls, photo views, bookings.
             </p>
             
             <div className="grid grid-cols-2 gap-4">
