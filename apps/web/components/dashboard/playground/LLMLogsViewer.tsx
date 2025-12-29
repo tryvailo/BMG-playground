@@ -39,10 +39,10 @@ export function LLMLogsViewer({ logs }: LLMLogsViewerProps) {
     }
   };
 
-  const formatJSON = (obj: any): string => {
+  const formatJSON = (obj: unknown): string => {
     try {
       return JSON.stringify(obj, null, 2);
-    } catch (error) {
+    } catch (_error) {
       return String(obj);
     }
   };

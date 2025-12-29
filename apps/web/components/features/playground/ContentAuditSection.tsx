@@ -27,7 +27,6 @@ import { Alert, AlertDescription } from '@kit/ui/alert';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@kit/ui/collapsible';
 import { cn } from '@kit/ui/utils';
 
-import { performContentAudit } from '~/lib/actions/content-audit';
 import type { ContentAuditResult } from '~/lib/server/services/content/types';
 
 // --- Premium 2026 Light Tokens ---
@@ -53,7 +52,14 @@ import type { ContentAuditResult } from '~/lib/server/services/content/types';
 };
 
 // --- Custom Modern Components ---
-const BentoCard = ({ children, className, title, subtitle }: any) => (
+interface BentoCardProps {
+  children: React.ReactNode;
+  className?: string;
+  title?: string;
+  subtitle?: string;
+}
+
+const BentoCard = ({ children, className, title, subtitle }: BentoCardProps) => (
     <Card className={cn(
         "border border-slate-200 bg-white shadow-[0_8px_32px_0_rgba(15,23,42,0.04)] overflow-hidden transition-all duration-300 hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] group",
         className
@@ -537,7 +543,7 @@ export function ContentAuditSection({ result, className }: ContentAuditSectionPr
           value={`${q.wateriness_score.toFixed(1)}%`}
         >
           <p className="text-sm text-slate-700">Показник водянистості: <strong className="font-bold text-slate-900">{q.wateriness_score.toFixed(1)}%</strong>.</p>
-          <p className="text-xs text-slate-500 mt-1">Норма — до 25%. Високий показник означає багато "стоп-слів" та мало корисної інформації.</p>
+          <p className="text-xs text-slate-500 mt-1">Норма — до 25%. Високий показник означає багато &quot;стоп-слів&quot; та мало корисної інформації.</p>
         </MinimalMetricCard>
 
         {/* 4.8 Link Authority */}

@@ -12,8 +12,6 @@ import {
   Shield,
   Search,
   Gauge,
-  Activity,
-  TrendingUp,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -50,7 +48,14 @@ const TOKENS = {
 };
 
 // --- Custom Modern Components ---
-const BentoCard = ({ children, className, title, subtitle }: any) => (
+interface BentoCardProps {
+  children: React.ReactNode;
+  className?: string;
+  title?: string;
+  subtitle?: string;
+}
+
+const BentoCard = ({ children, className, title, subtitle }: BentoCardProps) => (
     <Card className={cn(
         "border border-slate-200 bg-white shadow-[0_8px_32px_0_rgba(15,23,42,0.04)] overflow-hidden transition-all duration-300 hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] group",
         className
@@ -607,7 +612,7 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
                         borderRadius: '8px',
                         padding: '8px 12px',
                       }}
-                      formatter={(value: any, name: string) => {
+                      formatter={(value: number | null | undefined, name: string) => {
                         if (value === null || value === undefined) return ['N/A', name];
                         const numValue = typeof value === 'number' ? value : Number(value);
                         if (isNaN(numValue)) return ['N/A', name];
@@ -829,7 +834,7 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
             status={data.meta.titleLength && data.meta.titleLength >= 30 && data.meta.titleLength <= 65 ? 'good' : 'warning'}
             value={`${data.meta.titleLength || 0} симв.`}
           >
-            <div className="bg-slate-50/50 p-3 rounded-lg border border-slate-200 text-xs italic font-medium text-slate-700">"{data.meta.title}"</div>
+            <div className="bg-slate-50/50 p-3 rounded-lg border border-slate-200 text-xs italic font-medium text-slate-700">&quot;{data.meta.title}&quot;</div>
           </AuditItem>
           <AuditItem
             id="3_19"
@@ -838,7 +843,7 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
             status={data.meta.descriptionLength && data.meta.descriptionLength >= 120 && data.meta.descriptionLength <= 165 ? 'good' : 'warning'}
             value={`${data.meta.descriptionLength || 0} симв.`}
           >
-            <div className="bg-slate-50/50 p-3 rounded-lg border border-slate-200 text-xs italic text-slate-600">"{data.meta.description}"</div>
+            <div className="bg-slate-50/50 p-3 rounded-lg border border-slate-200 text-xs italic text-slate-600">&quot;{data.meta.description}&quot;</div>
           </AuditItem>
           <AuditItem
             id="3_20"

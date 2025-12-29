@@ -689,7 +689,7 @@ export function ServicesTable({
         {services.length === 0 ? (
           <EmptyState>
             <EmptyStateHeading>No services added yet</EmptyStateHeading>
-            <EmptyStateText>Click "Add Service" to get started.</EmptyStateText>
+            <EmptyStateText>Click &quot;Add Service&quot; to get started.</EmptyStateText>
             <EmptyStateButton onClick={() => setIsAdding(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Add Service
