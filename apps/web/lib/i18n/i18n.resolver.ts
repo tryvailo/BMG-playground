@@ -22,7 +22,7 @@ export async function i18nResolver(language: string, namespace: string) {
         `../../locales/${language}/${lowercaseNamespace}.json`
       );
       return data.default || data as Record<string, string>;
-    } catch (fallbackError) {
+    } catch (_fallbackError) {
       // Fallback to empty object if file doesn't exist
       console.warn(
         `Failed to load locale file: locales/${language}/${namespace}.json (tried both cases)`,
