@@ -411,7 +411,7 @@ Important:
     let parsed: ParsedResponse;
     try {
       parsed = JSON.parse(content) as ParsedResponse;
-    } catch (error) {
+    } catch (_error) {
       // Fallback: try to extract JSON from markdown code blocks
       const jsonMatch = content.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/);
       if (jsonMatch) {
