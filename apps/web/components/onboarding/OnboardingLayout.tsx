@@ -4,7 +4,6 @@ import React from 'react';
 import { useRouter } from '~/lib/navigation';
 import { ChevronLeft } from 'lucide-react';
 import { cn } from '@kit/ui/utils';
-import { AppLogo } from '../app-logo';
 
 interface OnboardingLayoutProps {
     children: React.ReactNode;
