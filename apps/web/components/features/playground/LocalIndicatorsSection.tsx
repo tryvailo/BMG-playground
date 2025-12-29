@@ -808,7 +808,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
         <div className="space-y-4">
           <div className="space-y-3">
             <p className="text-sm font-medium text-slate-600 mb-4 leading-relaxed">
-              Links to the clinic's website from local sources: city portals, news sites, partners, medical associations, charity foundations, and local bloggers.
+              Links to the clinic&apos;s website from local sources: city portals, news sites, partners, medical associations, charity foundations, and local bloggers.
             </p>
             
             <div className="grid grid-cols-2 gap-4">
