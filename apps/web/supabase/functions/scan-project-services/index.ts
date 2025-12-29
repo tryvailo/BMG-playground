@@ -195,7 +195,7 @@ Deno.serve(async (req) => {
         }
 
         // Parse responses
-        const aiEngines: Array<'openai' | 'perplexity'> = ['openai', 'perplexity'];
+        const _aiEngines: Array<'openai' | 'perplexity'> = ['openai', 'perplexity'];
         const responses: Array<{ engine: 'openai' | 'perplexity'; text: string | null }> = [
           { engine: 'openai', text: openaiResponse },
           { engine: 'perplexity', text: perplexityResponse },
@@ -400,7 +400,7 @@ Important:
       throw new Error(`OpenAI API error: ${response.status}`);
     }
 
-    const data = await response.json();
+    const _data = await response.json();
     const content = data.choices?.[0]?.message?.content;
 
     if (!content) {
@@ -466,7 +466,7 @@ Important:
     }
 
     return result;
-  } catch (error) {
+  } catch (_error) {
     // Fallback parsing
     const responseTextLower = responseText.toLowerCase();
     const normalizedTarget = normalizeDomain(targetDomain);
