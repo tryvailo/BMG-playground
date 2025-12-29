@@ -187,9 +187,9 @@ export function CompetitorsOverview() {
 
     const distributionData = useMemo(() => services.map((s, i) => {
         const row: Record<string, number | string> = { service: s };
-        row.you = [45, 52, 68, 35, 72, 58, 44, 61][i % 8];
-        row.c1 = [60, 48, 75, 42, 65, 50, 55, 48][i % 8];
-        row.c2 = [30, 85, 40, 92, 25, 70, 68, 35][i % 8];
+        row.you = [45, 52, 68, 35, 72, 58, 44, 61][i % 8] ?? 0;
+        row.c1 = [60, 48, 75, 42, 65, 50, 55, 48][i % 8] ?? 0;
+        row.c2 = [30, 85, 40, 92, 25, 70, 68, 35][i % 8] ?? 0;
         return row;
     }), [services]);
 
@@ -466,7 +466,7 @@ export function CompetitorsOverview() {
                                 <XAxis dataKey="p" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 900, fill: '#64748b' }} />
                                 <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 900, fill: '#64748b' }} />
                                 <Tooltip content={<GlassTooltip />} />
-                                {competitors.slice(0, 3).map((c, i) => (
+                                {competitors.slice(0, 3).map((c) => (
                                     <Area key={c.id} type="monotone" dataKey={c.id} stroke={c.color} strokeWidth={1} fill="transparent" name={c.name} opacity={0.3} />
                                 ))}
                                 <Area type="monotone" dataKey="market" stroke="#cbd5e1" strokeWidth={2} fill="transparent" strokeDasharray="5 5" name="Market Avg" />
@@ -496,7 +496,7 @@ export function CompetitorsOverview() {
                                 <XAxis dataKey="p" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 900, fill: '#64748b' }} />
                                 <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 900, fill: '#64748b' }} />
                                 <Tooltip content={<GlassTooltip />} />
-                                {competitors.slice(0, 5).map((c, i) => (
+                                {competitors.slice(0, 5).map((c) => (
                                     <Line key={c.id} type="monotone" dataKey={c.id} stroke={c.color} strokeWidth={1} dot={false} opacity={0.2} name={c.name} />
                                 ))}
                                 <Line type="stepAfter" dataKey="market" stroke="#e2e8f0" strokeWidth={2} dot={false} strokeDasharray="6 6" name="Benchmark" />
@@ -649,7 +649,7 @@ export function CompetitorsOverview() {
                             </div>
                             <h4 className="text-2xl font-black italic mb-6 uppercase tracking-tighter italic z-10">Generate Roadmap</h4>
                             <p className="text-sm text-slate-600 font-medium max-w-xs mb-10 leading-relaxed z-10">
-                                Deploy the Alpha-Strategic plan to achieve 1.5 position in 'Diagnostic' cluster.
+                                Deploy the Alpha-Strategic plan to achieve 1.5 position in &apos;Diagnostic&apos; cluster.
                             </p>
                             <button className="relative group/btn z-10 px-12 py-5 rounded-full bg-white text-slate-950 text-xs font-black uppercase tracking-widest shadow-white/10 shadow-2xl overflow-hidden transition-all hover:scale-105 active:scale-95">
                                 <span className="relative z-10">Initiate Protocol</span>
