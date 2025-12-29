@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@kit/ui/button';
-import { Check, Play, Info } from 'lucide-react';
+import { Check, Play } from 'lucide-react';
 import { cn } from '@kit/ui/utils';
 
 interface StepPricingProps {
@@ -17,7 +17,7 @@ export function StepPricing({ onPlanSelect }: StepPricingProps) {
             id: 'starter',
             name: 'Starter',
             price: { month: 99, year: 79 },
-            description: 'For small companies who want to monitor their brand\'s visibility.',
+            description: 'For small companies who want to monitor their brand&apos;s visibility.',
             features: [
                 '50 unique prompts',
                 '1 answer engine — ChatGPT',

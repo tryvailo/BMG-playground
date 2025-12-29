@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Button } from '@kit/ui/button';
-import { TrendingDown, Search } from 'lucide-react';
+import { TrendingDown } from 'lucide-react';
 import { cn } from '@kit/ui/utils';
 
 interface StepBenchmarkProps {
@@ -30,11 +30,11 @@ export function StepBenchmark({ onContinue, clinicName = 'My Clinic' }: StepBenc
             </div>
 
             <h1 className="text-4xl font-bold text-slate-900 mb-4 leading-tight">
-                {clinicName}'s AI visibility is below industry benchmarks
+                {clinicName}&apos;s AI visibility is below industry benchmarks
             </h1>
 
             <p className="text-lg text-slate-600 mb-10 leading-relaxed">
-                Let's fix that — we've already found 5+ opportunities to improve {clinicName}'s visibility.
+                Let&apos;s fix that — we&apos;ve already found 5+ opportunities to improve {clinicName}&apos;s visibility.
             </p>
 
             <Button

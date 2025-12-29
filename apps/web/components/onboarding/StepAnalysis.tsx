@@ -11,7 +11,7 @@ import {
     Tooltip,
     ResponsiveContainer
 } from 'recharts';
-import { Loader2, Plus, TrendingUp } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 
 interface StepAnalysisProps {
     onContinue: () => void;
@@ -21,12 +21,12 @@ export function StepAnalysis({ onContinue }: StepAnalysisProps) {
     return (
         <div className="flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
             <h1 className="text-4xl font-bold text-slate-900 mb-6 leading-tight">
-                We run your prompts daily to analyze your brand's performance
+                We run your prompts daily to analyze your brand&apos;s performance
             </h1>
 
             <p className="text-lg text-slate-600 mb-10 leading-relaxed font-normal">
                 We look for your brand in answers, citations, and mentions to understand
-                how you're showing up in ChatGPT, Google AI Overviews, Perplexity, Microsoft Copilot, and more.
+                how you&apos;re showing up in ChatGPT, Google AI Overviews, Perplexity, Microsoft Copilot, and more.
             </p>
 
             <Button
