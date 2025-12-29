@@ -122,7 +122,7 @@ export const updateService = enhanceAction(
     const { id, data } = params;
     const supabase = getSupabaseServerClient();
 
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       updated_at: new Date().toISOString(),
     };
 

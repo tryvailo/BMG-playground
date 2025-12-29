@@ -67,7 +67,7 @@ export const getDashboardMetrics = enhanceAction(
       // Note: Using 'as any' because projects table is not in the generated Supabase types yet
       
       let project: Project | null = null;
-      let projectError: any = null;
+      let projectError: Error | null = null;
       
       // Always try to find user's project first if user is authenticated
       if (user?.sub) {

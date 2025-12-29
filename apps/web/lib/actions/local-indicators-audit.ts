@@ -289,7 +289,7 @@ export const getLatestLocalIndicatorsAudit = enhanceAction(
           .select('url, created_at')
           .order('created_at', { ascending: false })
           .limit(10);
-        console.log('[LocalIndicators] Available URLs in database:', allUrls?.map((r: any) => r.url) || []);
+        console.log('[LocalIndicators] Available URLs in database:', allUrls?.map((r: { url: string }) => r.url) || []);
         return null;
       }
 
