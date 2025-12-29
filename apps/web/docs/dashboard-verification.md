@@ -140,3 +140,4 @@ WHERE p.domain = 'demo-clinic.com'
 - [ ] KPI карточки отображают значения из БД
 
 
+

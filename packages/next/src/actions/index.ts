@@ -37,40 +37,60 @@ export function enhanceAction<
   return async (
     params: Config['schema'] extends ZodType ? z.infer<Config['schema']> : Args,
   ) => {
-    type UserParam = Config['auth'] extends false ? undefined : JwtPayload;
+    try {
+      type UserParam = Config['auth'] extends false ? undefined : JwtPayload;
 
-    const requireAuth = config.auth ?? true;
-    let user: UserParam = undefined as UserParam;
+      const requireAuth = config.auth ?? true;
+      let user: UserParam = undefined as UserParam;
 
-    // validate the schema passed in the config if it exists
-    const data = config.schema
-      ? zodParseFactory(config.schema)(params)
-      : params;
+      // validate the schema passed in the config if it exists
+      const data = config.schema
+        ? zodParseFactory(config.schema)(params)
+        : params;
 
-    // by default, the CAPTCHA token is not required
-    const verifyCaptcha = config.captcha ?? false;
+      // by default, the CAPTCHA token is not required
+      const verifyCaptcha = config.captcha ?? false;
 
-    // verify the CAPTCHA token. It will throw an error if the token is invalid.
-    if (verifyCaptcha) {
-      const token = (data as Args & { captchaToken: string }).captchaToken;
+      // verify the CAPTCHA token. It will throw an error if the token is invalid.
+      if (verifyCaptcha) {
+        const token = (data as Args & { captchaToken: string }).captchaToken;
 
-      // Verify the CAPTCHA token. It will throw an error if the token is invalid.
-      await verifyCaptchaToken(token);
-    }
-
-    // verify the user is authenticated if required
-    if (requireAuth) {
-      // verify the user is authenticated if required
-      const auth = await requireUser(getSupabaseServerClient());
-
-      // If the user is not authenticated, redirect to the specified URL.
-      if (!auth.data) {
-        redirect(auth.redirectTo);
+        // Verify the CAPTCHA token. It will throw an error if the token is invalid.
+        await verifyCaptchaToken(token);
       }
 
-      user = auth.data as UserParam;
-    }
+      // verify the user is authenticated if required
+      if (requireAuth) {
+        // verify the user is authenticated if required
+        const auth = await requireUser(getSupabaseServerClient());
 
-    return fn(data, user);
+        // If the user is not authenticated, redirect to the specified URL.
+        if (!auth.data) {
+          redirect(auth.redirectTo);
+        }
+
+        user = auth.data as UserParam;
+      }
+
+      return fn(data, user);
+    } catch (error) {
+      // Re-throw redirect/notFound errors from Next.js as-is
+      if (
+        error instanceof Error &&
+        (error.message === 'NEXT_REDIRECT' ||
+          error.message === 'NEXT_NOT_FOUND' ||
+          'digest' in error)
+      ) {
+        throw error;
+      }
+      // Re-throw plain Error objects to ensure proper serialization by Next.js
+      // Custom error classes (e.g., OpenAIAPIError) may have non-serializable properties
+      if (error instanceof Error) {
+        const plainError = new Error(error.message);
+        plainError.name = error.name;
+        throw plainError;
+      }
+      throw new Error(String(error));
+    }
   };
 }

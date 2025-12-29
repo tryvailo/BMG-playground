@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Calculator, Loader2, X, Save, Briefcase } from 'lucide-react';
+import { Plus, Edit2, Trash2, Calculator, Loader2, X, Save, Briefcase, MoreHorizontal, CheckCircle2, XCircle, AlertCircle, ChevronDown } from 'lucide-react';
 import { Button } from '@kit/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@kit/ui/card';
 import {
@@ -22,6 +22,22 @@ import { twMerge } from 'tailwind-merge';
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+// Horizon UI Design Tokens
+const HORIZON = {
+  primary: '#4318FF',
+  primaryLight: '#4318FF15',
+  secondary: '#A3AED0',
+  secondaryLight: '#A3AED015',
+  success: '#01B574',
+  warning: '#FFB547',
+  error: '#EE5D50',
+  background: '#F4F7FE',
+  cardBg: '#FFFFFF',
+  textPrimary: '#1B2559',
+  textSecondary: '#A3AED0',
+};
+
 import { toast } from 'sonner';
 import type { ServiceAnalysisData } from '~/lib/actions/playground-test';
 import { runLiveDashboardTest } from '~/lib/actions/playground-test';
@@ -203,7 +219,6 @@ export function ServicesTable({
   const [calculationResults, setCalculationResults] = useState<Map<string, ServiceCalculationResult>>(new Map());
   const [isInitialized, setIsInitialized] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
-
   // Load services from localStorage on mount
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -574,21 +589,22 @@ export function ServicesTable({
   };
 
   return (
-    <Card className="transition-all duration-200">
-      <CardHeader>
+    <Card className="transition-all duration-300 rounded-[20px] border-none bg-white shadow-[0_18px_40px_rgba(112,144,176,0.12)] overflow-hidden">
+      <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Services Management</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-lg font-bold" style={{ color: HORIZON.textPrimary }}>Services Management</CardTitle>
+            <CardDescription className="text-sm" style={{ color: HORIZON.secondary }}>
               Add and manage services to track in AI recommendations
             </CardDescription>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             {services.length > 0 && (
               <Button
                 onClick={handleCalculateAll}
                 disabled={isCalculating || !apiKeyOpenAI || !apiKeyPerplexity}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 rounded-xl text-white font-medium shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5"
+                style={{ backgroundColor: HORIZON.primary }}
               >
                 {isCalculating ? (
                   <>
@@ -598,7 +614,7 @@ export function ServicesTable({
                 ) : (
                   <>
                     <Calculator className="h-4 w-4" />
-                    Calculate All Parameters
+                    Calculate All
                   </>
                 )}
               </Button>
@@ -607,18 +623,31 @@ export function ServicesTable({
               onClick={handleResetToDefaults}
               variant="outline"
               size="sm"
-              className="text-muted-foreground hover:text-foreground"
+              className="rounded-xl border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50"
               title="Reset to default example services"
             >
-              Reset to Defaults
+              Reset
             </Button>
             <Button
               onClick={() => setIsAdding(!isAdding)}
               variant={isAdding ? 'outline' : 'default'}
-              className={`flex items-center gap-2 transition-all ${!isAdding ? 'bg-primary hover:bg-primary/90 shadow-md transform hover:scale-105' : ''}`}
+              className={cn(
+                "flex items-center gap-2 rounded-xl font-medium transition-all",
+                !isAdding
+                  ? "text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                  : "border-gray-200"
+              )}
+              style={!isAdding ? { backgroundColor: HORIZON.primary } : undefined}
             >
               <Plus className="h-4 w-4" />
               {isAdding ? 'Cancel' : 'Add Service'}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-xl h-9 w-9 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+            >
+              <MoreHorizontal className="h-5 w-5" />
             </Button>
           </div>
         </div>
@@ -696,19 +725,33 @@ export function ServicesTable({
             </EmptyStateButton>
           </EmptyState>
         ) : (
-          <div className="rounded-md border border-border overflow-hidden">
+          <div className="rounded-[20px] overflow-auto max-h-[400px]">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Service Name</TableHead>
-                  <TableHead>Search Query</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead className="text-center">Visibility (V)</TableHead>
-                  <TableHead className="text-center">Position (P)</TableHead>
-                  <TableHead className="text-center">Comp. Score (C)</TableHead>
-                  <TableHead className="text-center">AIV Score</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-40">Actions</TableHead>
+                <TableRow className="bg-[#F4F7FE] border-none hover:bg-[#F4F7FE]">
+                  <TableHead className="text-xs font-bold uppercase tracking-wider py-4" style={{ color: HORIZON.secondary }}>
+                    <div className="flex items-center gap-1">
+                      Service Name
+                      <ChevronDown className="h-3 w-3" />
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-xs font-bold uppercase tracking-wider" style={{ color: HORIZON.secondary }}>
+                    <div className="flex items-center gap-1">
+                      Search Query
+                      <ChevronDown className="h-3 w-3" />
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-xs font-bold uppercase tracking-wider" style={{ color: HORIZON.secondary }}>
+                    <div className="flex items-center gap-1">
+                      Location
+                      <ChevronDown className="h-3 w-3" />
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-xs font-bold uppercase tracking-wider text-center" style={{ color: HORIZON.secondary }}>Visibility</TableHead>
+                  <TableHead className="text-xs font-bold uppercase tracking-wider text-center" style={{ color: HORIZON.secondary }}>Position</TableHead>
+                  <TableHead className="text-xs font-bold uppercase tracking-wider text-center" style={{ color: HORIZON.secondary }}>AIV Score</TableHead>
+                  <TableHead className="text-xs font-bold uppercase tracking-wider" style={{ color: HORIZON.secondary }}>Status</TableHead>
+                  <TableHead className="text-xs font-bold uppercase tracking-wider w-32" style={{ color: HORIZON.secondary }}>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -816,53 +859,76 @@ export function ServicesTable({
                     <TableRow
                       key={service.id}
                       className={cn(
-                        'cursor-pointer transition-colors',
-                        selectedServiceId === service.id ? 'bg-primary/5 hover:bg-primary/10' : 'hover:bg-muted/50'
+                        'cursor-pointer transition-all duration-200 border-none',
+                        selectedServiceId === service.id
+                          ? 'bg-[#4318FF08]'
+                          : 'hover:bg-gray-50/50'
                       )}
                       onClick={() => setSelectedServiceId(service.id === selectedServiceId ? null : service.id)}
                     >
-                      <TableCell className="font-medium">{service.name}</TableCell>
-                      <TableCell className="max-w-xs truncate">{service.search_query}</TableCell>
-                      <TableCell>{service.location_city}</TableCell>
-                      <TableCell>
+                      <TableCell className="font-semibold py-4" style={{ color: HORIZON.textPrimary }}>{service.name}</TableCell>
+                      <TableCell className="max-w-xs truncate text-sm" style={{ color: HORIZON.secondary }}>{service.search_query}</TableCell>
+                      <TableCell className="text-sm" style={{ color: HORIZON.secondary }}>{service.location_city}</TableCell>
+                      <TableCell className="text-center">
                         {result ? (
-                          <Badge variant={result.analysis?.foundUrl ? 'success' : 'outline'}>
-                            {result.analysis?.foundUrl ? '1' : '0'}
-                          </Badge>
+                          result.analysis?.foundUrl ? (
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: `${HORIZON.success}15`, color: HORIZON.success }}>
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              Visible
+                            </div>
+                          ) : (
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: `${HORIZON.error}15`, color: HORIZON.error }}>
+                              <XCircle className="h-3.5 w-3.5" />
+                              Hidden
+                            </div>
+                          )
                         ) : (
-                          <span className="text-muted-foreground">—</span>
+                          <span style={{ color: HORIZON.secondary }}>—</span>
                         )}
                       </TableCell>
                       <TableCell className="text-center">
                         {result?.analysis?.position !== undefined && result.analysis.position !== null ? (
-                          <span className="text-sm font-medium">#{result.analysis.position}</span>
+                          <span className="text-sm font-bold" style={{ color: HORIZON.textPrimary }}>#{result.analysis.position}</span>
                         ) : (
-                          <span className="text-muted-foreground">—</span>
+                          <span style={{ color: HORIZON.secondary }}>—</span>
                         )}
                       </TableCell>
                       <TableCell className="text-center">
                         {result ? (
-                          <span className="text-sm font-medium">70</span>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden" style={{ minWidth: '60px' }}>
+                              <div
+                                className="h-full rounded-full transition-all duration-500"
+                                style={{
+                                  width: `${Math.min(100, result.aivScore)}%`,
+                                  backgroundColor: result.aivScore > 50 ? HORIZON.primary : HORIZON.warning
+                                }}
+                              />
+                            </div>
+                            <span className="text-sm font-bold min-w-[40px]" style={{ color: HORIZON.textPrimary }}>
+                              {result.aivScore.toFixed(1)}%
+                            </span>
+                          </div>
                         ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {result ? (
-                          <Badge variant={result.aivScore > 50 ? 'success' : 'warning'}>
-                            {result.aivScore.toFixed(1)}
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
+                          <span style={{ color: HORIZON.secondary }}>—</span>
                         )}
                       </TableCell>
                       <TableCell>
                         {result?.error ? (
-                          <Badge variant="destructive">Error</Badge>
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: `${HORIZON.error}15`, color: HORIZON.error }}>
+                            <XCircle className="h-3.5 w-3.5" />
+                            Error
+                          </div>
                         ) : result ? (
-                          <Badge variant="success">Calculated</Badge>
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: `${HORIZON.success}15`, color: HORIZON.success }}>
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            Done
+                          </div>
                         ) : (
-                          <Badge variant="outline">Pending</Badge>
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100" style={{ color: HORIZON.secondary }}>
+                            <AlertCircle className="h-3.5 w-3.5" />
+                            Pending
+                          </div>
                         )}
                       </TableCell>
                       <TableCell>
@@ -914,7 +980,7 @@ export function ServicesTable({
 
         {/* Service Analysis Detail for the selected service */}
         {selectedServiceId && (
-          <div className="mt-8 space-y-8 animate-fade-in pt-6 border-t border-border">
+          <div className="mt-8 space-y-6 pt-6" style={{ borderTop: `1px solid ${HORIZON.background}` }}>
             {(() => {
               const result = calculationResults.get(selectedServiceId);
               const service = services.find((s) => s.id === selectedServiceId);
@@ -923,14 +989,23 @@ export function ServicesTable({
 
               return (
                 <div className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-primary/10 rounded-lg">
-                        <Briefcase className="h-5 w-5 text-primary" />
+                  {/* Header */}
+                  <div
+                    className="flex items-center justify-between p-5 rounded-[20px]"
+                    style={{ backgroundColor: HORIZON.background }}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div
+                        className="w-12 h-12 rounded-full flex items-center justify-center"
+                        style={{ backgroundColor: HORIZON.primaryLight }}
+                      >
+                        <Briefcase className="h-6 w-6" style={{ color: HORIZON.primary }} />
                       </div>
                       <div>
-                        <h2 className="text-xl font-bold">Аналіз: {service.name}</h2>
-                        <p className="text-sm text-muted-foreground">
+                        <h2 className="text-xl font-bold" style={{ color: HORIZON.textPrimary }}>
+                          Аналіз: {service.name}
+                        </h2>
+                        <p className="text-sm" style={{ color: HORIZON.secondary }}>
                           {service.search_query} • {service.location_city}
                         </p>
                       </div>
@@ -939,43 +1014,71 @@ export function ServicesTable({
                       variant="ghost"
                       size="sm"
                       onClick={() => setSelectedServiceId(null)}
-                      className="text-muted-foreground"
+                      className="rounded-xl h-10 px-4 font-medium hover:bg-white"
+                      style={{ color: HORIZON.secondary }}
                     >
                       <X className="h-4 w-4 mr-2" />
-                      Закрити
+                      Close
                     </Button>
                   </div>
 
+                  {/* Tabs */}
                   <Tabs defaultValue="overview" className="w-full">
-                    <TabsList className="grid w-full max-w-md grid-cols-2">
-                      <TabsTrigger value="overview">Результати (ТЗ)</TabsTrigger>
-                      <TabsTrigger value="calculate">Дії та Логи</TabsTrigger>
+                    <TabsList
+                      className="grid w-full max-w-md grid-cols-2 p-1 rounded-xl h-12"
+                      style={{ backgroundColor: HORIZON.background }}
+                    >
+                      <TabsTrigger
+                        value="overview"
+                        className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-medium"
+                        style={{ color: HORIZON.textSecondary }}
+                      >
+                        Results
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="calculate"
+                        className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-medium"
+                        style={{ color: HORIZON.textSecondary }}
+                      >
+                        Actions & Logs
+                      </TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="overview" className="mt-6">
                       {!result || !result.analysis || result.error ? (
-                        <div className="p-12 text-center border-2 border-dashed border-border rounded-xl bg-muted/30">
-                          <Calculator className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                          <h3 className="text-lg font-medium mb-2">Немає даних для аналізу</h3>
-                          <p className="text-muted-foreground max-w-sm mx-auto mb-6">
+                        <div
+                          className="p-12 text-center rounded-[20px]"
+                          style={{ backgroundColor: HORIZON.background }}
+                        >
+                          <div
+                            className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
+                            style={{ backgroundColor: HORIZON.secondaryLight }}
+                          >
+                            <Calculator className="h-8 w-8" style={{ color: HORIZON.secondary }} />
+                          </div>
+                          <h3 className="text-lg font-bold mb-2" style={{ color: HORIZON.textPrimary }}>
+                            No Analysis Data
+                          </h3>
+                          <p className="max-w-sm mx-auto mb-6" style={{ color: HORIZON.secondary }}>
                             {result?.error
-                              ? `Виникла помилка: ${result.error}`
-                              : 'Ця послуга ще не була проаналізована. Натисніть кнопку нижче, щоб запустити пошук в AI системах.'}
+                              ? `Error occurred: ${result.error}`
+                              : 'This service has not been analyzed yet. Click the button below to start AI analysis.'}
                           </p>
                           <Button
                             onClick={() => handleCalculateService(service.id)}
                             disabled={isCalculating}
-                            className="bg-primary hover:bg-primary/90"
+                            className="rounded-xl px-6 py-5 font-semibold text-white shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5"
+                            style={{ backgroundColor: HORIZON.primary }}
                           >
                             {isCalculating ? (
                               <>
                                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                Розрахунок...
+                                Calculating...
                               </>
                             ) : (
                               <>
                                 <Calculator className="h-4 w-4 mr-2" />
-                                Розрахувати зараз
+                                Calculate Now
                               </>
                             )}
                           </Button>
@@ -995,45 +1098,59 @@ export function ServicesTable({
 
                     <TabsContent value="calculate" className="mt-6">
                       <div className="space-y-6">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle className="text-base">Керування аналізом</CardTitle>
-                            <CardDescription>
-                              Запустіть новий розрахунок або перегляньте технічні логи взаємодії з AI.
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <Button
-                              onClick={() => handleCalculateService(service.id)}
-                              disabled={isCalculating}
-                              variant="outline"
-                              className="w-full md:w-auto"
-                            >
-                              {isCalculating ? (
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              ) : (
-                                <Calculator className="h-4 w-4 mr-2" />
-                              )}
-                              Перезапустити розрахунок
-                            </Button>
-                          </CardContent>
-                        </Card>
+                        {/* Action Card */}
+                        <div
+                          className="p-6 rounded-[20px]"
+                          style={{ backgroundColor: 'white', boxShadow: '0 4px 12px rgba(112, 144, 176, 0.1)' }}
+                        >
+                          <h3 className="text-base font-bold mb-2" style={{ color: HORIZON.textPrimary }}>
+                            Analysis Control
+                          </h3>
+                          <p className="text-sm mb-4" style={{ color: HORIZON.secondary }}>
+                            Run a new calculation or view technical AI interaction logs.
+                          </p>
+                          <Button
+                            onClick={() => handleCalculateService(service.id)}
+                            disabled={isCalculating}
+                            className="rounded-xl h-11 font-medium border-2"
+                            variant="outline"
+                            style={{ borderColor: HORIZON.primary, color: HORIZON.primary }}
+                          >
+                            {isCalculating ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <Calculator className="h-4 w-4 mr-2" />
+                            )}
+                            Restart Calculation
+                          </Button>
+                        </div>
 
+                        {/* LLM Logs */}
                         {result?.analysis?.llmLogs && result.analysis.llmLogs.length > 0 && (
                           <div className="space-y-4">
-                            <h3 className="text-sm font-semibold flex items-center gap-2">
-                              Технічні логи LLM
-                              <Badge variant="outline" className="font-normal">
-                                {result.analysis.llmLogs.length} записів
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-sm font-bold" style={{ color: HORIZON.textPrimary }}>
+                                Technical LLM Logs
+                              </h3>
+                              <Badge
+                                className="font-semibold text-xs rounded-lg"
+                                style={{ backgroundColor: HORIZON.primaryLight, color: HORIZON.primary }}
+                              >
+                                {result.analysis.llmLogs.length} entries
                               </Badge>
-                            </h3>
+                            </div>
                             <LLMLogsViewer logs={result.analysis.llmLogs} />
                           </div>
                         )}
 
                         {!result?.analysis?.llmLogs && (
-                          <div className="p-8 text-center bg-muted/20 rounded-lg border border-dashed">
-                            <p className="text-sm text-muted-foreground">Логи будуть доступні після завершення розрахунку.</p>
+                          <div
+                            className="p-8 text-center rounded-[20px]"
+                            style={{ backgroundColor: HORIZON.background }}
+                          >
+                            <p className="text-sm" style={{ color: HORIZON.secondary }}>
+                              Logs will be available after calculation completes.
+                            </p>
                           </div>
                         )}
                       </div>

@@ -64,14 +64,14 @@ export const getDashboardMetrics = enhanceAction(
 
       // Step 1: Fetch project to get domain
       // Note: Using 'as any' because projects table is not in the generated Supabase types yet
-      
+
       let project: Project | null = null;
       let projectError: Error | null = null;
-      
+
       // Always try to find user's project first if user is authenticated
       if (user?.sub) {
         console.log('[Dashboard] Looking for user project, user ID:', user.sub);
-        
+
         // Try to find user's first project
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: userProjects, error: userProjectsError } = await (supabase as any)
@@ -79,11 +79,11 @@ export const getDashboardMetrics = enhanceAction(
           .select('*')
           .eq('organization_id', user.sub)
           .limit(1);
-        
+
         if (userProjectsError) {
           console.warn('[Dashboard] Error fetching user projects:', userProjectsError);
         }
-        
+
         if (userProjects && userProjects.length > 0) {
           // Use user's project
           project = userProjects[0];
@@ -101,7 +101,7 @@ export const getDashboardMetrics = enhanceAction(
               .select('id')
               .eq('id', user.sub)
               .single();
-            
+
             if (!accountCheck) {
               console.log('[Dashboard] Account does not exist, creating...');
               // Account should be created by trigger, but if not, create it
@@ -115,23 +115,23 @@ export const getDashboardMetrics = enhanceAction(
                   created_at: new Date().toISOString(),
                   updated_at: new Date().toISOString(),
                 });
-              
+
               if (accountError) {
                 console.error('[Dashboard] Error creating account:', accountError);
               }
             }
-            
+
             // Call the function to ensure user has a project
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const { data: projectIdResult, error: rpcError } = await (supabase as any)
               .rpc('ensure_user_has_project', { account_id: user.sub });
-            
+
             if (rpcError) {
               console.error('[Dashboard] Error calling ensure_user_has_project:', rpcError);
             } else {
               console.log('[Dashboard] ensure_user_has_project returned project_id:', projectIdResult);
             }
-            
+
             // Try to fetch the project again
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const { data: retryProject, error: retryError } = await (supabase as any)
@@ -140,7 +140,7 @@ export const getDashboardMetrics = enhanceAction(
               .eq('organization_id', user.sub)
               .limit(1)
               .single();
-            
+
             if (retryProject && !retryError) {
               project = retryProject;
               if (project) {
@@ -209,6 +209,7 @@ export const getDashboardMetrics = enhanceAction(
         console.warn('[Dashboard] Error:', projectError?.message);
         console.warn('[Dashboard] User:', user?.sub || 'no user');
         return {
+          clinicName: 'Demo Clinic',
           kpis: {
             avgAivScore: 0,
             serviceVisibility: 0,
@@ -227,6 +228,7 @@ export const getDashboardMetrics = enhanceAction(
       const projectData = project as Project;
       if (!projectData) {
         return {
+          clinicName: 'Demo Clinic',
           kpis: {
             avgAivScore: 0,
             serviceVisibility: 0,
@@ -270,13 +272,13 @@ export const getDashboardMetrics = enhanceAction(
       }
 
       const weeklyStats = (weeklyStatsData || []) as WeeklyStats[];
-      
+
       if (weeklyStats.length === 0) {
         console.warn('[Dashboard] ⚠️ No weekly_stats found for project:', actualProjectId);
         console.warn('[Dashboard] Project domain:', projectData.domain);
         console.warn('[Dashboard] Project ID:', actualProjectId);
         console.warn('[Dashboard] User ID:', user?.sub || 'no user');
-        
+
         // Try to create data if user exists
         if (user?.sub) {
           console.log('[Dashboard] Attempting to ensure project has data for user:', user.sub);
@@ -284,12 +286,12 @@ export const getDashboardMetrics = enhanceAction(
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const { data: ensureResult, error: ensureError } = await (supabase as any)
               .rpc('ensure_user_has_project', { account_id: user.sub });
-            
+
             if (ensureError) {
               console.error('[Dashboard] Error ensuring project:', ensureError);
             } else {
               console.log('[Dashboard] ensure_user_has_project result:', ensureResult);
-              
+
               // Fetch again
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const { data: retryStats } = await (supabase as any)
@@ -297,7 +299,7 @@ export const getDashboardMetrics = enhanceAction(
                 .select('*')
                 .eq('project_id', actualProjectId)
                 .order('week_start', { ascending: true });
-              
+
               if (retryStats && retryStats.length > 0) {
                 weeklyStats.push(...(retryStats as WeeklyStats[]));
                 console.log('[Dashboard] ✅ Found', weeklyStats.length, 'weekly_stats after ensuring');
@@ -310,7 +312,7 @@ export const getDashboardMetrics = enhanceAction(
       }
 
       console.log('[Dashboard] Found', weeklyStats.length, 'weekly_stats records for project', actualProjectId);
-      
+
       // Debug: Log first and last record to verify data
       if (weeklyStats.length > 0) {
         const first = weeklyStats[0]!;
@@ -411,7 +413,7 @@ export const getDashboardMetrics = enhanceAction(
       if (weeklyStats.length > 0) {
         // Use the most recent weekly stats
         const latestStats = weeklyStats[weeklyStats.length - 1]!;
-        
+
         console.log('[Dashboard] Using latest weekly_stats from', latestStats.week_start, {
           visibility: latestStats.visability_score,
           tech: latestStats.tech_score,
@@ -420,19 +422,19 @@ export const getDashboardMetrics = enhanceAction(
           local: latestStats.local_score,
           clinic_ai_score: latestStats.clinic_ai_score,
         });
-        
+
         // Get component scores from weekly_stats (use stored values, they should be non-null)
         techScore = latestStats.tech_score ?? 0;
         contentScore = latestStats.content_score ?? 0;
         eeatScore = latestStats.eeat_score ?? 0;
         localScore = latestStats.local_score ?? 0;
-        
+
         // Use visibility from weekly_stats (already set above, but ensure it's used)
         serviceVisibility = latestStats.visability_score ?? serviceVisibility;
-        
+
         // Use avg_position from weekly_stats (already set above, but ensure it's used)
         avgPosition = latestStats.avg_position ?? avgPosition;
-        
+
         // Calculate ClinicAI Score using the full formula
         // Formula: 0.25*Visibility + 0.2*Tech + 0.2*Content + 0.15*E-E-A-T + 0.1*Local
         // Use the stored clinic_ai_score if available (calculated by trigger), otherwise calculate
@@ -443,7 +445,7 @@ export const getDashboardMetrics = enhanceAction(
         } else {
           // Calculate if not stored (shouldn't happen if trigger works)
           const visibilityScore = latestStats.visability_score ?? serviceVisibility;
-          
+
           const scoreInputs: ClinicAIScoreInputs = {
             visibility: visibilityScore,
             tech: techScore,
@@ -451,18 +453,18 @@ export const getDashboardMetrics = enhanceAction(
             eeat: eeatScore,
             local: localScore,
           };
-          
+
           avgAivScore = calculateClinicAIScore(scoreInputs);
           console.log('[Dashboard] Calculated ClinicAI Score:', avgAivScore, 'from inputs:', scoreInputs);
         }
-        
+
       } else {
         // Calculate from scans if no weekly stats available
         // For now, use a simplified calculation based on visibility rate and position
         const visibilityScore = serviceVisibility;
         const positionScore = avgPosition ? Math.max(0, 100 - avgPosition * 10) : 0;
         avgAivScore = visibilityScore * 0.6 + positionScore * 0.4;
-        
+
         // Component scores default to 0 if no weekly stats
         techScore = 0;
         contentScore = 0;
@@ -519,11 +521,11 @@ export const getDashboardMetrics = enhanceAction(
       // If no competitors from scans, generate mock competitors based on weekly_stats
       if (competitorPoints.length === 0 && weeklyStats.length > 0) {
         console.log('[Dashboard] No competitors from scans, generating mock competitors based on weekly_stats');
-        
+
         const latestStats = weeklyStats[weeklyStats.length - 1]!;
         const currentScore = latestStats.clinic_ai_score || avgAivScore;
         const currentPosition = latestStats.avg_position || avgPosition || 5.0;
-        
+
         // Generate 8 mock competitors with varying scores and positions
         const mockCompetitors = [
           { name: 'competitor-1.com', score: currentScore + 5, position: currentPosition - 1.5, mentions: 45 },
@@ -535,7 +537,7 @@ export const getDashboardMetrics = enhanceAction(
           { name: 'competitor-7.com', score: currentScore + 3, position: currentPosition - 1.0, mentions: 35 },
           { name: 'competitor-8.com', score: currentScore - 2, position: currentPosition + 0.5, mentions: 30 },
         ];
-        
+
         competitorPoints = mockCompetitors.map((comp) => ({
           domain: comp.name,
           avgPosition: Math.max(1, Math.min(10, comp.position)),
@@ -543,7 +545,7 @@ export const getDashboardMetrics = enhanceAction(
           isClient: false,
           mentions: comp.mentions,
         }));
-        
+
         // Add current project as a competitor point
         competitorPoints.push({
           domain: projectData.domain || 'current-project.com',
@@ -552,7 +554,7 @@ export const getDashboardMetrics = enhanceAction(
           isClient: true,
           mentions: 50,
         });
-        
+
         // Sort by AI score (descending)
         competitorPoints.sort((a, b) => b.aiScore - a.aiScore);
       }
@@ -570,8 +572,8 @@ export const getDashboardMetrics = enhanceAction(
       // Ensure all values are non-zero if we have weekly stats
       if (weeklyStats.length > 0) {
         // Validate that we have non-zero values
-        if (avgAivScore === 0 || serviceVisibility === 0 || techScore === 0 || 
-            contentScore === 0 || eeatScore === 0 || localScore === 0) {
+        if (avgAivScore === 0 || serviceVisibility === 0 || techScore === 0 ||
+          contentScore === 0 || eeatScore === 0 || localScore === 0) {
           console.warn('[Dashboard] ⚠️ WARNING: Some values are zero despite having weekly_stats!', {
             avgAivScore,
             serviceVisibility,
@@ -583,7 +585,7 @@ export const getDashboardMetrics = enhanceAction(
           });
         }
       }
-      
+
       console.log('[Dashboard] Building response:', {
         avgAivScore,
         serviceVisibility,
@@ -597,6 +599,7 @@ export const getDashboardMetrics = enhanceAction(
       });
 
       const response: DashboardMetricsResponse = {
+        clinicName: projectData.name || projectData.domain || 'Клініка',
         kpis: {
           avgAivScore: Math.round(avgAivScore * 10) / 10,
           serviceVisibility: Math.round(serviceVisibility * 10) / 10,
@@ -626,6 +629,7 @@ export const getDashboardMetrics = enhanceAction(
 
       // Return empty/default data on error
       return {
+        clinicName: 'Demo Clinic',
         kpis: {
           avgAivScore: 0,
           serviceVisibility: 0,

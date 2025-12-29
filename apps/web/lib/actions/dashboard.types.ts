@@ -50,6 +50,7 @@ export interface CompetitorDataPoint {
 }
 
 export interface DashboardMetricsResponse {
+  clinicName: string;
   kpis: DashboardKPIs;
   history: HistoryDataPoint[];
   competitors: CompetitorDataPoint[];

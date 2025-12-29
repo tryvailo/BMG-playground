@@ -15,3 +15,4 @@ grant usage on schema kit to service_role;
 -- Create unaccent extension in kit schema if it doesn't exist
 create extension if not exists "unaccent" schema kit;
 
+

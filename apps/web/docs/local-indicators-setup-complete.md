@@ -91,3 +91,4 @@ docker exec -i supabase_db_next-supabase-saas-kit-turbo psql -U postgres -d post
 Все настройки завершены. Local Indicators готов к использованию.
 
 
+

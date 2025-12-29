@@ -58,3 +58,4 @@ WHERE p.domain = 'demo-clinic.com'
   AND ws.week_start < '2026-01-01';
 
 
+

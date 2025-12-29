@@ -1,80 +1,111 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@kit/ui/card';
+import { Card, CardContent, CardHeader } from '@kit/ui/card';
 import { Badge } from '@kit/ui/badge';
+
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@kit/ui/table';
-import { AlertCircle, Trophy, Target, TrendingUp, Calculator, ExternalLink } from 'lucide-react';
+  AlertCircle, Trophy, Target, TrendingUp, Calculator, ExternalLink,
+  CheckCircle2, XCircle, Lightbulb, BarChart3
+} from 'lucide-react';
 import type { ServiceAnalysisData } from '~/lib/actions/playground-test';
 import {
   calculateServiceAivScore,
   type ServiceAivScoreBreakdown,
 } from '~/lib/modules/analytics/calculator';
 
+// Horizon UI Design Tokens
+const HORIZON = {
+  primary: '#4318FF',
+  primaryLight: '#4318FF15',
+  secondary: '#A3AED0',
+  secondaryLight: '#A3AED015',
+  success: '#01B574',
+  successLight: '#01B57415',
+  warning: '#FFB547',
+  warningLight: '#FFB54715',
+  error: '#EE5D50',
+  errorLight: '#EE5D5015',
+  info: '#2B77E5',
+  infoLight: '#2B77E515',
+  background: '#F4F7FE',
+  cardBg: '#FFFFFF',
+  textPrimary: '#1B2559',
+  textSecondary: '#A3AED0',
+  shadow: '0 18px 40px rgba(112, 144, 176, 0.12)',
+  shadowSm: '0 4px 12px rgba(112, 144, 176, 0.1)',
+};
+
+// Horizon Card Component
+interface HorizonCardProps {
+  children: React.ReactNode;
+  className?: string;
+  title?: string;
+  subtitle?: string;
+  icon?: React.ElementType;
+  iconColor?: string;
+}
+
+const HorizonCard = ({ children, className = '', title, subtitle, icon: Icon, iconColor }: HorizonCardProps) => (
+  <Card
+    className={`border-none bg-white rounded-[20px] overflow-hidden transition-all duration-300 ${className}`}
+    style={{ boxShadow: HORIZON.shadow }}
+  >
+    {(title || subtitle) && (
+      <CardHeader className="pb-2">
+        <div className="flex items-center gap-3">
+          {Icon && (
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: iconColor ? `${iconColor}15` : HORIZON.primaryLight }}
+            >
+              <Icon className="w-5 h-5" style={{ color: iconColor || HORIZON.primary }} />
+            </div>
+          )}
+          <div>
+            {title && (
+              <h3 className="text-lg font-bold" style={{ color: HORIZON.textPrimary }}>
+                {title}
+              </h3>
+            )}
+            {subtitle && (
+              <p className="text-sm" style={{ color: HORIZON.textSecondary }}>
+                {subtitle}
+              </p>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+    )}
+    <CardContent className={`p-6 ${(title || subtitle) ? 'pt-2' : ''}`}>
+      {children}
+    </CardContent>
+  </Card>
+);
+
 interface ServiceAnalysisDetailProps {
   data: ServiceAnalysisData;
-  domain?: string; // Domain to highlight in competitors list
-  competitorsAvgScore?: number; // Average ClinicAI score of competitors (0-100). Default: 70
-  targetPage?: string; // Target page URL (optional, will be constructed from domain if not provided)
-  country?: string; // Country code (optional, e.g., "UA")
+  domain?: string;
+  competitorsAvgScore?: number;
+  targetPage?: string;
+  country?: string;
 }
 
 export function ServiceAnalysisDetail({
   data,
   domain,
-  competitorsAvgScore = 70, // Default average score for competitors in playground
+  competitorsAvgScore = 70,
   targetPage,
-  country = 'UA', // Default country
+  country = 'UA',
 }: ServiceAnalysisDetailProps) {
   const { query, location, foundUrl, position, totalResults, competitors, recommendationText } = data;
 
-  // Construct target page URL if not provided
-  const finalTargetPage = targetPage || (domain ? `https://${domain}` : '');
-
-  // Extract city from location (assuming format "City" or "City, Country")
+  const _finalTargetPage = targetPage || (domain ? `https://${domain}` : '');
   const city = location.split(',')[0]?.trim() || location;
 
-  // Helper functions for table rendering
   const truncateText = (text: string, maxLength: number = 30): string => {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
-  };
-
-  const renderCompetitors = (competitors: Array<{ name: string }>): string => {
-    if (competitors.length === 0) return '—';
-    const names = competitors.map((c) => c.name);
-    if (names.length <= 2) return names.join(', ');
-    return `${names.slice(0, 2).join(', ')}...`;
-  };
-
-  const renderCompetitorUrls = (competitors: Array<{ url?: string }>): React.ReactNode => {
-    const urls = competitors.filter((c) => c.url).map((c) => c.url!);
-    if (urls.length === 0) return <span className="text-muted-foreground text-xs">—</span>;
-    if (urls.length === 1 && urls[0]) {
-      return (
-        <a
-          href={urls[0]}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-primary hover:underline text-xs flex items-center gap-1"
-        >
-          <span className="max-w-[120px] truncate">{truncateText(urls[0], 20)}</span>
-          <ExternalLink className="h-3 w-3 flex-shrink-0" />
-        </a>
-      );
-    }
-    return (
-      <div className="text-xs text-muted-foreground">
-        {urls.length} URLs
-      </div>
-    );
   };
 
   // Calculate AIV Score
@@ -87,21 +118,14 @@ export function ServiceAnalysisDetail({
     });
   }, [foundUrl, position, totalResults, competitorsAvgScore]);
 
-  // Normalize domain for comparison
   const normalizeDomain = (url: string | null | undefined): string | null => {
     if (!url) return null;
-    return url
-      .toLowerCase()
-      .replace(/^https?:\/\//, '')
-      .replace(/^www\./, '')
-      .replace(/\/$/, '');
+    return url.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
   };
 
-  // Use domain prop or extract from foundUrl
   const targetDomain = domain || (foundUrl ? normalizeDomain(foundUrl) : null);
   const normalizedDomain = targetDomain ? normalizeDomain(targetDomain) : null;
 
-  // Check if a competitor is "Our Clinic"
   const isOurClinic = (competitor: { name: string; url?: string }): boolean => {
     if (!normalizedDomain) return false;
     const competitorUrl = competitor.url ? normalizeDomain(competitor.url) : null;
@@ -114,358 +138,312 @@ export function ServiceAnalysisDetail({
     );
   };
 
-  // Estimate score for each competitor based on their rank
-  // Higher rank (lower number) = higher estimated score
   const estimateCompetitorScore = (rank: number, total: number): number => {
-    // Simple estimation: #1 gets 90, #2 gets 80, etc.
-    // Or use formula: 100 - (rank - 1) * (100 / total)
     if (rank === 1) return 90;
     if (rank === 2) return 80;
     if (rank === 3) return 70;
-    // For others, use decreasing formula
     return Math.max(30, 100 - (rank - 1) * (70 / Math.max(total - 1, 1)));
   };
 
-  // Sort competitors by rank
   const sortedCompetitors = [...competitors].sort((a, b) => a.rank - b.rank);
 
+  // Get score color
+  const getScoreColor = (score: number) => {
+    if (score >= 70) return HORIZON.success;
+    if (score >= 40) return HORIZON.warning;
+    return HORIZON.error;
+  };
+
+
+
   return (
-    <div className="mt-8 space-y-6">
-      {/* Section Title */}
+    <div className="space-y-6">
+      {/* Section Header */}
       <div className="flex items-center gap-3">
-        <Target className="h-6 w-6 text-muted-foreground" />
-        <h2 className="text-2xl font-bold text-foreground">
+        <div
+          className="w-10 h-10 rounded-full flex items-center justify-center"
+          style={{ backgroundColor: HORIZON.primaryLight }}
+        >
+          <Target className="w-5 h-5" style={{ color: HORIZON.primary }} />
+        </div>
+        <h2 className="text-xl font-bold" style={{ color: HORIZON.textPrimary }}>
           Service Analysis Detail
         </h2>
       </div>
 
-      {/* Top Card: AIV Score Breakdown */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calculator className="h-5 w-5" />
-            AIV Score Breakdown
-          </CardTitle>
-          <CardDescription>
-            Calculated using the formula: V × ((V × 100 × 0.30) + (P_Score × 0.25) + (C × 0.20))
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Final AIV Score */}
-          <div className="text-center py-6 border-b">
-            <p className="text-sm font-medium text-muted-foreground mb-2">
-              Final AIV Score
-            </p>
-            <div className="flex items-center justify-center gap-3">
-              <span className="text-5xl font-bold text-foreground">
-                {aivScoreResult.finalScore.toFixed(1)}
+      {/* AIV Score Card - Hero Style */}
+      <HorizonCard icon={Calculator} iconColor={HORIZON.primary} title="AIV Score Breakdown" subtitle="Calculated using visibility, position, and competitor metrics">
+        {/* Big Score Display */}
+        <div
+          className="text-center py-8 mb-6 rounded-[16px]"
+          style={{ backgroundColor: HORIZON.background }}
+        >
+          <p className="text-sm font-medium mb-2" style={{ color: HORIZON.textSecondary }}>
+            Final AIV Score
+          </p>
+          <div className="flex items-center justify-center gap-2">
+            <span
+              className="text-6xl font-bold"
+              style={{ color: getScoreColor(aivScoreResult.finalScore) }}
+            >
+              {aivScoreResult.finalScore.toFixed(1)}
+            </span>
+            <span className="text-2xl" style={{ color: HORIZON.textSecondary }}>/ 100</span>
+          </div>
+          <div className="mt-4 w-64 mx-auto">
+            <div className="h-3 rounded-full overflow-hidden" style={{ backgroundColor: '#E9EDF7' }}>
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${aivScoreResult.finalScore}%`,
+                  backgroundColor: getScoreColor(aivScoreResult.finalScore)
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Formula Breakdown - 3 Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Visibility */}
+          <div className="p-4 rounded-[16px]" style={{ backgroundColor: HORIZON.primaryLight }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: HORIZON.primary }}>
+                Visibility (30%)
               </span>
-              <span className="text-2xl text-muted-foreground">/ 100</span>
+              <span className="text-lg font-bold" style={{ color: HORIZON.primary }}>
+                +{aivScoreResult.visibilityPart.toFixed(1)}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              {foundUrl ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4" style={{ color: HORIZON.success }} />
+                  <span className="text-sm font-medium" style={{ color: HORIZON.textPrimary }}>Visible</span>
+                </>
+              ) : (
+                <>
+                  <XCircle className="w-4 h-4" style={{ color: HORIZON.error }} />
+                  <span className="text-sm font-medium" style={{ color: HORIZON.textPrimary }}>Not Visible</span>
+                </>
+              )}
             </div>
           </div>
 
-          {/* Formula Breakdown */}
-          <div className="space-y-3">
-            <p className="text-sm font-semibold text-foreground mb-3">
-              Formula Breakdown:
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-primary">
-                    Visibility Weight (30%)
-                  </span>
-                  <Badge variant="info" className="text-xs">
-                    +{aivScoreResult.visibilityPart.toFixed(2)}
-                  </Badge>
-                </div>
-                <p className="text-xs text-primary/80">
-                  {foundUrl ? 'Visible' : 'Not Visible'}
-                </p>
-              </div>
-
-              <div className="p-3 bg-muted rounded-lg border border-border">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-foreground">
-                    Position Weight (25%)
-                  </span>
-                  <Badge variant="secondary" className="text-xs">
-                    +{aivScoreResult.positionPart.toFixed(2)}
-                  </Badge>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {position ? `Rank #${position}` : 'N/A'}
-                </p>
-              </div>
-
-              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
-                    Competitor Env Weight (20%)
-                  </span>
-                  <Badge variant="success" className="text-xs">
-                    +{aivScoreResult.competitorPart.toFixed(2)}
-                  </Badge>
-                </div>
-                <p className="text-xs text-emerald-600 dark:text-emerald-400">
-                  Avg: {competitorsAvgScore.toFixed(0)}
-                </p>
-              </div>
+          {/* Position */}
+          <div className="p-4 rounded-[16px]" style={{ backgroundColor: HORIZON.infoLight }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: HORIZON.info }}>
+                Position (25%)
+              </span>
+              <span className="text-lg font-bold" style={{ color: HORIZON.info }}>
+                +{aivScoreResult.positionPart.toFixed(1)}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" style={{ color: HORIZON.info }} />
+              <span className="text-sm font-medium" style={{ color: HORIZON.textPrimary }}>
+                {position ? `Rank #${position}` : 'N/A'}
+              </span>
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Middle Section: Competitor Leaderboard */}
+          {/* Competitor Environment */}
+          <div className="p-4 rounded-[16px]" style={{ backgroundColor: HORIZON.successLight }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: HORIZON.success }}>
+                Competitor Env (20%)
+              </span>
+              <span className="text-lg font-bold" style={{ color: HORIZON.success }}>
+                +{aivScoreResult.competitorPart.toFixed(1)}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" style={{ color: HORIZON.success }} />
+              <span className="text-sm font-medium" style={{ color: HORIZON.textPrimary }}>
+                Avg: {competitorsAvgScore.toFixed(0)}
+              </span>
+            </div>
+          </div>
+        </div>
+      </HorizonCard>
+
+      {/* Competitor Leaderboard */}
       {sortedCompetitors.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Trophy className="h-5 w-5" />
-              Competitor Leaderboard
-            </CardTitle>
-            <CardDescription>
-              Ranking of clinics found in AI recommendations with estimated scores
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-20">Rank</TableHead>
-                    <TableHead>Clinic Name</TableHead>
-                    <TableHead className="w-32">Est. Score</TableHead>
-                    <TableHead className="w-32">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sortedCompetitors.map((competitor, index) => {
-                    const isOur = isOurClinic(competitor);
-                    const estScore = estimateCompetitorScore(competitor.rank, totalResults);
-                    return (
-                      <TableRow
-                        key={index}
-                        className={
-                          isOur
-                            ? 'bg-primary/10 font-semibold'
-                            : ''
-                        }
-                      >
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold">#{competitor.rank}</span>
-                            {competitor.rank === 1 && (
-                              <Trophy className="h-4 w-4 text-amber-500" />
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <span className={isOur ? 'text-primary' : ''}>
-                              {competitor.name}
-                            </span>
-                            {isOur && (
-                              <Badge variant="info" className="text-xs">
-                                Our Clinic
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <TrendingUp className="h-3 w-3 text-muted-foreground" />
-                            <span className="font-medium">{estScore.toFixed(0)}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {isOur ? (
-                            <Badge variant="success" className="text-xs">
-                              Visible
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-xs">
-                              Competitor
-                            </Badge>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+        <HorizonCard icon={Trophy} iconColor={HORIZON.warning} title="Competitor Leaderboard" subtitle="Ranking of clinics found in AI recommendations">
+          <div className="space-y-3">
+            {sortedCompetitors.map((competitor, index) => {
+              const isOur = isOurClinic(competitor);
+              const estScore = estimateCompetitorScore(competitor.rank, totalResults);
+
+              return (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-4 rounded-[16px] transition-all"
+                  style={{
+                    backgroundColor: isOur ? HORIZON.primaryLight : HORIZON.background,
+                    border: isOur ? `2px solid ${HORIZON.primary}` : 'none'
+                  }}
+                >
+                  <div className="flex items-center gap-4">
+                    {/* Rank Badge */}
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm"
+                      style={{
+                        backgroundColor: competitor.rank <= 3 ? HORIZON.success : HORIZON.secondary,
+                        color: 'white'
+                      }}
+                    >
+                      {competitor.rank === 1 && <Trophy className="w-5 h-5" />}
+                      {competitor.rank !== 1 && `#${competitor.rank}`}
+                    </div>
+
+                    {/* Name */}
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold" style={{ color: isOur ? HORIZON.primary : HORIZON.textPrimary }}>
+                          {competitor.name}
+                        </span>
+                        {isOur && (
+                          <Badge
+                            className="text-xs font-semibold rounded-lg"
+                            style={{ backgroundColor: HORIZON.primary, color: 'white' }}
+                          >
+                            YOU
+                          </Badge>
+                        )}
+                      </div>
+                      {competitor.url && (
+                        <span className="text-xs" style={{ color: HORIZON.textSecondary }}>
+                          {truncateText(competitor.url, 30)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Score */}
+                  <div className="flex items-center gap-4">
+                    <div className="w-24 h-2 rounded-full overflow-hidden" style={{ backgroundColor: '#E9EDF7' }}>
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${estScore}%`,
+                          backgroundColor: getScoreColor(estScore)
+                        }}
+                      />
+                    </div>
+                    <span className="font-bold min-w-[40px] text-right" style={{ color: HORIZON.textPrimary }}>
+                      {estScore.toFixed(0)}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </HorizonCard>
       )}
 
-      {/* Service Results Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Service Results Table</CardTitle>
-          <CardDescription>
-            Detailed breakdown of service visibility analysis results
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted">
-                  <TableHead className="text-xs font-semibold text-foreground">
-                    Service
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-foreground max-w-[150px]">
-                    Page
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-foreground">
-                    Country
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-foreground">
-                    City
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-foreground">
-                    Visibility
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-foreground">
-                    Found URL
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-foreground">
-                    Position
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-foreground">
-                    Total Results
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-foreground">
-                    AIV Score
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-foreground">
-                    Competitors
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-foreground">
-                    Comp. URLs
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow className="hover:bg-muted/50">
-                  <TableCell className="text-xs font-medium text-foreground">
-                    {query}
-                  </TableCell>
-                  <TableCell className="text-xs max-w-[150px]">
-                    {finalTargetPage ? (
-                      <a
-                        href={finalTargetPage}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline truncate block"
-                        title={finalTargetPage}
-                      >
-                        {truncateText(finalTargetPage, 25)}
-                      </a>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {country}
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {city}
-                  </TableCell>
-                  <TableCell className="text-xs">
-                    {foundUrl ? (
-                      <Badge variant="success" className="text-xs">
-                        Present
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-xs">
-                        Not Present
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-xs max-w-[150px]">
-                    {foundUrl ? (
-                      <a
-                        href={foundUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline truncate block flex items-center gap-1"
-                        title={foundUrl}
-                      >
-                        <span className="truncate">{truncateText(foundUrl, 20)}</span>
-                        <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                      </a>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {position !== null ? `#${position}` : '—'}
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {totalResults}
-                  </TableCell>
-                  <TableCell className="text-xs">
-                    <Badge
-                      variant={
-                        aivScoreResult.finalScore > 70
-                          ? 'success'
-                          : aivScoreResult.finalScore > 40
-                            ? 'warning'
-                            : 'outline'
-                      }
-                      className="text-xs"
-                    >
-                      {aivScoreResult.finalScore.toFixed(1)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground max-w-[200px]">
-                    <div className="truncate" title={competitors.map((c) => c.name).join(', ')}>
-                      {renderCompetitors(competitors)}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-xs max-w-[150px]">
-                    {renderCompetitorUrls(competitors)}
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
+      {/* Service Results Summary */}
+      <HorizonCard icon={BarChart3} iconColor={HORIZON.info} title="Service Results Summary" subtitle="Detailed breakdown of service visibility analysis">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {/* Query */}
+          <div className="p-4 rounded-[16px]" style={{ backgroundColor: HORIZON.background }}>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: HORIZON.textSecondary }}>
+              Query
+            </p>
+            <p className="font-semibold text-sm" style={{ color: HORIZON.textPrimary }}>
+              {truncateText(query, 25)}
+            </p>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Bottom Section: Recommendations */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5" />
-            AI Optimization Advice
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 mt-0.5">
-                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                  <AlertCircle className="h-4 w-4 text-primary" />
-                </div>
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-foreground mb-2">
-                  Recommendations
-                </p>
-                <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-line">
-                  {recommendationText ||
-                    (foundUrl
-                      ? `Your service ranked #${position} out of ${totalResults} results. To improve your ranking, focus on enhancing your E-E-A-T signals, local presence, and technical optimization.`
-                      : 'Your site was not found in AI recommendations. Try adding \'llms.txt\', updating your Local Business Schema, and improving your online presence through content optimization and local SEO.')}
-                </p>
-              </div>
+          {/* Location */}
+          <div className="p-4 rounded-[16px]" style={{ backgroundColor: HORIZON.background }}>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: HORIZON.textSecondary }}>
+              Location
+            </p>
+            <p className="font-semibold text-sm" style={{ color: HORIZON.textPrimary }}>
+              {city}, {country}
+            </p>
+          </div>
+
+          {/* Visibility */}
+          <div className="p-4 rounded-[16px]" style={{ backgroundColor: HORIZON.background }}>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: HORIZON.textSecondary }}>
+              Visibility
+            </p>
+            <div className="flex items-center gap-2">
+              {foundUrl ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4" style={{ color: HORIZON.success }} />
+                  <span className="font-semibold text-sm" style={{ color: HORIZON.success }}>Present</span>
+                </>
+              ) : (
+                <>
+                  <XCircle className="w-4 h-4" style={{ color: HORIZON.error }} />
+                  <span className="font-semibold text-sm" style={{ color: HORIZON.error }}>Not Found</span>
+                </>
+              )}
             </div>
           </div>
-        </CardContent>
-      </Card>
+
+          {/* Position */}
+          <div className="p-4 rounded-[16px]" style={{ backgroundColor: HORIZON.background }}>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: HORIZON.textSecondary }}>
+              Position / Total
+            </p>
+            <p className="font-semibold text-sm" style={{ color: HORIZON.textPrimary }}>
+              {position ? `#${position}` : '—'} / {totalResults}
+            </p>
+          </div>
+        </div>
+
+        {/* Found URL */}
+        {foundUrl && (
+          <div className="mt-4 p-4 rounded-[16px]" style={{ backgroundColor: HORIZON.successLight }}>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: HORIZON.success }}>
+              Found URL
+            </p>
+            <a
+              href={foundUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 font-medium text-sm hover:underline"
+              style={{ color: HORIZON.success }}
+            >
+              <span>{truncateText(foundUrl, 50)}</span>
+              <ExternalLink className="w-4 h-4" />
+            </a>
+          </div>
+        )}
+      </HorizonCard>
+
+      {/* AI Optimization Advice */}
+      <HorizonCard icon={Lightbulb} iconColor={HORIZON.warning} title="AI Optimization Advice" subtitle="Recommendations to improve your AI visibility">
+        <div
+          className="p-6 rounded-[16px]"
+          style={{ backgroundColor: HORIZON.warningLight }}
+        >
+          <div className="flex items-start gap-4">
+            <div
+              className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: `${HORIZON.warning}30` }}
+            >
+              <AlertCircle className="w-6 h-6" style={{ color: HORIZON.warning }} />
+            </div>
+            <div>
+              <p className="font-semibold mb-2" style={{ color: HORIZON.textPrimary }}>
+                Recommendations
+              </p>
+              <p className="text-sm leading-relaxed" style={{ color: HORIZON.textPrimary }}>
+                {recommendationText ||
+                  (foundUrl
+                    ? `Your service ranked #${position} out of ${totalResults} results. To improve your ranking, focus on enhancing your E-E-A-T signals, local presence, and technical optimization.`
+                    : "Your site was not found in AI recommendations. Try adding 'llms.txt', updating your Local Business Schema, and improving your online presence through content optimization and local SEO.")}
+              </p>
+            </div>
+          </div>
+        </div>
+      </HorizonCard>
     </div>
   );
 }

@@ -60,3 +60,4 @@ WHERE schema_name = 'kit';
 1. ✅ `20251129_add_ai_visibility.sql` - создаст таблицы projects, services, scans, weekly_stats
 2. ✅ `20251201_add_dashboard_metrics.sql` - добавит колонки в weekly_stats
 
+

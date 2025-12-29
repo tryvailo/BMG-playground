@@ -346,3 +346,4 @@ const result = await analyzeLocalIndicators(
 После этого система будет полностью функциональна согласно ТЗ.
 
 
+

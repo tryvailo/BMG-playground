@@ -11,6 +11,23 @@ import {
   XCircle,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@kit/ui/card';
+
+// --- Horizon UI Design Tokens ---
+const HORIZON = {
+  primary: '#4318FF',
+  primaryLight: '#4318FF15',
+  secondary: '#A3AED0',
+  textPrimary: '#1B2559',
+  textSecondary: '#A3AED0',
+  success: '#01B574',
+  successLight: '#01B57415',
+  warning: '#FFB547',
+  warningLight: '#FFB54715',
+  error: '#EE5D50',
+  errorLight: '#EE5D5015',
+  shadow: '0 18px 40px rgba(112, 144, 176, 0.12)',
+  shadowHover: '0 25px 50px rgba(112, 144, 176, 0.18)',
+};
 import { Button } from '@kit/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@kit/ui/alert';
 import { Badge } from '@kit/ui/badge';
@@ -56,9 +73,11 @@ function DuplicatePairCard({ duplicate }: DuplicatePairCardProps) {
 
   return (
     <Card className={cn(
-      'hover:shadow-sm transition-shadow border-l-4',
+      'hover:shadow-xl transition-all duration-300 border-none rounded-[16px] border-l-4 overflow-hidden',
       getStatusColor()
-    )}>
+    )}
+      style={{ boxShadow: HORIZON.shadow }}
+    >
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
           <CardHeader className="cursor-pointer hover:bg-accent/50 transition-colors py-3">
@@ -172,8 +191,8 @@ function DuplicatePairCard({ duplicate }: DuplicatePairCardProps) {
   );
 }
 
-export function DuplicateCheckSection({ 
-  targetUrl, 
+export function DuplicateCheckSection({
+  targetUrl,
   apiKeyFirecrawl,
   initialData = null,
   initialStatus = 'idle',
@@ -216,7 +235,7 @@ export function DuplicateCheckSection({
           limit: 50,
           apiKeyFirecrawl: apiKeyFirecrawl?.trim(),
         };
-        
+
         console.log('[DuplicateCheckSection] Sending request to /api/duplicate-check:', {
           url: requestBody.url,
           limit: requestBody.limit,
@@ -262,31 +281,27 @@ export function DuplicateCheckSection({
   };
 
   return (
-    <Card className="border-2">
+    <Card className="border-none rounded-[20px] transition-all duration-300 shadow-none" style={{ boxShadow: HORIZON.shadow }}>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Search className="h-5 w-5" />
-          Deep Content Analysis
-        </CardTitle>
-        <CardDescription>
-          Scans up to 50 internal pages to find content duplicates (SEO Penalty Risk). Adjustable limit: 10-100 pages.
+        <CardTitle className="text-xl font-bold text-[#1B2559]">Duplicate Content Analysis</CardTitle>
+        <CardDescription className="text-[#A3AED0]">
+          Identify internal content duplication risks and SEO penalty factors.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Idle State */}
         {status === 'idle' && (
-          <div className="space-y-4">
+          <div className="py-6 flex flex-col items-center justify-center text-center border-2 border-dashed border-[#F4F7FE] rounded-2xl">
+            <Search className="h-10 w-10 text-[#A3AED0] mb-4 opacity-20" />
             <Button
               onClick={handleStartScan}
               disabled={!targetUrl || !targetUrl.trim()}
-              className="w-full sm:w-auto"
-              size="lg"
+              className="bg-[#4318FF] hover:bg-[#4318FF]/90 text-white rounded-xl px-10 py-6 text-lg font-bold shadow-lg shadow-[#4318FF]/20 transition-all hover:scale-105 active:scale-95"
             >
-              <Search className="mr-2 h-4 w-4" />
-              Start Deep Scan (30-60s)
+              Start Full Scan
             </Button>
-            <p className="text-sm text-muted-foreground">
-              ⏱️ Requires waiting. The scan will crawl your website and analyze content similarity.
+            <p className="text-xs text-[#A3AED0] mt-4 font-medium italic">
+              * Scan requires approximately 30-60 seconds for a sample of 50 pages.
             </p>
           </div>
         )}
@@ -312,12 +327,12 @@ export function DuplicateCheckSection({
         {/* Complete State - No Duplicates */}
         {status === 'complete' && data && data.duplicatesFound === 0 && (
           <div className="space-y-4">
-            <Alert className="border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/20">
-              <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-              <AlertTitle className="text-emerald-800 dark:text-emerald-300">
+            <Alert className="border-none rounded-xl" style={{ backgroundColor: `${HORIZON.success}10` }}>
+              <CheckCircle2 className="h-5 w-5" style={{ color: HORIZON.success }} />
+              <AlertTitle className="font-bold" style={{ color: HORIZON.success }}>
                 No Duplicates Found
               </AlertTitle>
-              <AlertDescription className="text-emerald-700 dark:text-emerald-400">
+              <AlertDescription className="font-medium" style={{ color: HORIZON.success }}>
                 Great! No duplicate content found in the scanned sample of {data.pagesScanned} pages.
               </AlertDescription>
             </Alert>
@@ -348,12 +363,12 @@ export function DuplicateCheckSection({
         {/* Complete State - Duplicates Found */}
         {status === 'complete' && data && data.duplicatesFound > 0 && (
           <div className="space-y-4">
-            <Alert className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/20">
-              <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-              <AlertTitle className="text-yellow-800 dark:text-yellow-300">
+            <Alert className="border-none rounded-xl" style={{ backgroundColor: `${HORIZON.warning}10` }}>
+              <AlertTriangle className="h-5 w-5" style={{ color: HORIZON.warning }} />
+              <AlertTitle className="font-bold" style={{ color: HORIZON.warning }}>
                 Duplicate Content Detected
               </AlertTitle>
-              <AlertDescription className="text-yellow-700 dark:text-yellow-400">
+              <AlertDescription className="font-medium" style={{ color: HORIZON.warning }}>
                 Found {data.duplicatesFound} duplicate pair{data.duplicatesFound !== 1 ? 's' : ''} in{' '}
                 {data.pagesScanned} scanned pages. This can negatively impact SEO rankings.
               </AlertDescription>

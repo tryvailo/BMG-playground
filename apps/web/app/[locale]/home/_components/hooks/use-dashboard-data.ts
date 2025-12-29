@@ -5,6 +5,7 @@ import { getDashboardMetrics } from '~/lib/actions/dashboard';
 import type { DashboardFilters } from '~/lib/actions/dashboard.types';
 
 interface DashboardData {
+  clinicName: string;
   kpis: {
     avgAivScore: number;
     serviceVisibility: number;
@@ -54,6 +55,7 @@ export function useDashboardData(params?: UseDashboardDataParams) {
       }));
 
       return {
+        clinicName: metrics.clinicName,
         kpis: {
           avgAivScore: metrics.kpis.avgAivScore,
           serviceVisibility: metrics.kpis.serviceVisibility,

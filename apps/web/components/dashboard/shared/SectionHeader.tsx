@@ -2,41 +2,62 @@
 
 import React from 'react';
 
+// Horizon UI Design Tokens
+const HORIZON = {
+  primary: '#4318FF',
+  primaryLight: '#4318FF15',
+  textPrimary: '#1B2559',
+  textSecondary: '#A3AED0',
+};
+
 interface SectionHeaderProps {
   title: string;
   subtitle?: string;
   icon: React.ElementType;
+  action?: React.ReactNode;
 }
 
 /**
- * Standardized Section Header Component
- * Follows Dashboard Brandbook 2026 standards
- * 
- * H2 - Заголовок секции
- * text-2xl font-black flex items-center gap-2 text-slate-900
+ * Section Header Component - Horizon UI Style
  */
-export const SectionHeader: React.FC<SectionHeaderProps> = ({ 
-  title, 
-  subtitle, 
-  icon: Icon 
+export const SectionHeader: React.FC<SectionHeaderProps> = ({
+  title,
+  subtitle,
+  icon: Icon,
+  action
 }) => {
   return (
-    <div className="flex items-center justify-between mb-4 mt-6 first:mt-0 animate-in fade-in slide-in-from-left duration-1000">
-      <div>
-        <h2 className="text-2xl font-black flex items-center gap-2 text-slate-900">
-          <div className="p-1.5 rounded-xl bg-primary/10 shadow-[0_0_15px_rgba(var(--primary-rgb),0.1)] backdrop-blur-md border border-primary/20">
-            <Icon className="h-3.5 w-3.5 text-primary" />
-          </div>
-          {title}
-        </h2>
-        {subtitle && (
-          <p className="text-sm font-medium text-slate-700 mt-1">
-            {subtitle}
-          </p>
-        )}
+    <div className="flex items-center justify-between mb-6 mt-8 first:mt-0">
+      <div className="flex items-center gap-4">
+        {/* Icon Container */}
+        <div
+          className="w-12 h-12 rounded-full flex items-center justify-center"
+          style={{ backgroundColor: HORIZON.primaryLight }}
+        >
+          <Icon className="h-6 w-6" style={{ color: HORIZON.primary }} />
+        </div>
+
+        {/* Text */}
+        <div>
+          <h2
+            className="text-xl font-bold"
+            style={{ color: HORIZON.textPrimary }}
+          >
+            {title}
+          </h2>
+          {subtitle && (
+            <p
+              className="text-sm mt-0.5"
+              style={{ color: HORIZON.textSecondary }}
+            >
+              {subtitle}
+            </p>
+          )}
+        </div>
       </div>
+
+      {/* Optional Action */}
+      {action && <div>{action}</div>}
     </div>
   );
 };
-
-

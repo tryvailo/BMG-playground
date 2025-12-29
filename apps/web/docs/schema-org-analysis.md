@@ -214,3 +214,4 @@ npx tsx scripts/debug-schema-analysis.ts <URL>
 **Все исправления применены и готовы к тестированию.**
 
 
+

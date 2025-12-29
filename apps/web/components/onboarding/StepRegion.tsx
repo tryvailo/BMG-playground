@@ -10,6 +10,16 @@ import {
     SelectValue
 } from '@kit/ui/select';
 
+// Horizon UI Design Tokens
+const HORIZON = {
+    primary: '#4318FF',
+    primaryLight: '#4318FF15',
+    secondary: '#A3AED0',
+    background: '#F4F7FE',
+    textPrimary: '#1B2559',
+    textSecondary: '#A3AED0',
+};
+
 interface StepRegionProps {
     onContinue: (region: string, language: string) => void;
 }
@@ -20,23 +30,30 @@ export function StepRegion({ onContinue }: StepRegionProps) {
 
     return (
         <div className="flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <h1 className="text-4xl font-bold text-slate-900 mb-6 leading-tight">
+            <h1 className="text-4xl font-bold mb-6 leading-tight" style={{ color: HORIZON.textPrimary }}>
                 Which region do you want to run your prompts in?
             </h1>
 
-            <p className="text-lg text-slate-500 mb-10 leading-relaxed font-medium">
+            <p className="text-lg mb-10 leading-relaxed font-medium" style={{ color: HORIZON.textSecondary }}>
                 Choose the primary region that your audience is located, so that
                 you get the most relevant results for your brand.
             </p>
 
             <div className="space-y-8 mb-12">
                 <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-400 uppercase tracking-wider">Region</label>
+                    <label className="text-sm font-bold uppercase tracking-wider" style={{ color: HORIZON.textSecondary }}>Region</label>
                     <Select value={region} onValueChange={setRegion}>
-                        <SelectTrigger className="h-14 bg-slate-50 border-slate-100 rounded-xl text-slate-900 font-semibold px-4">
+                        <SelectTrigger
+                            className="h-14 rounded-xl font-semibold px-4 border-2 transition-all"
+                            style={{
+                                backgroundColor: HORIZON.background,
+                                borderColor: region ? HORIZON.primary + '30' : 'transparent',
+                                color: HORIZON.textPrimary
+                            }}
+                        >
                             <SelectValue placeholder="Select region" />
                         </SelectTrigger>
-                        <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                        <SelectContent className="rounded-xl shadow-xl">
                             <SelectItem value="US" className="font-medium">🇺🇸 United States</SelectItem>
                             <SelectItem value="UK" className="font-medium">🇬🇧 United Kingdom</SelectItem>
                             <SelectItem value="UA" className="font-medium">🇺🇦 Ukraine</SelectItem>
@@ -47,12 +64,19 @@ export function StepRegion({ onContinue }: StepRegionProps) {
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-400 uppercase tracking-wider">Language</label>
+                    <label className="text-sm font-bold uppercase tracking-wider" style={{ color: HORIZON.textSecondary }}>Language</label>
                     <Select value={language} onValueChange={setLanguage}>
-                        <SelectTrigger className="h-14 bg-slate-50 border-slate-100 rounded-xl text-slate-900 font-semibold px-4">
+                        <SelectTrigger
+                            className="h-14 rounded-xl font-semibold px-4 border-2 transition-all"
+                            style={{
+                                backgroundColor: HORIZON.background,
+                                borderColor: language ? HORIZON.primary + '30' : 'transparent',
+                                color: HORIZON.textPrimary
+                            }}
+                        >
                             <SelectValue placeholder="Select language" />
                         </SelectTrigger>
-                        <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                        <SelectContent className="rounded-xl shadow-xl">
                             <SelectItem value="en" className="font-medium">English (en)</SelectItem>
                             <SelectItem value="uk" className="font-medium">Ukrainian (uk)</SelectItem>
                             <SelectItem value="de" className="font-medium">German (de)</SelectItem>
@@ -64,7 +88,11 @@ export function StepRegion({ onContinue }: StepRegionProps) {
 
             <Button
                 onClick={() => onContinue(region, language)}
-                className="w-full lg:w-fit px-12 py-6 text-lg bg-teal-600 hover:bg-teal-700 text-white shadow-xl shadow-teal-100 hover:shadow-teal-200 rounded-xl transition-all"
+                className="w-full lg:w-fit px-12 py-6 text-lg text-white rounded-xl transition-all hover:-translate-y-0.5 font-semibold"
+                style={{
+                    backgroundColor: HORIZON.primary,
+                    boxShadow: `0 15px 30px ${HORIZON.primary}30`
+                }}
             >
                 Continue
             </Button>
@@ -76,7 +104,7 @@ export function VisualRegion() {
     return (
         <div className="flex items-center justify-center animate-in zoom-in-95 duration-1000">
             <div className="relative w-[480px] h-[480px] opacity-40">
-                <svg viewBox="0 0 100 100" className="w-full h-full text-slate-400">
+                <svg viewBox="0 0 100 100" className="w-full h-full" style={{ color: HORIZON.secondary }}>
                     <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="1 3" />
                     <circle cx="50" cy="50" r="38" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="1 3" />
                     <circle cx="50" cy="50" r="28" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="1 3" />
@@ -92,8 +120,11 @@ export function VisualRegion() {
                     })}
                 </svg>
 
-                {/* Glow Effect */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-teal-500/10 to-transparent rounded-full blur-3xl -z-10" />
+                {/* Glow Effect with Horizon primary */}
+                <div
+                    className="absolute inset-0 rounded-full blur-3xl -z-10"
+                    style={{ background: `linear-gradient(to top right, ${HORIZON.primary}15, transparent)` }}
+                />
             </div>
         </div>
     );

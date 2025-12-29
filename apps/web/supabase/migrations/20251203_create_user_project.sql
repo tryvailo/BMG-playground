@@ -125,3 +125,4 @@ GRANT EXECUTE ON FUNCTION kit.ensure_user_has_project(uuid) TO authenticated, se
 COMMENT ON FUNCTION kit.ensure_user_has_project(uuid) IS 'Creates a project with demo data for a user account if it does not exist';
 
 
+

@@ -13,12 +13,24 @@ import { ProfileAccountDropdownContainer } from '~/components/personal-account-d
 import { navigationConfig } from '~/config/navigation.config';
 import { Tables } from '~/lib/database.types';
 
+// Horizon UI Design Tokens
+const HORIZON = {
+  primary: '#4318FF',
+  primaryLight: '#4318FF15',
+  background: '#F4F7FE',
+  textPrimary: '#1B2559',
+};
+
 export function HomeSidebar(props: {
   account?: Tables<'accounts'>;
   user: JwtPayload;
 }) {
   return (
-    <Sidebar collapsible={'icon'}>
+    <Sidebar
+      collapsible={'icon'}
+      className="border-none"
+      style={{ backgroundColor: 'white' }}
+    >
       <SidebarHeader className={'h-16 justify-center'}>
         <div className={'flex items-center justify-between space-x-2'}>
           <div>
@@ -27,11 +39,14 @@ export function HomeSidebar(props: {
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="px-2">
         <SidebarNavigation config={navigationConfig} />
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter
+        className="border-t"
+        style={{ borderColor: HORIZON.background }}
+      >
         <ProfileAccountDropdownContainer
           user={props.user}
           account={props.account}

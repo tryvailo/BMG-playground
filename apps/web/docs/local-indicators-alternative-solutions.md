@@ -451,3 +451,4 @@ async function analyzeLocalBacklinks(
 4. **Низкий:** OAuth интеграция для точных метрик (6.2, 6.3)
 
 
+

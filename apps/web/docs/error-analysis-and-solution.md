@@ -105,3 +105,4 @@ rules: {
 # Заменить catch (error) на catch (_error) где error не используется
 ```
 
+

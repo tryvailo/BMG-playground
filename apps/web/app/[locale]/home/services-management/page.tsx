@@ -63,9 +63,9 @@ export default function ServicesManagementPage() {
                   apiKeyOpenAI.startsWith('sk-') && apiKeyPerplexity.startsWith('pplx-');
 
   return (
-    <PageBody>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-full min-h-full">
-        <div className="flex flex-col space-y-6 h-full min-h-full">
+    <PageBody className="overflow-auto">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <div className="flex flex-col space-y-6">
           <Card>
             <CardHeader>
               <div className="flex items-center gap-3">

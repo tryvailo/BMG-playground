@@ -44,7 +44,7 @@
     "techAudit": {
       "title": "Технічний аудит",
       "groups": {
-        "ai": "3. Технічна оптимізація (AI & Search)",
+        "ai": "Технічна оптимізація (AI & Search)",
         "compliance": "Базова відповідність",
         "schema": "Структуровані дані (Schema.org)",
         "seo": "SEO та індексація",
@@ -52,103 +52,103 @@
       },
       "items": {
         "3_1": {
-          "title": "3.1. Наявність файлу llms.txt",
+          "title": "Наявність файлу llms.txt",
           "description": "Перевірка наявності файлу llms.txt для допомоги AI-системам."
         },
         "3_2": {
-          "title": "3.2. Оптимізація llms.txt",
+          "title": "Оптимізація llms.txt",
           "description": "Аналіз вмісту llms.txt на відповідність рекомендаціям щодо повноти та структури."
         },
         "3_3": {
-          "title": "3.3. Наявність robots.txt",
+          "title": "Наявність robots.txt",
           "description": "Файл допомагає пошуковим і AI-роботам правильно індексувати сайт."
         },
         "3_4": {
-          "title": "3.4. Конфігурація robots.txt",
+          "title": "Конфігурація robots.txt",
           "description": "Перевірка правил доступу та наявності карти сайту (sitemap)."
         },
         "3_5": {
-          "title": "3.5. HTTPS",
+          "title": "HTTPS",
           "description": "Захищений протокол передачі даних. Критично для медичних сайтів."
         },
         "3_6": {
-          "title": "3.6. Мобільна адаптивність",
+          "title": "Мобільна адаптивність",
           "description": "Коректне відображення на мобільних пристроях (mobile-first)."
         },
         "3_7": {
-          "title": "3.7. MedicalOrganization Schema",
+          "title": "MedicalOrganization Schema",
           "description": "Спеціальна розмітка для медичних організацій."
         },
         "3_8": {
-          "title": "3.8. LocalBusiness Schema",
+          "title": "LocalBusiness Schema",
           "description": "Дані про назву, адресу, телефон та години роботи."
         },
         "3_9": {
-          "title": "3.9. Physician Schema",
+          "title": "Physician Schema",
           "description": "Розмітка для окремих лікарів, їх спеціалізацій та досягнень."
         },
         "3_10": {
-          "title": "3.10. MedicalSpecialty Schema",
+          "title": "MedicalSpecialty Schema",
           "description": "Класифікація конкретних галузей медицини клініки."
         },
         "3_11": {
-          "title": "3.11. MedicalProcedure Schema",
+          "title": "MedicalProcedure Schema",
           "description": "Опис діагностичних та лікувальних процедур."
         },
         "3_12": {
-          "title": "3.12. FAQ Schema",
+          "title": "FAQ Schema",
           "description": "Розмітка часто задаваних питань для розширених сніпетів."
         },
         "3_13": {
-          "title": "3.13. Review Schema",
+          "title": "Review Schema",
           "description": "Допомагає AI ідентифікувати відгуки та рейтинги."
         },
         "3_14": {
-          "title": "3.14. BreadcrumbList Schema",
+          "title": "BreadcrumbList Schema",
           "description": "Навігаційна структура (\"хлібні крихти\")."
         },
         "3_15": {
-          "title": "3.15. Lang",
+          "title": "Lang",
           "description": "Атрибут мови контенту для браузерів та AI."
         },
         "3_16": {
-          "title": "3.16. Hreflang",
+          "title": "Hreflang",
           "description": "Вказівка мовних або регіональних версій сторінок."
         },
         "3_17": {
-          "title": "3.17. Зовнішні посилання",
+          "title": "Зовнішні посилання",
           "description": "Якість та релевантність посилань на сторонні ресурси."
         },
         "3_18": {
-          "title": "3.18. Titles",
+          "title": "Titles",
           "description": "Заголовки сторінок: довжина, унікальність та ключові слова."
         },
         "3_19": {
-          "title": "3.19. Descriptions",
+          "title": "Descriptions",
           "description": "Мета-описи: унікальність та привабливість для кліків (CTR)."
         },
         "3_20": {
-          "title": "3.20. Canonicals",
+          "title": "Canonicals",
           "description": "Вказівка пріоритетної версії сторінки для уникнення дублів."
         },
         "3_21": {
-          "title": "3.21. Noindex",
+          "title": "Noindex",
           "description": "Приховування технічних або малоцінних сторінок від індексу."
         },
         "3_22": {
-          "title": "3.22. Nofollow",
+          "title": "Nofollow",
           "description": "Управління передачею ваги посилань на зовнішні ресурси."
         },
         "3_23": {
-          "title": "3.23. Дублі вмісту",
+          "title": "Дублі вмісту",
           "description": "Пошук сторінок зі схожістю контенту понад 80%."
         },
         "3_24": {
-          "title": "3.24. Швидкість основної версії",
+          "title": "Швидкість основної версії",
           "description": "Швидкість завантаження на комп'ютерах (Desktop)."
         },
         "3_25": {
-          "title": "3.25. Швидкість мобільної версії",
+          "title": "Швидкість мобільної версії",
           "description": "Швидкість завантаження на смартфонах (Mobile)."
         }
       }

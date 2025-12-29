@@ -183,3 +183,4 @@ LIMIT 1;
 5. Попробуйте выполнить запрос напрямую через Supabase Dashboard → SQL Editor
 
 
+

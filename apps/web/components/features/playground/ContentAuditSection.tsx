@@ -29,51 +29,58 @@ import { cn } from '@kit/ui/utils';
 
 import type { ContentAuditResult } from '~/lib/server/services/content/types';
 
-// --- Premium 2026 Light Tokens ---
-  const _TOKENS = {
-    colors: {
-        you: '#f43f5e', // Ruby
-        c1: '#3b82f6', // Blue
-        c2: '#8b5cf6', // Violet
-        c3: '#10b981', // Emerald
-        c4: '#f59e0b', // Amber
-        c5: '#0ea5e9', // Sky
-        c6: '#6366f1', // Indigo
-        c7: '#d946ef', // Fuchsia
-        c8: '#f97316', // Orange
-        c9: '#14b8a6', // Teal
-        c10: '#64748b', // Slate
-        marketAvg: '#cbd5e1',
-    },
-    shadows: {
-        soft: 'shadow-[0_8px_30px_rgb(0,0,0,0.04)]',
-        deep: 'shadow-[0_20px_50px_rgba(0,0,0,0.06)]',
-    }
+// --- Horizon UI Design Tokens ---
+const HORIZON = {
+  primary: '#4318FF',
+  primaryLight: '#4318FF15',
+  secondary: '#A3AED0',
+  success: '#01B574',
+  successLight: '#01B57415',
+  warning: '#FFB547',
+  warningLight: '#FFB54715',
+  error: '#EE5D50',
+  errorLight: '#EE5D5015',
+  background: '#F4F7FE',
+  textPrimary: '#1B2559',
+  textSecondary: '#A3AED0',
+  shadow: '0 18px 40px rgba(112, 144, 176, 0.12)',
 };
 
-// --- Custom Modern Components ---
+// --- Horizon Card Component ---
 interface BentoCardProps {
   children: React.ReactNode;
   className?: string;
   title?: string;
   subtitle?: string;
+  style?: React.CSSProperties;
 }
 
-const BentoCard = ({ children, className, title, subtitle }: BentoCardProps) => (
-    <Card className={cn(
-        "border border-slate-200 bg-white shadow-[0_8px_32px_0_rgba(15,23,42,0.04)] overflow-hidden transition-all duration-300 hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] group",
-        className
-    )}>
-        {(title || subtitle) && (
-            <CardHeader className="pb-2">
-                {title && <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 group-hover:text-primary transition-colors">{title}</h3>}
-                {subtitle && <p className="text-sm font-bold text-slate-900">{subtitle}</p>}
-            </CardHeader>
+const BentoCard = ({ children, className, title, subtitle, style }: BentoCardProps) => (
+  <Card
+    className={cn(
+      "border-none bg-white rounded-[20px] overflow-hidden transition-all duration-300",
+      className
+    )}
+    style={{ boxShadow: HORIZON.shadow, ...style }}
+  >
+    {(title || subtitle) && (
+      <CardHeader className="pb-2">
+        {title && (
+          <h3 className="text-lg font-bold" style={{ color: HORIZON.textPrimary }}>
+            {title}
+          </h3>
         )}
-        <CardContent className={cn("p-6", (title || subtitle) && "pt-2")}>
-            {children}
-        </CardContent>
-    </Card>
+        {subtitle && (
+          <p className="text-sm" style={{ color: HORIZON.textSecondary }}>
+            {subtitle}
+          </p>
+        )}
+      </CardHeader>
+    )}
+    <CardContent className={cn("p-6", (title || subtitle) && "pt-2")}>
+      {children}
+    </CardContent>
+  </Card>
 );
 
 interface ContentAuditSectionProps {

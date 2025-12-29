@@ -46,51 +46,62 @@ import { cn } from '@kit/ui/utils';
 import { runEEATAudit } from '~/lib/actions/eeat-audit';
 import type { EEATAuditResult } from '~/lib/server/services/eeat/types';
 
-// --- Premium 2026 Light Tokens ---
-const TOKENS = {
-    colors: {
-        you: '#f43f5e', // Ruby
-        c1: '#3b82f6', // Blue
-        c2: '#8b5cf6', // Violet
-        c3: '#10b981', // Emerald
-        c4: '#f59e0b', // Amber
-        c5: '#0ea5e9', // Sky
-        c6: '#6366f1', // Indigo
-        c7: '#d946ef', // Fuchsia
-        c8: '#f97316', // Orange
-        c9: '#14b8a6', // Teal
-        c10: '#64748b', // Slate
-        marketAvg: '#cbd5e1',
-    },
-    shadows: {
-        soft: 'shadow-[0_8px_30px_rgb(0,0,0,0.04)]',
-        deep: 'shadow-[0_20px_50px_rgba(0,0,0,0.06)]',
-    }
+// --- Horizon UI Design Tokens ---
+const HORIZON = {
+  primary: '#4318FF',
+  primaryLight: '#4318FF15',
+  secondary: '#A3AED0',
+  secondaryLight: '#A3AED015',
+  success: '#01B574',
+  successLight: '#01B57415',
+  warning: '#FFB547',
+  warningLight: '#FFB54715',
+  error: '#EE5D50',
+  errorLight: '#EE5D5015',
+  info: '#2B77E5',
+  infoLight: '#2B77E515',
+  background: '#F4F7FE',
+  textPrimary: '#1B2559',
+  textSecondary: '#A3AED0',
+  shadow: '0 18px 40px rgba(112, 144, 176, 0.12)',
+  shadowSm: '0 4px 12px rgba(112, 144, 176, 0.1)',
 };
 
-// --- Custom Modern Components ---
+// --- Horizon Card Component ---
 interface BentoCardProps {
   children: React.ReactNode;
   className?: string;
   title?: string;
   subtitle?: string;
+  style?: React.CSSProperties;
 }
 
-const BentoCard = ({ children, className, title, subtitle }: BentoCardProps) => (
-    <Card className={cn(
-        "border border-slate-200 bg-white shadow-[0_8px_32px_0_rgba(15,23,42,0.04)] overflow-hidden transition-all duration-300 hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] group",
-        className
-    )}>
-        {(title || subtitle) && (
-            <CardHeader className="pb-2">
-                {title && <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 group-hover:text-primary transition-colors">{title}</h3>}
-                {subtitle && <p className="text-sm font-bold text-slate-900">{subtitle}</p>}
-            </CardHeader>
+const BentoCard = ({ children, className, title, subtitle, style }: BentoCardProps) => (
+  <Card
+    className={cn(
+      "border-none bg-white rounded-[20px] overflow-hidden transition-all duration-300",
+      className
+    )}
+    style={{ boxShadow: HORIZON.shadow, ...style }}
+  >
+    {(title || subtitle) && (
+      <CardHeader className="pb-2">
+        {title && (
+          <h3 className="text-lg font-bold" style={{ color: HORIZON.textPrimary }}>
+            {title}
+          </h3>
         )}
-        <CardContent className={cn("p-6", (title || subtitle) && "pt-2")}>
-            {children}
-        </CardContent>
-    </Card>
+        {subtitle && (
+          <p className="text-sm" style={{ color: HORIZON.textSecondary }}>
+            {subtitle}
+          </p>
+        )}
+      </CardHeader>
+    )}
+    <CardContent className={cn("p-6", (title || subtitle) && "pt-2")}>
+      {children}
+    </CardContent>
+  </Card>
 );
 
 interface EEATAuditSectionProps {
@@ -686,11 +697,11 @@ export function EEATAuditSection({
     },
     {
       name: 'Contact Block',
-      value: result.trust.contact_block ? 
-        ((result.trust.contact_block.has_email ? 1 : 0) + 
-         (result.trust.contact_block.has_booking_form ? 1 : 0) + 
-         (result.trust.contact_block.has_map ? 1 : 0)) / 3 * 100 : 0,
-      status: result.trust.contact_block ? 
+      value: result.trust.contact_block ?
+        ((result.trust.contact_block.has_email ? 1 : 0) +
+          (result.trust.contact_block.has_booking_form ? 1 : 0) +
+          (result.trust.contact_block.has_map ? 1 : 0)) / 3 * 100 : 0,
+      status: result.trust.contact_block ?
         ((result.trust.contact_block.has_email && result.trust.contact_block.has_booking_form && result.trust.contact_block.has_map) ? 'good' : 'warning') : 'bad',
     },
   ];
@@ -846,19 +857,19 @@ export function EEATAuditSection({
           <BentoCard title="Trust Signals Breakdown" subtitle="Key trust indicators and their status">
             <div className="h-[350px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart 
-                  data={trustSignalsData} 
+                <BarChart
+                  data={trustSignalsData}
                   margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                   layout="vertical"
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis 
+                  <XAxis
                     type="number"
                     domain={[0, 100]}
                     tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }}
                     axisLine={{ stroke: '#cbd5e1' }}
                   />
-                  <YAxis 
+                  <YAxis
                     type="category"
                     dataKey="name"
                     tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }}
@@ -876,13 +887,13 @@ export function EEATAuditSection({
                   />
                   <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                     {trustSignalsData.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
+                      <Cell
+                        key={`cell-${index}`}
                         fill={
-                          entry.status === 'good' ? TOKENS.colors.c3 :
-                          entry.status === 'warning' ? TOKENS.colors.c4 :
-                          TOKENS.colors.you
-                        } 
+                          entry.status === 'good' ? HORIZON.success :
+                            entry.status === 'warning' ? HORIZON.warning :
+                              HORIZON.error
+                        }
                       />
                     ))}
                   </Bar>
@@ -907,8 +918,8 @@ export function EEATAuditSection({
                       className={cn(
                         'h-full transition-all duration-500 ease-out rounded-full',
                         signal.status === 'good' ? 'bg-emerald-600' :
-                        signal.status === 'warning' ? 'bg-orange-500' :
-                        'bg-red-600'
+                          signal.status === 'warning' ? 'bg-orange-500' :
+                            'bg-red-600'
                       )}
                       style={{ width: `${signal.value}%`, minWidth: signal.value > 0 ? '4px' : '0' }}
                     />

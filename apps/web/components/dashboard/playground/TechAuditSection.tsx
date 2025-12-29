@@ -25,51 +25,71 @@ import { cn } from '@kit/ui/utils';
 import type { EphemeralAuditResult } from '~/lib/modules/audit/ephemeral-audit';
 import { useTranslation } from 'react-i18next';
 
-// --- Premium 2026 Light Tokens ---
-const TOKENS = {
-    colors: {
-        you: '#f43f5e', // Ruby
-        c1: '#3b82f6', // Blue
-        c2: '#8b5cf6', // Violet
-        c3: '#10b981', // Emerald
-        c4: '#f59e0b', // Amber
-        c5: '#0ea5e9', // Sky
-        c6: '#6366f1', // Indigo
-        c7: '#d946ef', // Fuchsia
-        c8: '#f97316', // Orange
-        c9: '#14b8a6', // Teal
-        c10: '#64748b', // Slate
-        marketAvg: '#cbd5e1',
-    },
-    shadows: {
-        soft: 'shadow-[0_8px_30px_rgb(0,0,0,0.04)]',
-        deep: 'shadow-[0_20px_50px_rgba(0,0,0,0.06)]',
-    }
+// --- Horizon UI Design Tokens ---
+const HORIZON = {
+  primary: '#4318FF',
+  primaryLight: '#4318FF15',
+  secondary: '#A3AED0',
+  secondaryLight: '#A3AED015',
+  success: '#01B574',
+  successLight: '#01B57415',
+  warning: '#FFB547',
+  warningLight: '#FFB54715',
+  error: '#EE5D50',
+  errorLight: '#EE5D5015',
+  info: '#2B77E5',
+  infoLight: '#2B77E515',
+  background: '#F4F7FE',
+  textPrimary: '#1B2559',
+  textSecondary: '#A3AED0',
+  shadow: '0 18px 40px rgba(112, 144, 176, 0.12)',
+  shadowHover: '0 25px 50px rgba(112, 144, 176, 0.18)',
+  shadowSm: '0 4px 12px rgba(112, 144, 176, 0.1)',
+  // Category colors
+  colors: {
+    ai: '#4318FF',
+    compliance: '#01B574',
+    schema: '#2B77E5',
+    seo: '#FFB547',
+    performance: '#EE5D50',
+  }
 };
 
-// --- Custom Modern Components ---
+// --- Horizon Card Component ---
 interface BentoCardProps {
   children: React.ReactNode;
   className?: string;
   title?: string;
   subtitle?: string;
+  style?: React.CSSProperties;
 }
 
-const BentoCard = ({ children, className, title, subtitle }: BentoCardProps) => (
-    <Card className={cn(
-        "border border-slate-200 bg-white shadow-[0_8px_32px_0_rgba(15,23,42,0.04)] overflow-hidden transition-all duration-300 hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] group",
-        className
-    )}>
-        {(title || subtitle) && (
-            <CardHeader className="pb-2">
-                {title && <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 group-hover:text-primary transition-colors">{title}</h3>}
-                {subtitle && <p className="text-sm font-bold text-slate-900">{subtitle}</p>}
-            </CardHeader>
+const BentoCard = ({ children, className, title, subtitle, style }: BentoCardProps) => (
+  <Card
+    className={cn(
+      "border-none bg-white rounded-[20px] overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl",
+      className
+    )}
+    style={{ boxShadow: HORIZON.shadow, ...style }}
+  >
+    {(title || subtitle) && (
+      <CardHeader className="pb-2">
+        {title && (
+          <h3 className="text-lg font-bold" style={{ color: HORIZON.textPrimary }}>
+            {title}
+          </h3>
         )}
-        <CardContent className={cn("p-6", (title || subtitle) && "pt-2")}>
-            {children}
-        </CardContent>
-    </Card>
+        {subtitle && (
+          <p className="text-sm" style={{ color: HORIZON.textSecondary }}>
+            {subtitle}
+          </p>
+        )}
+      </CardHeader>
+    )}
+    <CardContent className={cn("p-6", (title || subtitle) && "pt-2")}>
+      {children}
+    </CardContent>
+  </Card>
 );
 
 interface TechAuditSectionProps {
@@ -103,10 +123,10 @@ function AuditItem({ title, description, status, value, score, children }: Audit
 
   const getStatusBg = () => {
     switch (status) {
-      case 'good': return 'bg-emerald-50 border-emerald-300';
-      case 'bad': return 'bg-red-50 border-red-300';
-      case 'warning': return 'bg-orange-50 border-orange-300';
-      default: return 'bg-white border-slate-200';
+      case 'good': return 'bg-[#01B57412] border-[#01B57430]';
+      case 'bad': return 'bg-[#EE5D5012] border-[#EE5D5030]';
+      case 'warning': return 'bg-[#FFB54712] border-[#FFB54730]';
+      default: return 'bg-white border-[#F4F7FE]';
     }
   };
 
@@ -126,10 +146,10 @@ function AuditItem({ title, description, status, value, score, children }: Audit
               <div className="flex items-center gap-4">
                 {score !== undefined && score !== null && (
                   <span className={cn(
-                    'text-lg font-black italic',
-                    status === 'good' ? 'text-emerald-500' : 
-                    status === 'warning' ? 'text-orange-500' : 
-                    'text-rose-500'
+                    'text-lg font-bold',
+                    status === 'good' ? 'text-[#01B574]' :
+                      status === 'warning' ? 'text-[#FFB547]' :
+                        'text-[#EE5D50]'
                   )}>
                     {score}%
                   </span>
@@ -195,8 +215,8 @@ function calculateOverallScore(data: EphemeralAuditResult): number {
   if (data.externalLinks.trusted > 0) scores.push(Math.min(100, data.externalLinks.trusted * 20));
 
   // Images scores
-  const imagesScore = data.images.total > 0 
-    ? ((data.images.total - data.images.missingAlt) / data.images.total) * 100 
+  const imagesScore = data.images.total > 0
+    ? ((data.images.total - data.images.missingAlt) / data.images.total) * 100
     : 100;
   scores.push(imagesScore);
 
@@ -278,20 +298,8 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
   // Helper to get status from boolean
   const fromBool = (val: boolean | null): 'good' | 'bad' => val ? 'good' : 'bad';
 
-  const overallScore = calculateOverallScore(data);
+  const _overallScore = calculateOverallScore(data);
   const categoryScores = calculateCategoryScores(data);
-
-  const getScoreColor = (score: number) => {
-    if (score >= 90) return 'text-emerald-700';
-    if (score >= 50) return 'text-orange-600';
-    return 'text-red-600';
-  };
-
-  const getScoreBgColor = (score: number) => {
-    if (score >= 90) return 'bg-emerald-50 border-emerald-300';
-    if (score >= 50) return 'bg-orange-50 border-orange-300';
-    return 'bg-red-50 border-red-300';
-  };
 
   // Format metric value to 2 decimal places
   const formatMetric = (value: number | null): string => {
@@ -304,12 +312,12 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
     {
       name: 'Desktop',
       score: data.speed.desktop || 0,
-      fill: TOKENS.colors.c1,
+      fill: HORIZON.primary,
     },
     {
       name: 'Mobile',
       score: data.speed.mobile || 0,
-      fill: TOKENS.colors.c2,
+      fill: HORIZON.info,
     },
   ];
 
@@ -385,132 +393,70 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
 
   return (
     <div className="space-y-12 mb-10">
-      {/* Hero Summary Dashboard */}
-      <BentoCard className={cn('border-2 relative overflow-hidden bg-white', getScoreBgColor(overallScore))}>
-        <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
-          <Gauge className="w-24 h-24" />
+      {/* ========== CATEGORY KPI GRID ========== */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 py-4 px-2">
+        {/* AI Score */}
+        <div className="group border-r border-[#F4F7FE] last:border-none pr-4">
+          <p className="text-[12px] font-bold uppercase tracking-widest mb-3 text-[#A3AED0]">AI Readiness</p>
+          <div className="text-5xl font-black tracking-tighter" style={{ color: HORIZON.textPrimary }}>
+            {categoryScores.ai}%
+          </div>
         </div>
-        <CardHeader>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-3xl font-black italic tracking-tighter text-slate-900 mb-2">
-                Technical Audit Results
-              </h1>
-              <p className="text-sm font-medium text-slate-700">
-                Comprehensive technical SEO and performance analysis
-              </p>
-            </div>
-            <div className="text-center">
-              <div className={cn('text-5xl font-black italic tracking-tighter mb-1', getScoreColor(overallScore))}>
-                {overallScore}
-              </div>
-              <div className="text-sm font-bold text-slate-600">
-                / 100
-              </div>
-            </div>
-          </div>
 
-          {/* Category Progress Bars */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-6">
-            <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">AI</span>
-                <span className="text-xs font-black text-slate-900">{categoryScores.ai}%</span>
-              </div>
-              <div className="h-3 w-full bg-slate-200 rounded-full overflow-hidden relative border border-slate-300">
-                <div
-                  className={cn(
-                    'transition-all duration-500 ease-out rounded-full shadow-sm h-full',
-                    categoryScores.ai >= 90 ? 'bg-emerald-600' : categoryScores.ai >= 50 ? 'bg-orange-500' : 'bg-red-600'
-                  )}
-                  style={{ width: `${categoryScores.ai}%`, minWidth: categoryScores.ai > 0 ? '4px' : '0' }}
-                />
-              </div>
-            </div>
-            <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Compliance</span>
-                <span className="text-xs font-black text-slate-900">{categoryScores.compliance}%</span>
-              </div>
-              <div className="h-3 w-full bg-slate-200 rounded-full overflow-hidden relative border border-slate-300">
-                <div
-                  className={cn(
-                    'transition-all duration-500 ease-out rounded-full shadow-sm h-full',
-                    categoryScores.compliance >= 90 ? 'bg-emerald-600' : categoryScores.compliance >= 50 ? 'bg-orange-500' : 'bg-red-600'
-                  )}
-                  style={{ width: `${categoryScores.compliance}%`, minWidth: categoryScores.compliance > 0 ? '4px' : '0' }}
-                />
-              </div>
-            </div>
-            <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Schema</span>
-                <span className="text-xs font-black text-slate-900">{Math.round(categoryScores.schema)}%</span>
-              </div>
-              <div className="h-3 w-full bg-slate-200 rounded-full overflow-hidden relative border border-slate-300">
-                <div
-                  className={cn(
-                    'transition-all duration-500 ease-out rounded-full shadow-sm h-full',
-                    categoryScores.schema >= 90 ? 'bg-emerald-600' : categoryScores.schema >= 50 ? 'bg-orange-500' : 'bg-red-600'
-                  )}
-                  style={{ width: `${categoryScores.schema}%`, minWidth: categoryScores.schema > 0 ? '4px' : '0' }}
-                />
-              </div>
-            </div>
-            <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">SEO</span>
-                <span className="text-xs font-black text-slate-900">{categoryScores.seo}%</span>
-              </div>
-              <div className="h-3 w-full bg-slate-200 rounded-full overflow-hidden relative border border-slate-300">
-                <div
-                  className={cn(
-                    'transition-all duration-500 ease-out rounded-full shadow-sm h-full',
-                    categoryScores.seo >= 90 ? 'bg-emerald-600' : categoryScores.seo >= 50 ? 'bg-orange-500' : 'bg-red-600'
-                  )}
-                  style={{ width: `${categoryScores.seo}%`, minWidth: categoryScores.seo > 0 ? '4px' : '0' }}
-                />
-              </div>
-            </div>
-            <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Performance</span>
-                <span className="text-xs font-black text-slate-900">{categoryScores.performance}%</span>
-              </div>
-              <div className="h-3 w-full bg-slate-200 rounded-full overflow-hidden relative border border-slate-300">
-                <div
-                  className={cn(
-                    'transition-all duration-500 ease-out rounded-full shadow-sm h-full',
-                    categoryScores.performance >= 90 ? 'bg-emerald-600' : categoryScores.performance >= 50 ? 'bg-orange-500' : 'bg-red-600'
-                  )}
-                  style={{ width: `${categoryScores.performance}%`, minWidth: categoryScores.performance > 0 ? '4px' : '0' }}
-                />
-              </div>
-            </div>
+        {/* Compliance Score */}
+        <div className="group border-r border-[#F4F7FE] last:border-none pr-4">
+          <p className="text-[12px] font-bold uppercase tracking-widest mb-3 text-[#A3AED0]">Compliance</p>
+          <div className="text-5xl font-black tracking-tighter" style={{ color: HORIZON.textPrimary }}>
+            {categoryScores.compliance}%
           </div>
-        </CardHeader>
-      </BentoCard>
+        </div>
+
+        {/* Schema Score */}
+        <div className="group border-r border-[#F4F7FE] last:border-none pr-4">
+          <p className="text-[12px] font-bold uppercase tracking-widest mb-3 text-[#A3AED0]">Structure</p>
+          <div className="text-5xl font-black tracking-tighter" style={{ color: HORIZON.textPrimary }}>
+            {Math.round(categoryScores.schema)}%
+          </div>
+        </div>
+
+        {/* SEO Score */}
+        <div className="group border-r border-[#F4F7FE] last:border-none pr-4">
+          <p className="text-[12px] font-bold uppercase tracking-widest mb-3 text-[#A3AED0]">Visibility</p>
+          <div className="text-5xl font-black tracking-tighter" style={{ color: HORIZON.textPrimary }}>
+            {categoryScores.seo}%
+          </div>
+        </div>
+
+        {/* Performance Score */}
+        <div className="group">
+          <p className="text-[12px] font-bold uppercase tracking-widest mb-3 text-[#A3AED0]">Performance</p>
+          <div className="text-5xl font-black tracking-tighter" style={{ color: HORIZON.textPrimary }}>
+            {categoryScores.performance}%
+          </div>
+        </div>
+      </div>
 
       {/* Performance Metrics Visualization */}
       {(data.speed.desktop !== null || data.speed.mobile !== null || coreWebVitalsData.length > 0 || pageSpeedCategoriesData.length > 0) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Speed Comparison: Desktop vs Mobile */}
           {(data.speed.desktop !== null || data.speed.mobile !== null) && (
-            <BentoCard title="Speed Score Comparison" subtitle="Desktop vs Mobile Performance">
+            <BentoCard title="Performance Comparison">
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={speedComparisonData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis 
-                      dataKey="name" 
-                      tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }}
-                      axisLine={{ stroke: '#cbd5e1' }}
+                    <CartesianGrid vertical={false} stroke={`${HORIZON.secondary}15`} />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fill: HORIZON.textSecondary, fontSize: 10, fontWeight: 600 }}
+                      axisLine={false}
+                      tickLine={false}
                     />
-                    <YAxis 
+                    <YAxis
                       domain={[0, 100]}
-                      tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }}
-                      axisLine={{ stroke: '#cbd5e1' }}
-                      label={{ value: 'Score', angle: -90, position: 'insideLeft', fill: '#64748b', fontSize: 12 }}
+                      tick={{ fill: HORIZON.textSecondary, fontSize: 10, fontWeight: 600 }}
+                      axisLine={false}
+                      tickLine={false}
                     />
                     <Tooltip
                       contentStyle={{
@@ -538,40 +484,42 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <RadarChart data={pageSpeedCategoriesData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                    <PolarGrid stroke="#e2e8f0" />
-                    <PolarAngleAxis 
-                      dataKey="category" 
-                      tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }}
+                    <PolarGrid stroke={`${HORIZON.secondary}30`} />
+                    <PolarAngleAxis
+                      dataKey="category"
+                      tick={{ fill: HORIZON.textSecondary, fontSize: 10, fontWeight: 600 }}
                     />
-                    <PolarRadiusAxis 
-                      angle={90} 
+                    <PolarRadiusAxis
+                      angle={90}
                       domain={[0, 100]}
-                      tick={{ fill: '#64748b', fontSize: 10 }}
+                      tick={{ fill: HORIZON.textSecondary, fontSize: 10 }}
+                      axisLine={false}
                     />
                     <Radar
                       name="Desktop"
                       dataKey="desktop"
-                      stroke={TOKENS.colors.c1}
-                      fill={TOKENS.colors.c1}
+                      stroke={HORIZON.primary}
+                      fill={HORIZON.primary}
                       fillOpacity={0.6}
                     />
                     <Radar
                       name="Mobile"
                       dataKey="mobile"
-                      stroke={TOKENS.colors.c2}
-                      fill={TOKENS.colors.c2}
+                      stroke={HORIZON.info}
+                      fill={HORIZON.info}
                       fillOpacity={0.6}
                     />
-                    <Legend 
-                      wrapperStyle={{ fontSize: '12px', fontWeight: 600, color: '#64748b' }}
+                    <Legend
+                      wrapperStyle={{ fontSize: '12px', fontWeight: 600, color: HORIZON.textSecondary }}
                       iconType="circle"
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '8px',
-                        padding: '8px 12px',
+                        backgroundColor: 'white',
+                        border: 'none',
+                        borderRadius: '12px',
+                        boxShadow: HORIZON.shadow,
+                        padding: '12px',
                       }}
                       formatter={(value: number) => [`${value}%`, '']}
                     />
@@ -586,31 +534,34 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
             <BentoCard className="lg:col-span-2" title="Core Web Vitals" subtitle="LCP, FCP, CLS, TBT Metrics">
               <div className="h-[350px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart 
-                    data={coreWebVitalsData} 
+                  <BarChart
+                    data={coreWebVitalsData}
                     margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                     layout="vertical"
                   >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis 
+                    <CartesianGrid vertical={false} stroke={`${HORIZON.secondary}15`} />
+                    <XAxis
                       type="number"
-                      tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }}
-                      axisLine={{ stroke: '#cbd5e1' }}
+                      tick={{ fill: HORIZON.textSecondary, fontSize: 10, fontWeight: 600 }}
+                      axisLine={false}
+                      tickLine={false}
                       tickFormatter={(value) => formatMetric(value)}
                     />
-                    <YAxis 
+                    <YAxis
                       type="category"
                       dataKey="metric"
-                      tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }}
-                      axisLine={{ stroke: '#cbd5e1' }}
+                      tick={{ fill: HORIZON.textSecondary, fontSize: 10, fontWeight: 600 }}
+                      axisLine={false}
+                      tickLine={false}
                       width={80}
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '8px',
-                        padding: '8px 12px',
+                        backgroundColor: 'white',
+                        border: 'none',
+                        borderRadius: '12px',
+                        boxShadow: HORIZON.shadow,
+                        padding: '12px',
                       }}
                       formatter={(value: unknown, name: string) => {
                         if (typeof value !== 'number' || value === null || value === undefined) return ['N/A', name];
@@ -618,11 +569,11 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
                         return [`${formatMetric(value)}`, name];
                       }}
                     />
-                    <Legend 
-                      wrapperStyle={{ fontSize: '12px', fontWeight: 600, color: '#64748b' }}
+                    <Legend
+                      wrapperStyle={{ fontSize: '12px', fontWeight: 600, color: HORIZON.textSecondary }}
                     />
-                    <Bar dataKey="desktop" fill={TOKENS.colors.c1} radius={[0, 4, 4, 0]} name="Desktop" />
-                    <Bar dataKey="mobile" fill={TOKENS.colors.c2} radius={[0, 4, 4, 0]} name="Mobile" />
+                    <Bar dataKey="desktop" fill={HORIZON.primary} radius={[0, 4, 4, 0]} name="Desktop" />
+                    <Bar dataKey="mobile" fill={HORIZON.info} radius={[0, 4, 4, 0]} name="Mobile" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -640,8 +591,8 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
                           <div className={cn(
                             'text-lg font-black',
                             vital.desktop <= vital.good ? 'text-emerald-600' :
-                            vital.desktop <= vital.needsImprovement ? 'text-orange-600' :
-                            'text-red-600'
+                              vital.desktop <= vital.needsImprovement ? 'text-orange-600' :
+                                'text-red-600'
                           )}>
                             {formatMetric(vital.desktop)}{vital.unit}
                           </div>
@@ -653,8 +604,8 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
                           <div className={cn(
                             'text-lg font-black',
                             vital.mobile <= vital.good ? 'text-emerald-600' :
-                            vital.mobile <= vital.needsImprovement ? 'text-orange-600' :
-                            'text-red-600'
+                              vital.mobile <= vital.needsImprovement ? 'text-orange-600' :
+                                'text-red-600'
                           )}>
                             {formatMetric(vital.mobile)}{vital.unit}
                           </div>

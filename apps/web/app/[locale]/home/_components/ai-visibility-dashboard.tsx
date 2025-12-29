@@ -50,50 +50,51 @@ export function AIVisibilityDashboard({ projectId, filters }: AIVisibilityDashbo
   // Transform the data from the hook to match DashboardData format
   const transformedData: DashboardData | null = dashboardData
     ? {
-        metrics: {
-          clinicAiScore: {
-            value: typeof dashboardData.kpis.avgAivScore === 'number' 
-              ? dashboardData.kpis.avgAivScore 
-              : Number(dashboardData.kpis.avgAivScore) || 0,
-            trend: 0, // TODO: Calculate trend from previous period
-          },
-          serviceVisibility: {
-            value: dashboardData.kpis.serviceVisibility,
-            trend: 0, // TODO: Calculate trend from previous period
-          },
-          avgPosition: {
-            value: dashboardData.kpis.avgPosition || 0,
-            trend: 0, // TODO: Calculate trend from previous period
-          },
-          techOptimization: {
-            value: dashboardData.kpis.techOptimization || 0,
-            trend: 0, // TODO: Calculate trend from previous period
-          },
-          contentOptimization: {
-            value: dashboardData.kpis.contentOptimization || 0,
-            trend: 0, // TODO: Calculate trend from previous period
-          },
-          eeatSignal: {
-            value: dashboardData.kpis.eeatSignal || 0,
-            trend: 0, // TODO: Calculate trend from previous period
-          },
-          localSignal: {
-            value: dashboardData.kpis.localSignal || 0,
-            trend: 0, // TODO: Calculate trend from previous period
-          },
+      clinicName: dashboardData.clinicName,
+      metrics: {
+        clinicAiScore: {
+          value: typeof dashboardData.kpis.avgAivScore === 'number'
+            ? dashboardData.kpis.avgAivScore
+            : Number(dashboardData.kpis.avgAivScore) || 0,
+          trend: 0, // TODO: Calculate trend from previous period
         },
-        trend: dashboardData.history.map((h) => ({
-          date: h.date,
-          score: h.score,
-        })),
-        competitors: dashboardData.competitors.map((c) => ({
-          name: c.name,
-          x: c.x,
-          y: c.y,
-          isCurrent: c.isCurrentProject,
-          z: c.z,
-        })),
-      }
+        serviceVisibility: {
+          value: dashboardData.kpis.serviceVisibility,
+          trend: 0, // TODO: Calculate trend from previous period
+        },
+        avgPosition: {
+          value: dashboardData.kpis.avgPosition || 0,
+          trend: 0, // TODO: Calculate trend from previous period
+        },
+        techOptimization: {
+          value: dashboardData.kpis.techOptimization || 0,
+          trend: 0, // TODO: Calculate trend from previous period
+        },
+        contentOptimization: {
+          value: dashboardData.kpis.contentOptimization || 0,
+          trend: 0, // TODO: Calculate trend from previous period
+        },
+        eeatSignal: {
+          value: dashboardData.kpis.eeatSignal || 0,
+          trend: 0, // TODO: Calculate trend from previous period
+        },
+        localSignal: {
+          value: dashboardData.kpis.localSignal || 0,
+          trend: 0, // TODO: Calculate trend from previous period
+        },
+      },
+      trend: dashboardData.history.map((h) => ({
+        date: h.date,
+        score: h.score,
+      })),
+      competitors: dashboardData.competitors.map((c) => ({
+        name: c.name,
+        x: c.x,
+        y: c.y,
+        isCurrent: c.isCurrentProject,
+        z: c.z,
+      })),
+    }
     : null;
 
   return (

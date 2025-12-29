@@ -35,3 +35,4 @@ echo "📊 Supabase Dashboard: http://localhost:54323"
 echo "🔑 Service Role Key можно найти в выводе команды 'supabase status'"
 
 
+

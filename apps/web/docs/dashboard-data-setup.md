@@ -143,3 +143,4 @@ pnpm supabase status
 - TypeScript проверка: `scripts/verify-dashboard-data.ts`
 
 
+

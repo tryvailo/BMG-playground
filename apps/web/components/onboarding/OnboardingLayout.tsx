@@ -5,6 +5,18 @@ import { useRouter } from '~/lib/navigation';
 import { ChevronLeft } from 'lucide-react';
 import { cn } from '@kit/ui/utils';
 
+// Horizon UI Design Tokens
+const HORIZON = {
+    primary: '#4318FF',
+    primaryLight: '#4318FF15',
+    secondary: '#A3AED0',
+    success: '#01B574',
+    background: '#F4F7FE',
+    textPrimary: '#1B2559',
+    textSecondary: '#A3AED0',
+    shadow: '0 18px 40px rgba(112, 144, 176, 0.12)',
+};
+
 interface OnboardingLayoutProps {
     children: React.ReactNode;
     visual?: React.ReactNode;
@@ -37,22 +49,25 @@ export function OnboardingLayout({
     };
 
     return (
-        <div className="flex flex-col lg:flex-row min-h-screen bg-[#F8FAFC]">
+        <div className="flex flex-col lg:flex-row min-h-screen" style={{ backgroundColor: HORIZON.background }}>
             {/* Left side: Content */}
             <div className="flex-1 flex flex-col p-6 lg:p-12 xl:p-20 relative">
                 {/* Header */}
                 <header className="flex items-center gap-4 mb-20 lg:mb-32">
                     <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center border border-teal-100 shadow-sm">
-                            <div className="w-5 h-5 text-teal-600">
+                        <div
+                            className="w-10 h-10 rounded-full flex items-center justify-center"
+                            style={{ backgroundColor: HORIZON.primaryLight }}
+                        >
+                            <div className="w-5 h-5" style={{ color: HORIZON.primary }}>
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
                                 </svg>
                             </div>
                         </div>
-                        <span className="font-bold text-slate-900 text-lg">{clinicName}</span>
-                        <span className="text-slate-300 mx-1">|</span>
-                        <span className="text-slate-500 font-medium">{domain}</span>
+                        <span className="font-bold text-lg" style={{ color: HORIZON.textPrimary }}>{clinicName}</span>
+                        <span style={{ color: HORIZON.secondary }}>|</span>
+                        <span className="font-medium" style={{ color: HORIZON.textSecondary }}>{domain}</span>
                     </div>
                 </header>
 
@@ -67,7 +82,8 @@ export function OnboardingLayout({
                         {showBack && (
                             <button
                                 onClick={handleBack}
-                                className="flex items-center gap-1.5 text-slate-500 hover:text-slate-900 transition-colors group"
+                                className="flex items-center gap-1.5 transition-colors group hover:opacity-80"
+                                style={{ color: HORIZON.textSecondary }}
                             >
                                 <ChevronLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
                                 <span className="text-sm font-medium">Back</span>
@@ -81,11 +97,20 @@ export function OnboardingLayout({
                             <div
                                 key={i}
                                 className={cn(
-                                    "h-1.5 rounded-full transition-all duration-300",
+                                    "h-2 rounded-full transition-all duration-300",
                                     i === step
-                                        ? "w-6 bg-slate-900"
-                                        : "w-1.5 bg-slate-200"
+                                        ? "w-8"
+                                        : i < step
+                                            ? "w-2"
+                                            : "w-2"
                                 )}
+                                style={{
+                                    backgroundColor: i === step
+                                        ? HORIZON.primary
+                                        : i < step
+                                            ? HORIZON.success
+                                            : HORIZON.secondary + '40'
+                                }}
                             />
                         ))}
                     </div>
@@ -93,12 +118,24 @@ export function OnboardingLayout({
             </div>
 
             {/* Right side: Visual */}
-            <div className="hidden lg:flex flex-1 bg-slate-50 relative overflow-hidden items-center justify-center">
+            <div
+                className="hidden lg:flex flex-1 relative overflow-hidden items-center justify-center"
+                style={{ backgroundColor: 'white' }}
+            >
+                {/* Gradient background */}
+                <div
+                    className="absolute inset-0 opacity-30"
+                    style={{
+                        background: `radial-gradient(circle at 30% 50%, ${HORIZON.primary}20 0%, transparent 50%),
+                                     radial-gradient(circle at 70% 30%, ${HORIZON.success}15 0%, transparent 40%)`
+                    }}
+                />
+
                 {/* Dotted background pattern */}
                 <div
-                    className="absolute inset-0 opacity-[0.2]"
+                    className="absolute inset-0 opacity-[0.08]"
                     style={{
-                        backgroundImage: 'radial-gradient(circle, #475569 1px, transparent 1px)',
+                        backgroundImage: `radial-gradient(circle, ${HORIZON.textPrimary} 1px, transparent 1px)`,
                         backgroundSize: '24px 24px'
                     }}
                 />

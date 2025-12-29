@@ -6,6 +6,17 @@ import { Input } from '@kit/ui/input';
 import { Plus, X, Check } from 'lucide-react';
 import { cn } from '@kit/ui/utils';
 
+// Horizon UI Design Tokens
+const HORIZON = {
+    primary: '#4318FF',
+    primaryLight: '#4318FF15',
+    secondary: '#A3AED0',
+    success: '#01B574',
+    background: '#F4F7FE',
+    textPrimary: '#1B2559',
+    textSecondary: '#A3AED0',
+};
+
 interface StepTopicsProps {
     onContinue: (topics: string[]) => void;
 }
@@ -27,11 +38,11 @@ export function StepTopics({ onContinue }: StepTopicsProps) {
 
     return (
         <div className="flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <h1 className="text-4xl font-bold text-slate-900 mb-4 leading-tight">
+            <h1 className="text-4xl font-bold mb-4 leading-tight" style={{ color: HORIZON.textPrimary }}>
                 Which topics do you want to create prompts for?
             </h1>
 
-            <p className="text-lg text-slate-500 mb-8 font-medium">
+            <p className="text-lg mb-8 font-medium" style={{ color: HORIZON.textSecondary }}>
                 Select up to 10 topics
             </p>
 
@@ -42,13 +53,21 @@ export function StepTopics({ onContinue }: StepTopicsProps) {
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && addTopic()}
                         placeholder="e.g. dental implants, laser surgery"
-                        className="h-14 bg-transparent border-0 border-b-2 border-slate-100 rounded-none focus-visible:ring-0 focus-visible:border-teal-500 text-xl px-0 pb-4 transition-all"
+                        className="h-14 bg-transparent border-0 border-b-2 rounded-none focus-visible:ring-0 text-xl px-0 pb-4 transition-all placeholder:opacity-30"
+                        style={{
+                            borderColor: inputValue ? HORIZON.primary : HORIZON.secondary + '40',
+                            color: HORIZON.textPrimary
+                        }}
                     />
                 </div>
 
                 <button
                     onClick={addTopic}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:border-teal-500 hover:text-teal-600 transition-all text-sm font-semibold"
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all text-sm font-semibold hover:-translate-y-0.5"
+                    style={{
+                        borderColor: HORIZON.primary + '40',
+                        color: HORIZON.primary
+                    }}
                 >
                     <Plus size={16} />
                     Add custom
@@ -59,12 +78,17 @@ export function StepTopics({ onContinue }: StepTopicsProps) {
                     {topics.map((topic, i) => (
                         <div
                             key={i}
-                            className="px-3 py-1.5 rounded-full bg-slate-50 border border-slate-100 flex items-center gap-2 group animate-in zoom-in-90 duration-300"
+                            className="px-4 py-2 rounded-full flex items-center gap-2 group animate-in zoom-in-90 duration-300"
+                            style={{
+                                backgroundColor: HORIZON.primaryLight,
+                                border: `1px solid ${HORIZON.primary}30`
+                            }}
                         >
-                            <span className="text-sm font-medium text-slate-700">{topic}</span>
+                            <span className="text-sm font-medium" style={{ color: HORIZON.textPrimary }}>{topic}</span>
                             <button
                                 onClick={() => removeTopic(i)}
-                                className="text-slate-400 hover:text-red-500 transition-colors"
+                                className="hover:opacity-60 transition-opacity"
+                                style={{ color: HORIZON.secondary }}
                             >
                                 <X size={14} />
                             </button>
@@ -77,11 +101,15 @@ export function StepTopics({ onContinue }: StepTopicsProps) {
                 disabled={topics.length === 0}
                 onClick={() => onContinue(topics)}
                 className={cn(
-                    "w-full lg:w-fit px-12 py-6 text-lg rounded-xl transition-all shadow-teal-100",
+                    "w-full lg:w-fit px-12 py-6 text-lg rounded-xl transition-all font-semibold",
                     topics.length > 0
-                        ? "bg-teal-600 hover:bg-teal-700 text-white shadow-xl hover:shadow-teal-200"
-                        : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                        ? "text-white hover:-translate-y-0.5"
+                        : "cursor-not-allowed opacity-50"
                 )}
+                style={{
+                    backgroundColor: topics.length > 0 ? HORIZON.primary : HORIZON.secondary,
+                    boxShadow: topics.length > 0 ? `0 15px 30px ${HORIZON.primary}30` : 'none'
+                }}
             >
                 Looks good
             </Button>
@@ -106,17 +134,28 @@ export function VisualTopics() {
     ];
 
     return (
-        <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-8 animate-in zoom-in-95 duration-700">
-            <h3 className="text-sm font-bold text-slate-900 text-center mb-6">Topic Selection Tips</h3>
+        <div
+            className="rounded-[20px] p-8 animate-in zoom-in-95 duration-700"
+            style={{
+                backgroundColor: 'white',
+                boxShadow: '0 25px 50px -12px rgba(67, 24, 255, 0.15)'
+            }}
+        >
+            <h3 className="text-sm font-bold text-center mb-6" style={{ color: HORIZON.textPrimary }}>
+                Topic Selection Tips
+            </h3>
             <div className="space-y-6">
                 {tips.map((tip, i) => (
                     <div key={i} className="flex gap-4 group">
-                        <div className="mt-1 w-5 h-5 rounded-full bg-slate-50 flex items-center justify-center flex-shrink-0 group-hover:bg-teal-50 transition-colors">
-                            <Check size={12} className="text-slate-400 group-hover:text-teal-600 transition-colors" />
+                        <div
+                            className="mt-1 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-colors group-hover:scale-110"
+                            style={{ backgroundColor: HORIZON.primaryLight }}
+                        >
+                            <Check size={12} style={{ color: HORIZON.primary }} />
                         </div>
                         <div>
-                            <h4 className="text-sm font-bold text-slate-900 mb-1 leading-snug">{tip.title}</h4>
-                            <p className="text-xs text-slate-500 leading-relaxed font-medium">{tip.description}</p>
+                            <h4 className="text-sm font-bold mb-1 leading-snug" style={{ color: HORIZON.textPrimary }}>{tip.title}</h4>
+                            <p className="text-xs leading-relaxed font-medium" style={{ color: HORIZON.textSecondary }}>{tip.description}</p>
                         </div>
                     </div>
                 ))}

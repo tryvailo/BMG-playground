@@ -74,3 +74,4 @@ SELECT kit.ensure_user_has_project('<ваш_user_id>');
 3. Ваш user ID (можно найти в Supabase Studio → Authentication → Users)
 
 
+

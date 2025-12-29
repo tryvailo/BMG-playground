@@ -6,7 +6,7 @@ import { Loader2, MapPin } from 'lucide-react';
 
 import { PageBody } from '@kit/ui/page';
 import { Button } from '@kit/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@kit/ui/card';
+import { Card, CardContent } from '@kit/ui/card';
 import { If } from '@kit/ui/if';
 
 import { LocalIndicatorsSection } from '~/components/features/playground/LocalIndicatorsSection';
@@ -67,26 +67,26 @@ export default function LocalIndicatorsPage() {
     }
 
     isLoadingRef.current = true;
-    
+
     if (!skipLoadingState) {
       setIsLoading(true);
     }
-    
-    const normalizedUrl = domain.trim().startsWith('http') 
-      ? domain.trim() 
+
+    const normalizedUrl = domain.trim().startsWith('http')
+      ? domain.trim()
       : `https://${domain.trim()}`;
-    
+
     console.log('[Local Indicators] Fetching audit for normalized URL:', normalizedUrl);
-    
+
     try {
       const latestAudit = await getLatestLocalIndicatorsAudit({ url: normalizedUrl });
-      
+
       console.log('[Local Indicators] Fetch result:', {
         hasAudit: !!latestAudit,
         hasResult: !!latestAudit?.result,
         createdAt: latestAudit?.createdAt,
       });
-      
+
       if (latestAudit && latestAudit.result) {
         console.log('[Local Indicators] Setting audit result in state');
         setResult(latestAudit.result);
@@ -203,13 +203,13 @@ export default function LocalIndicatorsPage() {
     const firecrawlApiKeyRaw = getStoredValue(STORAGE_KEYS.FIRECRAWL_API_KEY);
     const googleCustomSearchApiKeyRaw = getStoredValue(STORAGE_KEYS.GOOGLE_CUSTOM_SEARCH_API_KEY);
     const googleCustomSearchEngineIdRaw = getStoredValue(STORAGE_KEYS.GOOGLE_CUSTOM_SEARCH_ENGINE_ID);
-    
+
     // Normalize API keys (trim and check if not empty)
     const googlePlacesApiKey = googlePlacesApiKeyRaw?.trim() || undefined;
     const firecrawlApiKey = firecrawlApiKeyRaw?.trim() || undefined;
     const googleCustomSearchApiKey = googleCustomSearchApiKeyRaw?.trim() || undefined;
     const googleCustomSearchEngineId = googleCustomSearchEngineIdRaw?.trim() || undefined;
-    
+
     // Log API key status for debugging
     console.log('[Local Indicators] API Keys status:', {
       googlePlaces: googlePlacesApiKey ? 'Set' : 'Missing',
@@ -254,7 +254,7 @@ export default function LocalIndicatorsPage() {
       setResult(auditResult);
       setAuditDate(new Date().toISOString());
       toast.success('Local Indicators audit completed successfully!');
-      
+
       // Refresh data from database to ensure consistency
       // Small delay to ensure database write is complete
       setTimeout(() => {
@@ -263,7 +263,7 @@ export default function LocalIndicatorsPage() {
     } catch (error) {
       console.error('[Local Indicators] Error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
+
       // Check for API key errors
       if (errorMessage.includes('API key') || errorMessage.includes('401') || errorMessage.includes('403')) {
         toast.error('Invalid API keys. Please check your API keys.');
@@ -278,55 +278,51 @@ export default function LocalIndicatorsPage() {
 
   return (
     <PageBody>
-      <div className="flex-1 flex flex-col space-y-8 p-4 lg:p-8 bg-background">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="flex-1 flex flex-col space-y-8 p-4 lg:p-12 min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-black tracking-tighter uppercase italic">
-              Local Indicators <span className="text-primary NOT-italic">2026</span>
+            <h1 className="text-3xl font-bold" style={{ color: '#1B2559' }}>
+              Локальні показники
             </h1>
-            <p className="text-muted-foreground font-medium">
-              Comprehensive local SEO and business presence analytics.
+            <p className="text-sm mt-1" style={{ color: '#A3AED0' }}>
+              Комплексний аналіз місцевого SEO та присутності бізнесу в пошуку
             </p>
           </div>
         </div>
 
-        <Card className="border-none bg-white/70 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(15,23,42,0.04)]">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <MapPin className="h-5 w-5 text-muted-foreground" />
-              <CardTitle className="text-base">Audit Configuration</CardTitle>
+        <Card className="border-none bg-white rounded-[20px] shadow-[0_18px_40px_rgba(112,144,176,0.12)] overflow-hidden transition-all duration-300 hover:-translate-y-1">
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex flex-col">
+                <div className="flex items-center gap-3 mb-1">
+                  <MapPin className="h-5 w-5 text-[#4318FF]" />
+                  <h2 className="text-xl font-bold text-[#1B2559]">Local SEO Analysis</h2>
+                </div>
+                <p className="text-sm text-[#A3AED0]">Run a deep audit of your Google Business Profile and local visibility.</p>
+              </div>
+              <div className="flex flex-col items-end">
+                {auditDate && (
+                  <p className="text-xs text-[#A3AED0] mb-2 font-medium">
+                    Last audit: {new Date(auditDate).toLocaleString()}
+                  </p>
+                )}
+                <Button
+                  onClick={handleRunAudit}
+                  disabled={isPending || !isMounted || !getStoredValue(STORAGE_KEYS.DOMAIN)}
+                  className="w-full lg:w-auto bg-[#4318FF] hover:bg-[#4318FF]/90 text-white rounded-xl px-8"
+                >
+                  <If condition={isPending}>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  </If>
+                  {isPending ? 'Running Audit...' : 'Run New analysis'}
+                </Button>
+              </div>
             </div>
-          </CardHeader>
-
-          <CardContent>
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Domain, city, and API keys are configured in the Configuration page.
+            {isPending && result && (
+              <p className="text-xs text-[#A3AED0] mt-3 animate-pulse text-center">
+                Updating results... Previous data is still visible.
               </p>
-              
-              {auditDate && (
-                <p className="text-xs text-muted-foreground">
-                  Last audit: {new Date(auditDate).toLocaleString()}
-                </p>
-              )}
-
-              <Button
-                onClick={handleRunAudit}
-                disabled={isPending || !isMounted || !getStoredValue(STORAGE_KEYS.DOMAIN)}
-                className="w-full lg:w-auto bg-teal-600 hover:bg-teal-700 text-white shadow-xl shadow-teal-100 hover:shadow-teal-200"
-              >
-                <If condition={isPending}>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                </If>
-                {isPending ? 'Running Audit...' : 'Run Local Indicators Audit'}
-              </Button>
-              
-              {isPending && result && (
-                <p className="text-xs text-muted-foreground">
-                  Updating results... Previous data is still visible.
-                </p>
-              )}
-            </div>
+            )}
           </CardContent>
         </Card>
 
