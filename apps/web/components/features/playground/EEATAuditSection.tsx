@@ -1049,8 +1049,8 @@ export function EEATAuditSection({
                           <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />
                           <div className="text-xs text-slate-700">
                             <strong className="text-emerald-600">Good Example:</strong> All
-                            treatment articles contain a block: "Author: Cardiologist, PhD, Member of
-                            [Association]" with a link to their profile page.
+                            treatment articles contain a block: &quot;Author: Cardiologist, PhD, Member of
+                            [Association]&quot; with a link to their profile page.
                           </div>
                         </div>
                       </div>
@@ -1059,7 +1059,7 @@ export function EEATAuditSection({
                           <XCircle className="h-4 w-4 text-rose-500 mt-0.5 flex-shrink-0" />
                           <div className="text-xs text-slate-700">
                             <strong className="text-rose-600">Bad Example:</strong> Clinic
-                            blog without author names, listed only as "Site Editorial Team," with no data
+                            blog without author names, listed only as &quot;Site Editorial Team,&quot; with no data
                             on education or experience.
                           </div>
                         </div>
@@ -1278,7 +1278,7 @@ export function EEATAuditSection({
                           checked={result.authorship.author_credentials_found}
                         />
                         <p className="text-sm text-muted-foreground italic pl-8">
-                          This page does not appear to be a doctor profile page. For multi-page analysis, enable "Multi-page Analysis" and select "Doctors Only" filter.
+                          This page does not appear to be a doctor profile page. For multi-page analysis, enable &quot;Multi-page Analysis&quot; and select &quot;Doctors Only&quot; filter.
                         </p>
                       </>
                     )}
@@ -1757,7 +1757,7 @@ export function EEATAuditSection({
                         <strong className="text-emerald-600">Good Example:</strong> On the &quot;Chronic
                         Gastritis Treatment&quot; page, there is a separate &quot;Patient Story&quot; block: a concise description of
                         the situation before the visit, the examination, the prescribed treatment, the condition dynamics
-                        over 3 months, and the result (without PII/identifying data); added doctor's commentary on
+                        over 3 months, and the result (without PII/identifying data); added doctor&apos;s commentary on
                         tactic selection.
                       </div>
                     </div>
@@ -1784,7 +1784,7 @@ export function EEATAuditSection({
                   <p>• Presence of published cases overall and for main specialties (Cardiology, Dentistry, etc.).</p>
                   <p>
                     • Presence of a structured case template (complaint, diagnosis, treatment, result, timeline),
-                    rather than just a "they helped me" review.
+                    rather than just a &quot;they helped me&quot; review.
                   </p>
                 </div>
               </div>
@@ -2091,7 +2091,7 @@ export function EEATAuditSection({
                   Calculation
                 </h4>
                 <p className="text-sm text-muted-foreground">
-                  Verification of outbound links from the clinic's site to external mentions of the clinic/doctors in professional media.
+                  Verification of outbound links from the clinic&apos;s site to external mentions of the clinic/doctors in professional media.
                 </p>
               </div>
             </div>
@@ -2428,7 +2428,7 @@ export function EEATAuditSection({
                   Calculation
                 </h4>
                 <p className="text-xs text-muted-foreground">
-                  Presence/Absence of a full contacts block, legal information, and an "About the Clinic" page.
+                  Presence/Absence of a full contacts block, legal information, and an &quot;About the Clinic&quot; page.
                 </p>
               </div>
             </div>
@@ -2492,7 +2492,7 @@ export function EEATAuditSection({
 
                 {!result.trust.has_privacy_policy && (
                   <p className="text-sm text-muted-foreground italic pl-8">
-                    No privacy policy page found. Look for links to /privacy, /policy, /terms, or text "Політика конфіденційності".
+                    No privacy policy page found. Look for links to /privacy, /policy, /terms, or text &quot;Політика конфіденційності&quot;.
                   </p>
                 )}
               </div>
@@ -2526,7 +2526,7 @@ export function EEATAuditSection({
                   checked={true}
                 />
                 <p className="text-xs text-muted-foreground italic pl-8">
-                  Check for "Last Updated" dates on medical articles and the frequency of new blog posts.
+                  Check for &quot;Last Updated&quot; dates on medical articles and the frequency of new blog posts.
                 </p>
               </div>
             </div>
