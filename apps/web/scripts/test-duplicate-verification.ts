@@ -20,7 +20,7 @@ try {
       }
     }
   });
-} catch (error) {
+} catch (_error) {
   console.warn('Could not load .env.local file');
 }
 
@@ -169,7 +169,7 @@ async function main() {
     });
     console.log('');
 
-    const result = await fetchAndAnalyzePages(testUrls);
+    const _result = await fetchAndAnalyzePages(testUrls);
 
     console.log('\n' + '='.repeat(80));
     console.log('✅ Verification Complete');

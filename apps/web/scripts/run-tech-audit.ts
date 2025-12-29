@@ -26,7 +26,7 @@ try {
       }
     }
   });
-} catch (error) {
+} catch (_error) {
   // .env.local might not exist, continue without it
 }
 
@@ -35,7 +35,7 @@ const url = process.argv[2];
 // Try to get OpenAI key from: command line arg -> env var -> .env.local (already loaded)
 const openaiKey = process.argv[3] || process.env.OPENAI_API_KEY || '';
 const pageSpeedKey = process.argv[4] || process.env.GOOGLE_PAGESPEED_API_KEY || '';
-const firecrawlKey = process.argv[5] || process.env.FIRECRAWL_API_KEY || '';
+const _firecrawlKey = process.argv[5] || process.env.FIRECRAWL_API_KEY || '';
 
 if (!url) {
   console.error('❌ Error: URL is required');

@@ -4,7 +4,7 @@
  * Extracts and compares NAP data from website and external sources.
  */
 
-import { load, type CheerioAPI } from 'cheerio';
+import type { CheerioAPI } from 'cheerio';
 
 import type { NAPData, NAPComparison } from './types';
 

@@ -391,7 +391,7 @@ function calculateArchitectureScore($: CheerioAPI, url: string): number {
           const pathParts = linkUrl.pathname.split('/').filter((part) => part.length > 0);
           linkDepths.push(pathParts.length);
         }
-      } catch (error) {
+      } catch (_error) {
         // Invalid URL, skip
       }
     });
@@ -422,7 +422,7 @@ function calculateArchitectureScore($: CheerioAPI, url: string): number {
     }
 
     return Math.round(Math.max(0, Math.min(100, score)));
-  } catch (error) {
+  } catch (_error) {
     return 50; // Default score on error
   }
 }
@@ -434,7 +434,7 @@ function getDomain(url: string): string | null {
   try {
     const urlObj = new URL(url);
     return urlObj.hostname.replace(/^www\./, '').toLowerCase();
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }
@@ -491,11 +491,11 @@ function countAuthorityLinks($: CheerioAPI, baseUrl: string): number {
             count++;
           }
         }
-      } catch (error) {
+      } catch (_error) {
         // Invalid URL, skip
       }
     });
-  } catch (error) {
+  } catch (_error) {
     // Error parsing base URL, return 0
   }
 
@@ -565,7 +565,7 @@ function parseJsonLd(content: string): unknown {
 
   try {
     return JSON.parse(content.trim());
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }

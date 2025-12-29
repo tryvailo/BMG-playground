@@ -120,7 +120,7 @@ export function discoverInternalLinks(
           return false; // Break loop
         }
       }
-    } catch (error) {
+    } catch (_error) {
       // Invalid URL, skip
     }
   });

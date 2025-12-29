@@ -8,7 +8,7 @@
 'use server';
 
 import { crawlSiteContent } from '~/lib/modules/audit/firecrawl-service';
-import { load, type CheerioAPI } from 'cheerio';
+import { load } from 'cheerio';
 
 export interface ParsedReview {
   text: string;
@@ -43,7 +43,7 @@ async function findDocUaClinicUrl(
     // DOC.ua structure: https://doc.ua/clinic/[slug]
     // Or search: https://doc.ua/search?q=clinic+name+city
     
-    const searchQuery = `${clinicName} ${city}`.toLowerCase().replace(/\s+/g, '-');
+    const _searchQuery = `${clinicName} ${city}`.toLowerCase().replace(/\s+/g, '-');
     const searchUrl = `https://doc.ua/search?q=${encodeURIComponent(clinicName + ' ' + city)}`;
     
     // Use Firecrawl to get search results
@@ -379,7 +379,7 @@ function parseDate(dateText: string): string | null {
     }
     
     return null;
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }

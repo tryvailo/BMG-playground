@@ -42,7 +42,6 @@ import {
 import {
   getKnownSourcesForCity,
   findKnownSourceByDomain,
-  isKnownLocalSource,
 } from './known-sources';
 
 /*
@@ -85,7 +84,7 @@ function getDomain(url: string): string | null {
   try {
     const urlObj = new URL(url);
     return urlObj.hostname.replace(/^www\./, '').toLowerCase();
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }
@@ -149,7 +148,7 @@ function parseJsonLd(content: string): unknown {
   
   try {
     return JSON.parse(content.trim());
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }
@@ -633,7 +632,7 @@ async function analyzeGBPEngagement(
     // - Higher rating + more reviews = likely more impressions
     // - But we cannot get actual numbers without My Business API
     
-    const rating = placeData.rating || 0;
+    const _rating = placeData.rating || 0;
     const reviewCount = placeData.user_ratings_total || 0;
     
     // Very rough estimation based on review count and rating
@@ -931,7 +930,7 @@ async function analyzeLocalBacklinks(
                         }
                       }
                     }
-                  } catch (error) {
+                  } catch (_error) {
                     // Try next URL pattern
                     continue;
                   }

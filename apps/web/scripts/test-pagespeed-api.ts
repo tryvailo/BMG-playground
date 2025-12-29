@@ -91,7 +91,7 @@ async function main() {
   console.log('╚══════════════════════════════════════════════════════════════════════════════╝\n');
   
   // Analyze structure
-  const analyzeResponse = (data: any, label: string) => {
+  const analyzeResponse = (data: Record<string, unknown>, label: string) => {
     console.log(`\n📊 ${label.toUpperCase()} ANALYSIS:`);
     console.log('─'.repeat(80));
     
@@ -146,7 +146,7 @@ async function main() {
     if (data.lighthouseResult?.audits) {
       console.log('\n💡 Opportunities (Top 10):');
       const audits = data.lighthouseResult.audits;
-      const opportunities: Array<{ id: string; score: number | null; details: any }> = [];
+      const opportunities: Array<{ id: string; score: number | null; details: Record<string, unknown> }> = [];
       
       Object.keys(audits).forEach((key) => {
         const audit = audits[key];
@@ -177,7 +177,7 @@ async function main() {
     if (data.lighthouseResult?.audits) {
       console.log('\n🔍 Diagnostics (Top 5):');
       const audits = data.lighthouseResult.audits;
-      const diagnostics: Array<{ id: string; details: any }> = [];
+      const diagnostics: Array<{ id: string; details: Record<string, unknown> }> = [];
       
       Object.keys(audits).forEach((key) => {
         const audit = audits[key];
@@ -213,10 +213,10 @@ async function main() {
   console.log(`   Mobile:  ${mobileScore !== null ? Math.round(mobileScore * 100) : 'N/A'}/100`);
   
   // Core Web Vitals comparison
-  const compareMetric = (name: string, desktopAudit: any, mobileAudit: any) => {
-    const desktopValue = desktopAudit?.numericValue;
-    const mobileValue = mobileAudit?.numericValue;
-    const unit = desktopAudit?.numericUnit || mobileAudit?.numericUnit || '';
+  const compareMetric = (name: string, desktopAudit: Record<string, unknown> | undefined, mobileAudit: Record<string, unknown> | undefined) => {
+    const desktopValue = desktopAudit?.numericValue as number | undefined;
+    const mobileValue = mobileAudit?.numericValue as number | undefined;
+    const unit = (desktopAudit?.numericUnit || mobileAudit?.numericUnit || '') as string;
     
     if (desktopValue !== undefined || mobileValue !== undefined) {
       console.log(`\n${name}:`);

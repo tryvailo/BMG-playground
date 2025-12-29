@@ -9,14 +9,7 @@
  */
 
 import { execSync } from 'child_process';
-import { readFileSync, writeFileSync } from 'fs';
-import { glob } from 'glob';
 import path from 'path';
-
-const FIXABLE_PATTERNS = {
-  unusedVars: /^.*'(\w+)' is defined but never used.*$/,
-  unescapedEntities: /^.*`'` can be escaped.*$/,
-};
 
 async function fixLintErrors() {
   console.log('🔧 Запуск автоматического исправления ESLint ошибок...\n');
@@ -29,7 +22,7 @@ async function fixLintErrors() {
       cwd: path.resolve(__dirname, '../..')
     });
     console.log('✅ ESLint --fix выполнен\n');
-  } catch (error) {
+  } catch (_error) {
     console.log('⚠️  ESLint --fix завершился с ошибками (это нормально, некоторые ошибки требуют ручного исправления)\n');
   }
 
@@ -41,8 +34,8 @@ async function fixLintErrors() {
       encoding: 'utf-8',
       cwd: path.resolve(__dirname, '../..')
     }).toString();
-  } catch (error: any) {
-    lintOutput = error.stdout?.toString() || '';
+  } catch (error: unknown) {
+    lintOutput = (error as { stdout?: string })?.stdout?.toString() || '';
   }
 
   const errors = lintOutput.split('\n').filter(line => line.includes('error'));

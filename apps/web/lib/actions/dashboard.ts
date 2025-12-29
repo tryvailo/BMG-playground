@@ -262,7 +262,6 @@ export const getDashboardMetrics = enhanceAction(
           .lte('week_start', filters.dateRange.to.toISOString().split('T')[0]);
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: weeklyStatsData, error: weeklyStatsError } = await weeklyStatsQuery;
 
       if (weeklyStatsError) {
@@ -337,8 +336,8 @@ export const getDashboardMetrics = enhanceAction(
       }
 
       // Step 3: Fetch scans for competitor analysis (optional - not required for basic dashboard)
-      // Note: Using 'as any' because services table is not in the generated Supabase types yet
-      const { data: servicesData, error: servicesError } = await (supabase as any)
+      // Note: Using type assertion because services table is not in the generated Supabase types yet
+      const { data: servicesData, error: servicesError } = await (supabase as unknown as { from: (table: string) => { select: (cols: string) => { eq: (col: string, val: string) => Promise<{ data: { id: string }[] | null; error: Error | null }> } } })
         .from('services')
         .select('id')
         .eq('project_id', actualProjectId);

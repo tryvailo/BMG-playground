@@ -33,7 +33,7 @@
  *           дает качество флагмана по цене, близкой к средней.
  */
 
-import { generateUserPrompt, parseAiResponse, extractDomainsFromResponse } from '../lib/modules/ai/scanner';
+import { generateUserPrompt, extractDomainsFromResponse } from '../lib/modules/ai/scanner';
 import { performLiveTechAudit } from '../lib/modules/audit/live-scanner';
 
 /*
@@ -319,7 +319,7 @@ Important:
     };
     try {
       parsed = JSON.parse(content);
-    } catch (error) {
+    } catch (_error) {
       const jsonMatch = content.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/);
       if (jsonMatch) {
         parsed = JSON.parse(jsonMatch[1]!);
@@ -335,7 +335,7 @@ Important:
     }
     
     // Store the raw JSON content for debugging
-    (parsed as any).__rawJsonContent = content;
+    (parsed as Record<string, unknown>).__rawJsonContent = content;
 
     const result = {
       domainPresent: Boolean(parsed.domainPresent),
@@ -420,8 +420,8 @@ async function scanServiceVisibility(
   localScore: number;
   openaiText: string | null;
   perplexityText: string | null;
-  parsedJsonFromOpenAI?: any;
-  parsedJsonFromPerplexity?: any;
+  parsedJsonFromOpenAI?: Record<string, unknown>;
+  parsedJsonFromPerplexity?: Record<string, unknown>;
 }> {
   const userPrompt = generateUserPrompt(query, city);
 
@@ -447,7 +447,7 @@ async function scanServiceVisibility(
       model: PERPLEXITY_MODELS.ONLINE_PRO, // sonar-pro - основная мощная модель
       messages: [{ role: 'user', content: userPrompt }],
       temperature: 0.2, // Рекомендуется для sonar моделей
-    }).catch(async (_err1) => {
+    }).catch(async () => {
       // Fallback: try sonar (fast) if sonar-pro fails
       console.log('⚠️  Perplexity sonar-pro model failed, trying sonar (fast)...');
       try {
@@ -456,7 +456,7 @@ async function scanServiceVisibility(
           messages: [{ role: 'user', content: userPrompt }],
           temperature: 0.2,
         });
-      } catch (err2) {
+      } catch (_err2) {
         // If both online models fail, try DeepSeek as fallback
         console.log('⚠️  Trying DeepSeek R1 as fallback...');
         try {
@@ -501,12 +501,12 @@ async function scanServiceVisibility(
     rawAnalysis: string;
     trustScore: number;
     localScore: number;
-    parsedJson?: any; // Store the parsed JSON for debugging
+    parsedJson?: Record<string, unknown>; // Store the parsed JSON for debugging
   } | null = null;
 
   const allCompetitors = new Set<string>();
-  let parsedJsonFromOpenAI: any = null;
-  let parsedJsonFromPerplexity: any = null;
+  let parsedJsonFromOpenAI: Record<string, unknown> | null = null;
+  let parsedJsonFromPerplexity: Record<string, unknown> | null = null;
 
   if (openaiText) {
     console.log('\n🔍 Parsing OpenAI response...\n');
@@ -748,7 +748,7 @@ function estimateCompetitorCAIScore(position: number): number {
 /**
  * Print comparison table
  */
-function printComparisonTable(
+function _printComparisonTable(
   metrics: {
     visibilityRate: number;
     avgPosition: number | null;
@@ -926,7 +926,7 @@ async function main() {
     }));
 
     // Step 3: Output
-    const metrics = {
+    const _metrics = {
       visibilityRate,
       avgPosition,
       clinicAIScore: scoreCalculation.score,

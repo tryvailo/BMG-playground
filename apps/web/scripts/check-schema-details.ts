@@ -48,7 +48,7 @@ async function checkSchemaDetails() {
           if (parsed['@graph'] && Array.isArray(parsed['@graph'])) {
             console.log(`📊 Contains @graph with ${parsed['@graph'].length} items:\n`);
             
-            parsed['@graph'].forEach((item: any, i: number) => {
+            parsed['@graph'].forEach((item: Record<string, unknown>, i: number) => {
               console.log(`  Item ${i + 1}:`);
               const type = item['@type'] || item.type;
               console.log(`    Type: ${JSON.stringify(type)}`);

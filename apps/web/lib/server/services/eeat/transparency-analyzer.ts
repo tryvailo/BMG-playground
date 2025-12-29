@@ -4,7 +4,7 @@
  * Analyzes transparency of contacts, legal entity, and ownership information.
  */
 
-import { load, type CheerioAPI } from 'cheerio';
+import type { CheerioAPI } from 'cheerio';
 
 import type {
   LegalEntityInfo,
@@ -257,7 +257,7 @@ export function checkContactBlock($: CheerioAPI): ContactBlockInfo {
   }
 
   // Also check for map links
-  $('a[href*="google.com/maps"], a[href*="maps.google"]').each((_, element) => {
+  $('a[href*="google.com/maps"], a[href*="maps.google"]').each((_, _element) => {
     hasMap = true;
     return false; // Break
   });

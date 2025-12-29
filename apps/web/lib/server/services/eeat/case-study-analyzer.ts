@@ -4,7 +4,7 @@
  * Analyzes case study pages for structure, specialty, and PII compliance.
  */
 
-import { load, type CheerioAPI } from 'cheerio';
+import type { CheerioAPI } from 'cheerio';
 
 import type {
   CaseStudyStructure,

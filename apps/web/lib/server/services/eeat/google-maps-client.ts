@@ -27,7 +27,7 @@ export function extractPlaceIdFromUrl(url: string): string | null {
     // Pattern 3: https://www.google.com/maps/search/?api=1&query=...
     // For this case, we'd need to use Geocoding API to find place_id
     return null;
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }

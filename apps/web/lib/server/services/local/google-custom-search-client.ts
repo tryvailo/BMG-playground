@@ -164,7 +164,7 @@ export async function checkBacklink(
           
           return false; // Break
         }
-      } catch (error) {
+      } catch (_error) {
         // Invalid URL, skip
       }
     });

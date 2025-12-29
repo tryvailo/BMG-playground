@@ -4,7 +4,7 @@
  * Analyzes doctor pages for credentials, diplomas, certificates, and associations.
  */
 
-import { load, type CheerioAPI } from 'cheerio';
+import type { CheerioAPI } from 'cheerio';
 
 import type {
   DoctorCredentialsInfo,

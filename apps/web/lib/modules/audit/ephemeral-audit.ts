@@ -14,7 +14,7 @@ import type { TechAuditAnalysis } from './utils/tech-audit-analyzer';
 /**
  * PageSpeed API Response Types
  */
-interface PageSpeedMetrics {
+interface _PageSpeedMetrics {
   lcp?: number; // Largest Contentful Paint
   fcp?: number; // First Contentful Paint
   cls?: number; // Cumulative Layout Shift
@@ -309,7 +309,7 @@ async function checkFileExists(fileUrl: string): Promise<boolean> {
       signal: AbortSignal.timeout(5000),
     });
     return response.ok;
-  } catch (error) {
+  } catch (_error) {
     return false;
   }
 }

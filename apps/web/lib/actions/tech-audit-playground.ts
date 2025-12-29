@@ -29,7 +29,7 @@ type TechAuditInput = z.infer<typeof TechAuditInputSchema>;
  * @returns EphemeralAuditResult with all audit data
  */
 export const runPlaygroundTechAudit = enhanceAction(
-  async (input: TechAuditInput, user?: undefined): Promise<EphemeralAuditResult> => {
+  async (input: TechAuditInput, _user?: undefined): Promise<EphemeralAuditResult> => {
     const { domain, apiKeyOpenAI, apiKeyGooglePageSpeed } = input;
 
     console.log('[PlaygroundTechAudit] Starting audit for:', domain);
@@ -75,6 +75,7 @@ export const runPlaygroundTechAudit = enhanceAction(
         domain: insertData.domain,
       });
       
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: savedData, error: saveError } = await (supabase as any)
         .from('playground_tech_audits')
         .insert(insertData)
@@ -127,7 +128,7 @@ type AIAnalysisInput = z.infer<typeof AIAnalysisInputSchema>;
  * @returns AI analysis result
  */
 export const runAIAnalysis = enhanceAction(
-  async (input: AIAnalysisInput, user?: undefined): Promise<TechAuditAnalysis> => {
+  async (input: AIAnalysisInput, _user?: undefined): Promise<TechAuditAnalysis> => {
     const { audit, apiKeyOpenAI, duplicateAnalysis } = input;
 
     console.log('[AIAnalysis] Starting AI analysis...');
@@ -172,6 +173,7 @@ export const getLatestPlaygroundTechAudit = enhanceAction(
       console.log('[PlaygroundTechAudit] Fetching latest audit from database:', { url: normalizedUrl });
       
       // Try exact match first
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let { data, error } = await (supabase as any)
         .from('playground_tech_audits')
         .select('audit_result, created_at, id, url')
@@ -183,6 +185,7 @@ export const getLatestPlaygroundTechAudit = enhanceAction(
       // If no exact match, try without protocol (for flexibility)
       if (!data && !error) {
         const urlWithoutProtocol = normalizedUrl.replace(/^https?:\/\//, '');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: dataAlt, error: errorAlt } = await (supabase as any)
           .from('playground_tech_audits')
           .select('audit_result, created_at, id, url')

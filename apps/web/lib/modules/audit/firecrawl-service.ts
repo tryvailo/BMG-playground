@@ -195,7 +195,7 @@ export async function crawlSiteContent(
   // Validate URL
   try {
     new URL(url);
-  } catch (error) {
+  } catch (_error) {
     throw new Error(`Invalid URL: ${url}`);
   }
 

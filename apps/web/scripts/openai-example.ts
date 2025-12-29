@@ -138,7 +138,7 @@ export function createOpenAIClient(config: OpenAIClientConfig): OpenAIClient {
             try {
               const json = await response.json();
               if (json.error) errorData = json.error;
-            } catch (e) {
+            } catch (_e) {
               // Ignore parsing error, use default
             }
             throw new OpenAIAPIError(response.status, errorData);
@@ -166,7 +166,7 @@ export async function withRetry<T>(
   for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
     try {
       return await fn();
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Прекращаем попытки, если это не ошибка сети или не 429/5xx
       const isRetryable = 
         error instanceof OpenAIAPIError 
@@ -599,43 +599,7 @@ async function main() {
   } catch (err) {
     if (err instanceof OpenAIAPIError) {
       console.error(`API Error: ${err.status} - ${err.message}`);
-    } else {Now we need to build the UI for the "Technical Optimization" tab.
-Create a new component `src/components/dashboard/audit/TechAuditOverview.tsx`.
-
-**Input Props:**
-It accepts a `auditData` prop of type `TechAudit` (the DB model we defined).
-
-**Layout Requirements (Shadcn UI):**
-
-1.  **Top Section: Status & Scores**
-    - Display the Audit Date and Status (Completed/Running/Failed).
-    - **Score Cards Row:**
-      - **Desktop Speed:** Circle Gauge (0-100) using PageSpeed data. Color: Red (<50), Orange (50-89), Green (90+).
-      - **Mobile Speed:** Circle Gauge (0-100).
-      - **LLMS.txt Score:** Circle Gauge (0-100) based on AI analysis.
-
-2.  **Middle Section: File & Security Checks (Grid Layout)**
-    - **Card: "AI Files Configuration"**
-      - `llms.txt`: Badge (Found/Missing). If found, show a small "AI Quality Score".
-      - `robots.txt`: Badge (Found/Missing).
-      - `sitemap.xml`: Badge (Found/Missing).
-    - **Card: "Security & Access"**
-      - `HTTPS`: Check icon (Green) or X icon (Red).
-      - `Mobile Friendly`: Check/X icon.
-
-3.  **Bottom Section: Schema Markup Analysis**
-    - **Card: "Structured Data (Schema.org)"**
-    - Display a list of required schemas from the specs:
-      - MedicalOrganization
-      - Physician
-      - MedicalProcedure
-      - LocalBusiness
-      - FAQPage
-    - For each, show a status icon (Check/X) based on the `schema_summary` JSON data.
-
-**Styling:**
-Use `Lucide-React` icons. Ensure the layout is responsive (stack on mobile).
-If `auditData` is null (no audit run yet), show an "Empty State" with a "Run Audit" button.
+    } else {
       console.error('Network/Timeout Error:', err);
     }
   }

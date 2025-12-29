@@ -224,7 +224,7 @@ async function callPerplexityParallel(prompts: string[]) {
 /**
  * Пример использования
  */
-async function main() {
+async function _main() {
   const testPrompt = 'What are the top 3 endocrinology clinics in Kyiv, Ukraine? Provide short summary.';
 
   console.log('=== Метод 1: Простой вызов (sonar-pro) ===');

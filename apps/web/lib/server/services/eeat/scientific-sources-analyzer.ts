@@ -4,9 +4,9 @@
  * Analyzes scientific sources and calculates metrics for articles.
  */
 
-import { load, type CheerioAPI } from 'cheerio';
+import type { CheerioAPI } from 'cheerio';
 
-import type { ScientificSourcesMetrics, PublicationInfo } from './types';
+import type { ScientificSourcesMetrics } from './types';
 
 /**
  * Check if page is an article with medical content

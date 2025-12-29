@@ -20,7 +20,7 @@ try {
       }
     }
   });
-} catch (error) {
+} catch (_error) {
   console.warn('Could not load .env.local file');
 }
 
@@ -56,10 +56,10 @@ function extractTextContent(markdown: string): string {
   // Remove markdown links, images, headers
   return markdown
     .replace(/!\[.*?\]\(.*?\)/g, '') // Remove images
-    .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1') // Convert links to text
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Convert links to text
     .replace(/#{1,6}\s+/g, '') // Remove headers
-    .replace(/\*\*([^\*]+)\*\*/g, '$1') // Remove bold
-    .replace(/\*([^\*]+)\*/g, '$1') // Remove italic
+    .replace(/\*\*([^*]+)\*\*/g, '$1') // Remove bold
+    .replace(/\*([^*]+)\*/g, '$1') // Remove italic
     .replace(/`([^`]+)`/g, '$1') // Remove code
     .replace(/\n+/g, ' ') // Replace newlines with spaces
     .replace(/\s+/g, ' ') // Normalize spaces

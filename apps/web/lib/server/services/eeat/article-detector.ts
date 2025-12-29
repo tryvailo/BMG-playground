@@ -4,7 +4,7 @@
  * Detects if a page is an article and analyzes author information.
  */
 
-import { load, type CheerioAPI } from 'cheerio';
+import type { CheerioAPI } from 'cheerio';
 
 import type {
   ArticleAuthorInfo,

@@ -77,11 +77,6 @@ interface PlaceDetailsResponse {
   error_message?: string;
 }
 
-interface PlacePhotoResponse {
-  data: ArrayBuffer;
-  contentType?: string;
-}
-
 /**
  * Fetch comprehensive place details from Google Places API
  */

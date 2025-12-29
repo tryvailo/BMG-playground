@@ -4,7 +4,7 @@
  * Verifies medical author detection, aggregator rating fetching, and aggregated metrics.
  */
 
-import { analyzeEEAT, analyzeMultiplePages } from '../lib/server/services/eeat/eeat-analyzer';
+import { analyzeEEAT } from '../lib/server/services/eeat/eeat-analyzer';
 import { calculateAuthorMetrics } from '../lib/server/services/eeat/metrics-aggregator';
 import type { EEATAuditResult } from '../lib/server/services/eeat/types';
 

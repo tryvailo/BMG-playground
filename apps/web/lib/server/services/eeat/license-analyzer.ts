@@ -4,7 +4,7 @@
  * Analyzes licenses, accreditations, and related documents.
  */
 
-import { load, type CheerioAPI } from 'cheerio';
+import type { CheerioAPI } from 'cheerio';
 
 import type {
   LicenseImageInfo,

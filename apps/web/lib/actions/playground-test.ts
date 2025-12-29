@@ -978,7 +978,7 @@ Return valid JSON only, no markdown formatting.`;
 
     const parsed = JSON.parse(content);
     if (parsed.competitors && Array.isArray(parsed.competitors)) {
-      return parsed.competitors.map((comp: any) => ({
+      return parsed.competitors.map((comp: Record<string, unknown>) => ({
         rank: comp.rank || 0,
         name: comp.name || '',
         url: comp.url || undefined,

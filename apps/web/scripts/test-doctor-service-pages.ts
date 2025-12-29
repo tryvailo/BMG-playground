@@ -21,12 +21,11 @@ try {
       }
     }
   });
-} catch (error) {
+} catch (_error) {
   console.warn('Could not load .env.local file');
 }
 
 import { crawlSiteContent } from '../lib/modules/audit/firecrawl-service';
-import { analyzeContentDuplicates } from '../lib/utils/duplicate-analyzer';
 
 async function main() {
   console.log('\n╔══════════════════════════════════════════════════════════════════════════════╗');

@@ -64,7 +64,8 @@ export const getServices = enhanceAction(
     const { projectId } = params;
     const supabase = getSupabaseServerClient();
 
-    // Note: Using 'as any' because services table is not in the generated Supabase types yet
+    // Note: Using type assertion because services table is not in the generated Supabase types yet
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase as any)
       .from('services')
       .select('*')
@@ -89,7 +90,8 @@ export const createService = enhanceAction(
   async (params: CreateServiceInput) => {
     const supabase = getSupabaseServerClient();
 
-    // Note: Using 'as any' because services table is not in the generated Supabase types yet
+    // Note: Using type assertion because services table is not in the generated Supabase types yet
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase as any)
       .from('services')
       .insert({
@@ -132,7 +134,8 @@ export const updateService = enhanceAction(
     if (data.location_city !== undefined) updateData.location_city = data.location_city;
     if (data.location_country !== undefined) updateData.location_country = data.location_country;
 
-    // Note: Using 'as any' because services table is not in the generated Supabase types yet
+    // Note: Using type assertion because services table is not in the generated Supabase types yet
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: updatedService, error } = await (supabase as any)
       .from('services')
       .update(updateData)
@@ -159,7 +162,8 @@ export const deleteService = enhanceAction(
     const { id } = params;
     const supabase = getSupabaseServerClient();
 
-    // Note: Using 'as any' because services table is not in the generated Supabase types yet
+    // Note: Using type assertion because services table is not in the generated Supabase types yet
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any)
       .from('services')
       .delete()

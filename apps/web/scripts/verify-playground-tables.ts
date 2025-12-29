@@ -18,7 +18,7 @@ async function verifyTables() {
   for (const tableName of tables) {
     try {
       // Try to query the table (this will fail if table doesn't exist)
-      const { data, error } = await (supabase as any)
+      const { data: _data, error } = await (supabase as unknown as { from: (name: string) => { select: (cols: string) => { limit: (n: number) => Promise<{ data: unknown; error: { code?: string; message: string } | null }> } } })
         .from(tableName)
         .select('id')
         .limit(1);

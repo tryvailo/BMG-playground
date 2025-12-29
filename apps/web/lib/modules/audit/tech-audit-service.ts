@@ -446,7 +446,7 @@ export async function runFullTechAudit(projectId: string): Promise<string> {
 
   try {
     // Step 1: Fetch project to get domain
-    const { data: project, error: projectError } = await (supabase as any)
+    const { data: project, error: projectError } = await (supabase as unknown as { from: (table: string) => { select: (cols: string) => { eq: (col: string, val: string) => { single: () => Promise<{ data: Project | null; error: { message: string } | null }> } } } })
       .from('projects')
       .select('*')
       .eq('id', projectId)
@@ -460,7 +460,7 @@ export async function runFullTechAudit(projectId: string): Promise<string> {
     const baseUrl = normalizeUrl(projectData.domain);
 
     // Step 2: Create audit record with status 'running'
-    const { data: audit, error: auditCreateError } = await (supabase as any)
+    const { data: audit, error: auditCreateError } = await (supabase as unknown as { from: (table: string) => { insert: (data: Record<string, unknown>) => { select: () => { single: () => Promise<{ data: { id: string } | null; error: { message: string } | null }> } } } })
       .from('tech_audits')
       .insert({
         project_id: projectId,
@@ -500,8 +500,7 @@ export async function runFullTechAudit(projectId: string): Promise<string> {
     const homepageData = await parseHomepage(baseUrl);
 
     // Step 5: Create page audit record
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: pageAuditError } = await (supabase as any)
+    const { error: pageAuditError } = await (supabase as unknown as { from: (table: string) => { insert: (data: Record<string, unknown>) => Promise<{ error: { message: string } | null }> } })
       .from('pages_audit')
       .insert({
         audit_id: auditId,
@@ -533,7 +532,7 @@ export async function runFullTechAudit(projectId: string): Promise<string> {
       mobile: mobilePageSpeed.metrics,
     };
 
-    const { error: updateError } = await (supabase as any)
+    const { error: updateError } = await (supabase as unknown as { from: (table: string) => { update: (data: Record<string, unknown>) => { eq: (col: string, val: string) => Promise<{ error: { message: string } | null }> } } })
       .from('tech_audits')
       .update({
         status: 'completed',
@@ -570,8 +569,7 @@ export async function runFullTechAudit(projectId: string): Promise<string> {
     // Update audit status to 'failed' if we have an auditId
     if (auditId) {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase as any)
+        await (supabase as unknown as { from: (table: string) => { update: (data: Record<string, unknown>) => { eq: (col: string, val: string) => Promise<{ error: { message: string } | null }> } } })
           .from('tech_audits')
           .update({
             status: 'failed',

@@ -4,7 +4,7 @@
  * Analyzes media links, publications, and association memberships.
  */
 
-import { load, type CheerioAPI } from 'cheerio';
+import type { CheerioAPI } from 'cheerio';
 
 import type {
   MediaLinkInfo,
@@ -34,7 +34,7 @@ const AUTHORITATIVE_MEDIA_DOMAINS = [
  */
 export function checkMediaLinks($: CheerioAPI, baseUrl: string): MediaLinkInfo[] {
   const mediaLinks: MediaLinkInfo[] = [];
-  const textContent = $('body').text().toLowerCase();
+  const _textContent = $('body').text().toLowerCase();
 
   // Check for outbound links to media
   $('a[href]').each((_, element) => {
@@ -75,7 +75,7 @@ export function checkMediaLinks($: CheerioAPI, baseUrl: string): MediaLinkInfo[]
           }
         }
       }
-    } catch (error) {
+    } catch (_error) {
       // Invalid URL, skip
     }
   });
@@ -105,7 +105,7 @@ export function checkJournalPublications($: CheerioAPI, baseUrl: string): Public
   // Check for links to journals
   $('a[href]').each((_, element) => {
     const href = $(element).attr('href')?.toLowerCase() || '';
-    const text = $(element).text().toLowerCase();
+    const _text = $(element).text().toLowerCase();
 
     const isJournalLink = journalDomains.some((domain) => href.includes(domain));
 

@@ -38,7 +38,8 @@ export const getLatestProjectAudit = enhanceAction(
     const { projectId } = params;
     const supabase = getSupabaseServerClient();
 
-    // Note: Using 'as any' because tech_audits table is not in the generated Supabase types yet
+    // Note: Using type assertion because tech_audits table is not in the generated Supabase types yet
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase as any)
       .from('tech_audits')
       .select('*')
@@ -79,6 +80,7 @@ export const triggerTechAudit = enhanceAction(
     const supabase = getSupabaseServerClient();
 
     // Check if there's already a running audit for this project
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: runningAudit, error: checkError } = await (supabase as any)
       .from('tech_audits')
       .select('id, status')

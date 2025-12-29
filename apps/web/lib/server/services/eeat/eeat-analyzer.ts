@@ -25,11 +25,10 @@ import {
   fetchGoogleBusinessNAPFromWebsite,
 } from './google-business-client';
 import { extractArticleAuthor, analyzeAuthorProfile } from './article-detector';
-import { checkDoctorCredentials, checkAssociationMembership } from './doctor-analyzer';
+import { checkDoctorCredentials } from './doctor-analyzer';
 import {
   analyzeCaseStudyStructure,
   checkPIICompliance,
-  detectCaseStudySpecialty,
 } from './case-study-analyzer';
 import {
   checkLegalEntity,
@@ -40,10 +39,7 @@ import {
 import { checkLicenseImages, checkLicenseSection, checkAccreditations } from './license-analyzer';
 import { extractNAPFromWebsite, compareNAP } from './nap-analyzer';
 import { analyzePrivacyPolicyContent, checkGDPRCompliance } from './privacy-analyzer';
-import {
-  countScientificSourcesOnPage,
-  isMedicalArticle,
-} from './scientific-sources-analyzer';
+
 import {
   checkMediaLinks,
   checkJournalPublications,
@@ -725,8 +721,8 @@ export async function analyzeEEAT(
   }
 
   // Privacy Policy content analysis
-  let privacyPolicyContent = null;
-  const gdprCompliance = checkGDPRCompliance($);
+  let _privacyPolicyContent = null;
+  const _gdprCompliance = checkGDPRCompliance($);
   if (privacyPolicy) {
     // Try to find privacy policy URL
     let privacyUrl: string | undefined;
@@ -739,14 +735,14 @@ export async function analyzeEEAT(
       }
     });
     if (privacyUrl) {
-      privacyPolicyContent = await analyzePrivacyPolicyContent(privacyUrl);
+      _privacyPolicyContent = await analyzePrivacyPolicyContent(privacyUrl);
     }
   }
 
   // License analysis
-  const licenseImages = checkLicenseImages($, url);
-  const licenseSection = checkLicenseSection($, url);
-  const accreditations = checkAccreditations($, url);
+  const _licenseImages = checkLicenseImages($, url);
+  const _licenseSection = checkLicenseSection($, url);
+  const _accreditations = checkAccreditations($, url);
 
   // 3. Authority: Scientific Sources & Community
   const scientificSourcesCount = countScientificSources($);
@@ -777,9 +773,9 @@ export async function analyzeEEAT(
   }
 
   // Doctor expertise analysis
-  let doctorCredentials = undefined;
+  let _doctorCredentials = undefined;
   if (url.includes('/doctors/') || url.includes('/team/')) {
-    doctorCredentials = checkDoctorCredentials($);
+    _doctorCredentials = checkDoctorCredentials($);
   }
 
   // 5. Experience: Cases & Figures
