@@ -178,6 +178,7 @@ export const performLocalIndicatorsAudit = enhanceAction(
           city: insertData.city,
         });
         
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: savedData, error: saveError } = await (supabase as any)
           .from('local_indicators_audits')
           .insert(insertData)
@@ -244,6 +245,7 @@ export const getLatestLocalIndicatorsAudit = enhanceAction(
       
       // Note: Using 'as any' because local_indicators_audits table is not in the generated Supabase types yet
       // Try exact match first
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let { data, error } = await (supabase as any)
         .from('local_indicators_audits')
         .select('audit_result, created_at, id, url')
@@ -255,6 +257,7 @@ export const getLatestLocalIndicatorsAudit = enhanceAction(
       // If no exact match, try without protocol (for flexibility)
       if (!data && !error) {
         const urlWithoutProtocol = normalizedUrl.replace(/^https?:\/\//, '');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: dataAlt, error: errorAlt } = await (supabase as any)
           .from('local_indicators_audits')
           .select('audit_result, created_at, id, url')
@@ -284,6 +287,7 @@ export const getLatestLocalIndicatorsAudit = enhanceAction(
       if (!data || !data.audit_result) {
         console.log('[LocalIndicators] No audit found in database for URL:', normalizedUrl);
         // Debug: Check what URLs exist in database
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: allUrls } = await (supabase as any)
           .from('local_indicators_audits')
           .select('url, created_at')

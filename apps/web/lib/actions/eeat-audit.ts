@@ -189,6 +189,7 @@ export const runEEATAudit = enhanceAction(
           filterType: insertData.filter_type,
         });
         
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: savedData, error: saveError } = await (supabase as any)
           .from('eeat_audits')
           .insert(insertData)
@@ -228,6 +229,7 @@ export const runEEATAudit = enhanceAction(
   },
   {
     auth: false, // Playground actions don't require authentication
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     schema: EEATAuditInputSchema as any,
   },
 );
@@ -261,6 +263,7 @@ export const getLatestEEATAudit = enhanceAction(
       console.log('[EEATAudit] Fetching latest audit from database:', { url: normalizedUrl });
       
       // Try exact match first
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let { data, error } = await (supabase as any)
         .from('eeat_audits')
         .select('audit_result, created_at, id, url')
@@ -272,6 +275,7 @@ export const getLatestEEATAudit = enhanceAction(
       // If no exact match, try without protocol (for flexibility)
       if (!data && !error) {
         const urlWithoutProtocol = normalizedUrl.replace(/^https?:\/\//, '');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: dataAlt, error: errorAlt } = await (supabase as any)
           .from('eeat_audits')
           .select('audit_result, created_at, id, url')

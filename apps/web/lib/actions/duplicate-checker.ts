@@ -145,6 +145,7 @@ export const runDuplicateCheckAction = enhanceAction(
   },
   {
     auth: false, // Allow unauthenticated access (for playground)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     schema: DuplicateCheckInputSchema as any,
   },
 );
