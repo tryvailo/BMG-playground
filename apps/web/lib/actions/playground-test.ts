@@ -7,7 +7,7 @@ import { enhanceAction } from '@kit/next/actions';
 import { generateUserPrompt } from '~/lib/modules/ai/scanner';
 import { calculateClinicAIScore } from '~/lib/modules/analytics/calculator';
 import { mapLiveScanToDashboard, type ScanResult } from '~/lib/modules/ai/simulation-adapter';
-import { performEphemeralTechAudit, type EphemeralAuditResult } from '~/lib/modules/audit/ephemeral-audit';
+import type { EphemeralAuditResult } from '~/lib/modules/audit/ephemeral-audit';
 import type { TechAuditResult } from '~/lib/modules/audit/live-scanner';
 import type { DashboardData } from '~/components/dashboard/DashboardView';
 
@@ -246,7 +246,7 @@ async function withRetry<T>(
   for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
     try {
       return await fn();
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Прекращаем попытки, если это не ошибка сети или не 429/5xx
       const isRetryable = 
         (error instanceof OpenAIAPIError || error instanceof PerplexityAPIError)
@@ -313,7 +313,7 @@ function createOpenAIClient(config: OpenAIClientConfig): OpenAIClient {
             try {
               const json = await response.json();
               if (json.error) errorData = json.error;
-            } catch (e) {
+            } catch (_e) {
               // Ignore parsing error, use default
             }
             throw new OpenAIAPIError(response.status, errorData);
@@ -358,7 +358,7 @@ function createPerplexityClient(config: PerplexityClientConfig): PerplexityClien
             try {
               const json = await response.json();
               if (json.error) errorData = json.error;
-            } catch (e) {
+            } catch (_e) {
               // Ignore parsing error, use default
             }
             throw new PerplexityAPIError(response.status, errorData);
@@ -395,7 +395,7 @@ export interface LLMRequestLog {
   model: string;
   role: 'scanner' | 'parser';
   prompt: string;
-  requestBody: any;
+  requestBody: unknown;
   responseBody: {
     content: string;
     model: string;
@@ -681,7 +681,7 @@ async function parseAiResponseWithClient(
   responseText: string,
   targetDomain: string,
   openaiApiKey: string,
-  existingLogs: LLMRequestLog[] = [],
+  _existingLogs: LLMRequestLog[] = [],
 ): Promise<{
   parsed: {
     domainPresent: boolean;
@@ -802,7 +802,7 @@ Important:
     };
     try {
       parsed = JSON.parse(content);
-    } catch (error) {
+    } catch (_error) {
       // Fallback: try to extract JSON from markdown code blocks
       const jsonMatch = content.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/);
       if (jsonMatch) {
