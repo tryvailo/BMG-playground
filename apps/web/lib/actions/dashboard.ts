@@ -73,7 +73,8 @@ export const getDashboardMetrics = enhanceAction(
         console.log('[Dashboard] Looking for user project, user ID:', user.sub);
         
         // Try to find user's first project
-        const { data: userProjects, error: userProjectsError } = await (supabase as unknown as { from: (table: string) => { select: (columns: string) => { eq: (column: string, value: string) => { limit: (count: number) => Promise<{ data: unknown; error: unknown }> } } } } })
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: userProjects, error: userProjectsError } = await (supabase as any)
           .from('projects')
           .select('*')
           .eq('organization_id', user.sub)
@@ -149,6 +150,7 @@ export const getDashboardMetrics = enhanceAction(
               console.error('[Dashboard] Still no project after ensuring:', retryError);
               // Fallback to demo project
               if (projectId === 'demo') {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const { data: demoProject } = await (supabase as any)
                   .from('projects')
                   .select('*')
@@ -160,10 +162,11 @@ export const getDashboardMetrics = enhanceAction(
                 }
               }
             }
-          } catch (error) {
-            console.error('[Dashboard] Exception while ensuring project:', error);
+          } catch (_error) {
+            console.error('[Dashboard] Exception while ensuring project:', _error);
             // Fallback to demo project
             if (projectId === 'demo') {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const { data: demoProject } = await (supabase as any)
                 .from('projects')
                 .select('*')
@@ -178,6 +181,7 @@ export const getDashboardMetrics = enhanceAction(
         }
       } else if (projectId === 'demo') {
         // No user, use demo project
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: demoProject } = await (supabase as any)
           .from('projects')
           .select('*')
@@ -189,6 +193,7 @@ export const getDashboardMetrics = enhanceAction(
         }
       } else {
         // Search by UUID
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: foundProject, error: foundError } = await (supabase as any)
           .from('projects')
           .select('*')
@@ -243,6 +248,7 @@ export const getDashboardMetrics = enhanceAction(
 
       // Step 2: Fetch weekly stats FIRST (this is the primary data source for dashboard)
       // Note: Using 'as any' because weekly_stats table is not in the generated Supabase types yet
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let weeklyStatsQuery = (supabase as any)
         .from('weekly_stats')
         .select('*')
@@ -256,6 +262,7 @@ export const getDashboardMetrics = enhanceAction(
           .lte('week_start', filters.dateRange.to.toISOString().split('T')[0]);
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: weeklyStatsData, error: weeklyStatsError } = await weeklyStatsQuery;
 
       if (weeklyStatsError) {
@@ -275,6 +282,7 @@ export const getDashboardMetrics = enhanceAction(
         if (user?.sub) {
           console.log('[Dashboard] Attempting to ensure project has data for user:', user.sub);
           try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const { data: ensureResult, error: ensureError } = await (supabase as any)
               .rpc('ensure_user_has_project', { account_id: user.sub });
             
@@ -284,6 +292,7 @@ export const getDashboardMetrics = enhanceAction(
               console.log('[Dashboard] ensure_user_has_project result:', ensureResult);
               
               // Fetch again
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const { data: retryStats } = await (supabase as any)
                 .from('weekly_stats')
                 .select('*')
@@ -339,6 +348,7 @@ export const getDashboardMetrics = enhanceAction(
 
       // Only fetch scans if we have services
       if (serviceIds.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let scansQuery = (supabase as any)
           .from('scans')
           .select('*')

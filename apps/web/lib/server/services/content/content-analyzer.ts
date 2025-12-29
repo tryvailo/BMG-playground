@@ -155,8 +155,8 @@ function detectDoctorPages($: CheerioAPI): boolean {
   $('a[href]').each((_, element) => {
     const href = $(element).attr('href')?.toLowerCase() || '';
     // Look for patterns like /doctors/id, /team/member, /vrachi/name
-    if (/[\/\.](doctors|team|vrachi|likari|specialists)[\/\.]/i.test(href) ||
-      /[\/\.](doctor|likar|vrach)[\/\.]/i.test(href)) {
+    if (/[/.](doctors|team|vrachi|likari|specialists)[/.]/i.test(href) ||
+      /[/.](doctor|likar|vrach)[/.]/i.test(href)) {
       hasDoctorLink = true;
       return false; // Break loop
     }
@@ -193,7 +193,7 @@ function detectServicePages($: CheerioAPI): boolean {
   $('a[href]').each((_, element) => {
     const href = $(element).attr('href')?.toLowerCase() || '';
     // Look for service-like URL patterns
-    if (/[\/\.](services|poslugi|uslugi)[\/\.]/i.test(href)) {
+    if (/[/.](services|poslugi|uslugi)[/.]/i.test(href)) {
       uniqueServiceUrls.add(href);
     }
   });
@@ -210,7 +210,7 @@ function detectDirectionPagesCount($: CheerioAPI): number {
   $('a[href]').each((_, element) => {
     const href = $(element).attr('href')?.toLowerCase() || '';
     // Look for direction-like URL patterns
-    if (/[\/\.](napryamki|directions|specials|otdeleniya|viddilennya)[\/\.]/i.test(href)) {
+    if (/[/.](napryamki|directions|specials|otdeleniya|viddilennya)[/.]/i.test(href)) {
       uniqueDirectionUrls.add(href);
     }
   });
@@ -226,7 +226,7 @@ function countServicePages($: CheerioAPI): number {
 
   $('a[href]').each((_, element) => {
     const href = $(element).attr('href')?.toLowerCase() || '';
-    if (/[\/\.](services|poslugi|uslugi)[\/\.]/i.test(href)) {
+    if (/[/.](services|poslugi|uslugi)[/.]/i.test(href)) {
       uniqueServiceUrls.add(href);
     }
   });
@@ -520,7 +520,7 @@ function hasValidPhone($: CheerioAPI): boolean {
   const phonePatterns = [
     /\+380\s?\d{2}\s?\d{3}\s?\d{2}\s?\d{2}/, // +380 XX XXX XX XX
     /0\d{2}\s?\d{3}\s?\d{2}\s?\d{2}/, // 0XX XXX XX XX
-    /\(\d{3}\)\s?\d{3}-\d{2}-\d{2}/, // (XXX) XXX-XX-XX
+    /(\d{3})\s?\d{3}-\d{2}-\d{2}/, // (XXX) XXX-XX-XX
     /\+7\s?\d{3}\s?\d{3}\s?\d{2}\s?\d{2}/, // +7 XXX XXX XX XX
     /8\s?\d{3}\s?\d{3}\s?\d{2}\s?\d{2}/, // 8 XXX XXX XX XX
   ];

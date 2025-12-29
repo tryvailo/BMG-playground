@@ -166,7 +166,7 @@ async function fetchPageSpeed(
       metrics,
     };
     } catch (error) {
-    console.error('[TechAudit] Error fetching PageSpeed data:', error);
+      console.error('[TechAudit] Error fetching PageSpeed data:', error);
     return { score: null, metrics: {} };
   }
 }
@@ -403,7 +403,7 @@ async function parseHomepage(url: string): Promise<{
       issues,
     };
     } catch (error) {
-    console.error('[TechAudit] Error parsing homepage:', error);
+      console.error('[TechAudit] Error parsing homepage:', error);
     issues.push(`Error parsing page: ${error instanceof Error ? error.message : 'Unknown error'}`);
     return {
       title: null,
@@ -500,6 +500,7 @@ export async function runFullTechAudit(projectId: string): Promise<string> {
     const homepageData = await parseHomepage(baseUrl);
 
     // Step 5: Create page audit record
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error: pageAuditError } = await (supabase as any)
       .from('pages_audit')
       .insert({
@@ -563,12 +564,13 @@ export async function runFullTechAudit(projectId: string): Promise<string> {
       throw new Error('Failed to create audit record: auditId is null');
     }
     return auditId;
-    } catch (error) {
+  } catch (error) {
     console.error('[TechAudit] Error running full tech audit:', error);
 
     // Update audit status to 'failed' if we have an auditId
     if (auditId) {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await (supabase as any)
           .from('tech_audits')
           .update({
