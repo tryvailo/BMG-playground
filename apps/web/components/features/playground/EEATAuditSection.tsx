@@ -1133,8 +1133,8 @@ export function EEATAuditSection({
                           <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />
                           <div className="text-xs text-slate-700">
                             <strong className="text-emerald-600">Good Example:</strong> All
-                            treatment articles contain a block: "Author: Cardiologist, PhD, Member of
-                            [Association]" with a link to their profile page.
+                            treatment articles contain a block: &quot;Author: Cardiologist, PhD, Member of
+                            [Association]&quot; with a link to their profile page.
                           </div>
                         </div>
                       </div>
@@ -1143,7 +1143,7 @@ export function EEATAuditSection({
                           <XCircle className="h-4 w-4 text-rose-500 mt-0.5 flex-shrink-0" />
                           <div className="text-xs text-slate-700">
                             <strong className="text-rose-600">Bad Example:</strong> Clinic
-                            blog without author names, listed only as "Site Editorial Team," with no data
+                            blog without author names, listed only as &quot;Site Editorial Team,&quot; with no data
                             on education or experience.
                           </div>
                         </div>
