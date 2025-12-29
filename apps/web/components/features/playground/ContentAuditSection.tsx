@@ -34,20 +34,24 @@ const HORIZON = {
   primary: '#4318FF',
   primaryLight: '#4318FF15',
   secondary: '#A3AED0',
+  secondaryLight: '#A3AED015',
   success: '#01B574',
   successLight: '#01B57415',
   warning: '#FFB547',
   warningLight: '#FFB54715',
   error: '#EE5D50',
   errorLight: '#EE5D5015',
+  info: '#2B77E5',
+  infoLight: '#2B77E515',
   background: '#F4F7FE',
   textPrimary: '#1B2559',
   textSecondary: '#A3AED0',
   shadow: '0 18px 40px rgba(112, 144, 176, 0.12)',
+  shadowSm: '0 4px 12px rgba(112, 144, 176, 0.1)',
 };
 
 // --- Horizon Card Component ---
-interface BentoCardProps {
+interface HorizonCardProps {
   children: React.ReactNode;
   className?: string;
   title?: string;
@@ -55,7 +59,7 @@ interface BentoCardProps {
   style?: React.CSSProperties;
 }
 
-const BentoCard = ({ children, className, title, subtitle, style }: BentoCardProps) => (
+const HorizonCard = ({ children, className, title, subtitle, style }: HorizonCardProps) => (
   <Card
     className={cn(
       "border-none bg-white rounded-[20px] overflow-hidden transition-all duration-300",
@@ -66,12 +70,12 @@ const BentoCard = ({ children, className, title, subtitle, style }: BentoCardPro
     {(title || subtitle) && (
       <CardHeader className="pb-2">
         {title && (
-          <h3 className="text-lg font-bold" style={{ color: HORIZON.textPrimary }}>
+          <h3 className="text-sm font-bold uppercase tracking-widest mb-1" style={{ color: HORIZON.textSecondary }}>
             {title}
           </h3>
         )}
         {subtitle && (
-          <p className="text-sm" style={{ color: HORIZON.textSecondary }}>
+          <p className="text-sm font-bold" style={{ color: HORIZON.textPrimary }}>
             {subtitle}
           </p>
         )}
@@ -106,37 +110,37 @@ function ProgressBar({ value, max = 100, label, showValue = true, size = 'md' }:
   const percentage = Math.min(100, Math.max(0, (value / max) * 100));
 
   const getColor = () => {
-    if (percentage < 50) return 'bg-red-600';
-    if (percentage < 90) return 'bg-orange-500';
-    return 'bg-emerald-600';
+    if (percentage < 50) return HORIZON.error;
+    if (percentage < 90) return HORIZON.warning;
+    return HORIZON.success;
   };
 
   const heightClasses = {
-    sm: 'h-2.5',
-    md: 'h-3',
-    lg: 'h-4',
+    sm: 'h-1.5',
+    md: 'h-2',
+    lg: 'h-3',
   };
 
   return (
     <div className="w-full">
       {label && (
         <div className="flex justify-between items-center mb-1.5">
-          <span className="text-sm font-bold text-slate-700">{label}</span>
+          <span className="text-xs font-bold" style={{ color: HORIZON.textSecondary }}>{label}</span>
           {showValue && (
-            <span className="text-sm font-black text-slate-900">
+            <span className="text-xs font-bold" style={{ color: HORIZON.textPrimary }}>
               {Math.round(percentage)}%
             </span>
           )}
         </div>
       )}
-      <div className={cn('w-full bg-slate-200 rounded-full overflow-hidden relative border border-slate-300', heightClasses[size])}>
+      <div className={cn('w-full bg-[#F4F7FE] rounded-full overflow-hidden', heightClasses[size])}>
         <div
-          className={cn('transition-all duration-500 ease-out rounded-full shadow-sm', getColor())}
+          className="transition-all duration-500 ease-out rounded-full shadow-sm"
           style={{
             width: `${percentage}%`,
             height: '100%',
-            minWidth: percentage > 0 ? '4px' : '0',
-            minHeight: '100%'
+            backgroundColor: getColor(),
+            minWidth: percentage > 0 ? '4px' : '0'
           }}
         />
       </div>
@@ -170,7 +174,6 @@ function MinimalMetricCard({
 }: MinimalMetricCardProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
-  // Auto-calculate score from status if score is not provided
   const calculatedScore = score !== undefined && score !== null
     ? score
     : status === 'good'
@@ -184,43 +187,32 @@ function MinimalMetricCard({
   const getStatusIcon = () => {
     switch (status) {
       case 'good':
-        return <CheckCircle2 className="h-5 w-5 text-emerald-600" />;
+        return <CheckCircle2 className="h-5 w-5" style={{ color: HORIZON.success }} />;
       case 'bad':
-        return <XCircle className="h-5 w-5 text-red-600" />;
+        return <XCircle className="h-5 w-5" style={{ color: HORIZON.error }} />;
       case 'warning':
-        return <AlertCircle className="h-5 w-5 text-orange-600" />;
+        return <AlertCircle className="h-5 w-5" style={{ color: HORIZON.warning }} />;
       default:
-        return <Info className="h-5 w-5 text-slate-400" />;
-    }
-  };
-
-  const getStatusColor = () => {
-    switch (status) {
-      case 'good':
-        return 'bg-emerald-50 border-emerald-300';
-      case 'bad':
-        return 'bg-red-50 border-red-300';
-      case 'warning':
-        return 'bg-orange-50 border-orange-300';
-      default:
-        return 'bg-white border-slate-200';
+        return <Info className="h-5 w-5" style={{ color: HORIZON.textSecondary }} />;
     }
   };
 
   return (
-    <BentoCard className={cn('border-2', getStatusColor())}>
+    <HorizonCard className="border-none shadow-sm">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer hover:bg-slate-50/50 transition-colors">
+          <div className="cursor-pointer hover:opacity-80 transition-opacity p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {icon || getStatusIcon()}
+                <div className="p-2 rounded-xl bg-[#F4F7FE] border border-[#E2E8F0]">
+                  {icon || getStatusIcon()}
+                </div>
                 <div>
-                  <CardTitle className="text-base font-bold text-slate-900">
+                  <CardTitle className="text-base font-bold" style={{ color: HORIZON.textPrimary }}>
                     {title}
                   </CardTitle>
                   {description && (
-                    <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
+                    <p className="text-xs mt-0.5 line-clamp-1" style={{ color: HORIZON.textSecondary }}>
                       {description}
                     </p>
                   )}
@@ -230,18 +222,18 @@ function MinimalMetricCard({
                 {calculatedScore !== null && calculatedScore !== undefined ? (
                   <div className="flex items-center gap-2">
                     <span className={cn(
-                      'text-lg font-black italic',
-                      calculatedScore >= 90 ? 'text-emerald-500' :
-                        calculatedScore >= 50 ? 'text-orange-500' :
-                          'text-rose-500'
+                      'text-2xl font-bold tracking-tighter',
+                      calculatedScore >= 90 ? 'text-[#01B574]' :
+                        calculatedScore >= 50 ? 'text-[#FFB547]' :
+                          'text-[#EE5D50]'
                     )}>
                       {calculatedScore}
                     </span>
-                    <span className="text-sm text-slate-500">/100</span>
+                    <span className="text-sm font-bold" style={{ color: HORIZON.textSecondary }}>/100</span>
                   </div>
                 ) : null}
                 {value && (
-                  <span className="text-base font-bold text-slate-900">
+                  <span className="text-base font-bold" style={{ color: HORIZON.textPrimary }}>
                     {value}
                   </span>
                 )}
@@ -256,19 +248,19 @@ function MinimalMetricCard({
                 <ProgressBar value={calculatedScore} size="sm" showValue={false} />
               </div>
             ) : (
-              <div className="mt-3 h-2.5 w-full bg-slate-100 rounded-full border border-slate-200" />
+              <div className="mt-3 h-1.5 w-full bg-[#F4F7FE] rounded-full" />
             )}
-          </CardHeader>
+          </div>
         </CollapsibleTrigger>
         {children && (
           <CollapsibleContent>
-            <CardContent className="pt-0">
+            <div className="px-4 pb-4 pt-2 border-t border-[#F4F7FE]">
               {children}
-            </CardContent>
+            </div>
           </CollapsibleContent>
         )}
       </Collapsible>
-    </BentoCard>
+    </HorizonCard>
   );
 }
 
@@ -312,15 +304,15 @@ export function ContentAuditSection({ result, className }: ContentAuditSectionPr
   const overallScore = calculateOverallScore(result);
 
   const getScoreColor = (score: number) => {
-    if (score >= 90) return 'text-emerald-700';
-    if (score >= 50) return 'text-orange-600';
-    return 'text-red-600';
+    if (score >= 90) return HORIZON.success;
+    if (score >= 50) return HORIZON.warning;
+    return HORIZON.error;
   };
 
   const getScoreBgColor = (score: number) => {
-    if (score >= 90) return 'bg-emerald-50 border-emerald-300';
-    if (score >= 50) return 'bg-orange-50 border-orange-300';
-    return 'bg-red-50 border-red-300';
+    if (score >= 90) return 'rgba(1, 181, 116, 0.05)';
+    if (score >= 50) return 'rgba(255, 181, 71, 0.05)';
+    return 'rgba(238, 93, 80, 0.05)';
   };
 
   // Calculate category scores
@@ -345,80 +337,59 @@ export function ContentAuditSection({ result, className }: ContentAuditSectionPr
   return (
     <div className={cn('space-y-6', className)}>
       {/* Results Header */}
-      <BentoCard className={cn('border-2 relative overflow-hidden bg-white', getScoreBgColor(overallScore))}>
+      <HorizonCard className="relative overflow-hidden" style={{ border: `1px solid ${getScoreColor(overallScore)}20`, backgroundColor: getScoreBgColor(overallScore) }}>
         <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
           <FileText className="w-24 h-24" />
         </div>
-        <CardHeader>
+        <div>
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-black italic tracking-tighter text-slate-900 mb-2">
+              <h3 className="text-sm font-bold uppercase tracking-widest mb-1" style={{ color: HORIZON.textSecondary }}>
+                Overall Score
+              </h3>
+              <p className="text-2xl font-bold" style={{ color: HORIZON.textPrimary }}>
                 {t('title')}
-              </h1>
-              <p className="text-sm font-medium text-slate-700">
+              </p>
+              <p className="text-sm font-medium mt-1" style={{ color: HORIZON.textSecondary }}>
                 {t('description')}
               </p>
             </div>
             <div className="text-center">
-              <div className={cn('text-5xl font-black italic tracking-tighter mb-1', getScoreColor(overallScore))}>
+              <div className="text-5xl font-bold tracking-tighter mb-1" style={{ color: getScoreColor(overallScore) }}>
                 {overallScore}
               </div>
-              <div className="text-sm font-bold text-slate-600">
+              <div className="text-xs font-bold uppercase tracking-widest" style={{ color: HORIZON.textSecondary }}>
                 / 100
               </div>
             </div>
           </div>
 
           {/* Category Progress Bars */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-            <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+            <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Structure</span>
-                <span className="text-xs font-black text-slate-900">{categoryScores.structure}%</span>
+                <span className="text-xs font-bold uppercase tracking-widest" style={{ color: HORIZON.textSecondary }}>Structure</span>
+                <span className="text-xs font-bold" style={{ color: HORIZON.textPrimary }}>{categoryScores.structure}%</span>
               </div>
-              <div className="h-3 w-full bg-slate-200 rounded-full overflow-hidden relative border border-slate-300">
-                <div
-                  className={cn(
-                    'transition-all duration-500 ease-out rounded-full shadow-sm h-full',
-                    categoryScores.structure >= 90 ? 'bg-emerald-600' : categoryScores.structure >= 50 ? 'bg-orange-500' : 'bg-red-600'
-                  )}
-                  style={{ width: `${categoryScores.structure}%`, minWidth: categoryScores.structure > 0 ? '4px' : '0' }}
-                />
-              </div>
+              <ProgressBar value={categoryScores.structure} size="sm" showValue={false} />
             </div>
-            <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+            <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Text Quality</span>
-                <span className="text-xs font-black text-slate-900">{Math.round(categoryScores.textQuality)}%</span>
+                <span className="text-xs font-bold uppercase tracking-widest" style={{ color: HORIZON.textSecondary }}>Text Quality</span>
+                <span className="text-xs font-bold" style={{ color: HORIZON.textPrimary }}>{Math.round(categoryScores.textQuality)}%</span>
               </div>
-              <div className="h-3 w-full bg-slate-200 rounded-full overflow-hidden relative border border-slate-300">
-                <div
-                  className={cn(
-                    'transition-all duration-500 ease-out rounded-full shadow-sm h-full',
-                    categoryScores.textQuality >= 90 ? 'bg-emerald-600' : categoryScores.textQuality >= 50 ? 'bg-orange-500' : 'bg-red-600'
-                  )}
-                  style={{ width: `${categoryScores.textQuality}%`, minWidth: categoryScores.textQuality > 0 ? '4px' : '0' }}
-                />
-              </div>
+              <ProgressBar value={categoryScores.textQuality} size="sm" showValue={false} />
             </div>
-            <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+            <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Authority</span>
-                <span className="text-xs font-black text-slate-900">{categoryScores.authority}%</span>
+                <span className="text-xs font-bold uppercase tracking-widest" style={{ color: HORIZON.textSecondary }}>Authority</span>
+                <span className="text-xs font-bold" style={{ color: HORIZON.textPrimary }}>{categoryScores.authority}%</span>
               </div>
-              <div className="h-3 w-full bg-slate-200 rounded-full overflow-hidden relative border border-slate-300">
-                <div
-                  className={cn(
-                    'transition-all duration-500 ease-out rounded-full shadow-sm h-full',
-                    categoryScores.authority >= 90 ? 'bg-emerald-600' : categoryScores.authority >= 50 ? 'bg-orange-500' : 'bg-red-600'
-                  )}
-                  style={{ width: `${categoryScores.authority}%`, minWidth: categoryScores.authority > 0 ? '4px' : '0' }}
-                />
-              </div>
+              <ProgressBar value={categoryScores.authority} size="sm" showValue={false} />
             </div>
           </div>
-        </CardHeader>
-      </BentoCard>
+        </div>
+      </HorizonCard>
 
       {/* Audit Items List */}
       <div className="space-y-3">
@@ -613,24 +584,31 @@ export function ContentAuditSection({ result, className }: ContentAuditSectionPr
 
       {/* Recommendations */}
       {result.recommendations.length > 0 && (
-        <BentoCard className="border-2 border-orange-300 bg-orange-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-orange-600 text-xl font-black italic">
-              <AlertTriangle className="h-6 w-6 text-orange-600" />
-              Рекомендації ({result.recommendations.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+        <HorizonCard className="border-none" style={{ backgroundColor: '#FFF9F2' }}>
+          <div>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 rounded-xl bg-[#FFB54720]">
+                <AlertTriangle className="h-6 w-6 text-[#FFB547]" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold uppercase tracking-widest mb-1" style={{ color: HORIZON.textSecondary }}>
+                  Action Plan
+                </h3>
+                <p className="text-xl font-bold" style={{ color: HORIZON.textPrimary }}>
+                  Recommendations ({result.recommendations.length})
+                </p>
+              </div>
+            </div>
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
               {result.recommendations.map((rec, index) => (
                 <li key={index} className="flex items-start gap-2 text-sm">
-                  <span className="text-orange-500 mt-0.5 flex-shrink-0">•</span>
-                  <span className="text-slate-700 leading-relaxed">{rec}</span>
+                  <span className="text-[#FFB547] mt-1 flex-shrink-0 font-bold">•</span>
+                  <span className="leading-relaxed font-medium" style={{ color: '#4A5568' }}>{rec}</span>
                 </li>
               ))}
             </ul>
-          </CardContent>
-        </BentoCard>
+          </div>
+        </HorizonCard>
       )}
     </div>
   );

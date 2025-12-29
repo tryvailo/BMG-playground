@@ -278,51 +278,48 @@ export default function LocalIndicatorsPage() {
 
   return (
     <PageBody>
-      <div className="flex-1 flex flex-col space-y-8 p-4 lg:p-12 min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
+      <div className="flex-1 flex flex-col space-y-8 p-4 lg:p-8 min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold" style={{ color: '#1B2559' }}>
               Локальні показники
             </h1>
             <p className="text-sm mt-1" style={{ color: '#A3AED0' }}>
-              Комплексний аналіз місцевого SEO та присутності бізнесу в пошуку
+              Відстежуйте та аналізуйте свої локальні показники в пошуку
             </p>
           </div>
         </div>
 
-        <Card className="border-none bg-white rounded-[20px] shadow-[0_18px_40px_rgba(112,144,176,0.12)] overflow-hidden transition-all duration-300 hover:-translate-y-1">
+        <Card className="border-none bg-white rounded-[20px] overflow-hidden transition-all duration-300 shadow-[0_18px_40px_rgba(112,144,176,0.12)]">
           <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="flex flex-col">
-                <div className="flex items-center gap-3 mb-1">
-                  <MapPin className="h-5 w-5 text-[#4318FF]" />
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center bg-[#4318FF15]">
+                    <MapPin className="h-5 w-5 text-[#4318FF]" />
+                  </div>
                   <h2 className="text-xl font-bold text-[#1B2559]">Local SEO Analysis</h2>
                 </div>
-                <p className="text-sm text-[#A3AED0]">Run a deep audit of your Google Business Profile and local visibility.</p>
+                <p className="text-sm text-[#A3AED0] max-w-md">Запустіть глибокий аудит вашого Google Business Profile та локальної видимості.</p>
               </div>
-              <div className="flex flex-col items-end">
+              <div className="flex flex-col items-center md:items-end gap-3">
                 {auditDate && (
-                  <p className="text-xs text-[#A3AED0] mb-2 font-medium">
-                    Last audit: {new Date(auditDate).toLocaleString()}
+                  <p className="text-xs font-medium text-[#A3AED0]">
+                    Останній аудит: {new Date(auditDate).toLocaleString('uk-UA')}
                   </p>
                 )}
                 <Button
                   onClick={handleRunAudit}
                   disabled={isPending || !isMounted || !getStoredValue(STORAGE_KEYS.DOMAIN)}
-                  className="w-full lg:w-auto bg-[#4318FF] hover:bg-[#4318FF]/90 text-white rounded-xl px-8"
+                  className="w-full lg:w-auto bg-[#4318FF] hover:bg-[#4318FF]/90 text-white rounded-xl px-8 h-12 font-bold transition-all duration-200 shadow-[0_4px_12px_rgba(67,24,255,0.2)]"
                 >
                   <If condition={isPending}>
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   </If>
-                  {isPending ? 'Running Audit...' : 'Run New analysis'}
+                  {isPending ? 'Запуск аудиту...' : 'Запустити аналіз'}
                 </Button>
               </div>
             </div>
-            {isPending && result && (
-              <p className="text-xs text-[#A3AED0] mt-3 animate-pulse text-center">
-                Updating results... Previous data is still visible.
-              </p>
-            )}
           </CardContent>
         </Card>
 

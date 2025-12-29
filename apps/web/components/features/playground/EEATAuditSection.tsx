@@ -76,7 +76,7 @@ interface BentoCardProps {
   style?: React.CSSProperties;
 }
 
-const BentoCard = ({ children, className, title, subtitle, style }: BentoCardProps) => (
+const HorizonCard = ({ children, className, title, subtitle, style }: BentoCardProps) => (
   <Card
     className={cn(
       "border-none bg-white rounded-[20px] overflow-hidden transition-all duration-300",
@@ -87,12 +87,12 @@ const BentoCard = ({ children, className, title, subtitle, style }: BentoCardPro
     {(title || subtitle) && (
       <CardHeader className="pb-2">
         {title && (
-          <h3 className="text-lg font-bold" style={{ color: HORIZON.textPrimary }}>
+          <h3 className="text-sm font-bold uppercase tracking-widest mb-1" style={{ color: HORIZON.textSecondary }}>
             {title}
           </h3>
         )}
         {subtitle && (
-          <p className="text-sm" style={{ color: HORIZON.textSecondary }}>
+          <p className="text-sm font-bold" style={{ color: HORIZON.textPrimary }}>
             {subtitle}
           </p>
         )}
@@ -238,37 +238,37 @@ function ProgressBar({ value, max = 100, label, showValue = true, size = 'md' }:
   const percentage = Math.min(100, Math.max(0, (value / max) * 100));
 
   const getColor = () => {
-    if (percentage < 50) return 'bg-red-600';
-    if (percentage < 90) return 'bg-orange-500';
-    return 'bg-emerald-600';
+    if (percentage < 50) return HORIZON.error;
+    if (percentage < 90) return HORIZON.warning;
+    return HORIZON.success;
   };
 
   const heightClasses = {
-    sm: 'h-2.5',
-    md: 'h-3',
-    lg: 'h-4',
+    sm: 'h-1.5',
+    md: 'h-2',
+    lg: 'h-3',
   };
 
   return (
     <div className="w-full">
       {label && (
         <div className="flex justify-between items-center mb-1.5">
-          <span className="text-sm font-bold text-slate-700">{label}</span>
+          <span className="text-xs font-bold" style={{ color: HORIZON.textSecondary }}>{label}</span>
           {showValue && (
-            <span className="text-sm font-black text-slate-900">
+            <span className="text-xs font-bold" style={{ color: HORIZON.textPrimary }}>
               {Math.round(percentage)}%
             </span>
           )}
         </div>
       )}
-      <div className={cn('w-full bg-slate-200 rounded-full overflow-hidden relative border border-slate-300', heightClasses[size])}>
+      <div className={cn('w-full bg-[#F4F7FE] rounded-full overflow-hidden', heightClasses[size])}>
         <div
-          className={cn('transition-all duration-500 ease-out rounded-full shadow-sm', getColor())}
+          className="transition-all duration-500 ease-out rounded-full shadow-sm"
           style={{
             width: `${percentage}%`,
             height: '100%',
-            minWidth: percentage > 0 ? '4px' : '0',
-            minHeight: '100%'
+            backgroundColor: getColor(),
+            minWidth: percentage > 0 ? '4px' : '0'
           }}
         />
       </div>
@@ -300,7 +300,6 @@ function MinimalMetricCard({
 }: MinimalMetricCardProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
-  // Auto-calculate score from status if score is not provided
   const calculatedScore = score !== undefined && score !== null
     ? score
     : status === 'good'
@@ -314,38 +313,27 @@ function MinimalMetricCard({
   const getStatusIcon = () => {
     switch (status) {
       case 'good':
-        return <CheckCircle2 className="h-5 w-5 text-emerald-600" />;
+        return <CheckCircle2 className="h-5 w-5" style={{ color: HORIZON.success }} />;
       case 'bad':
-        return <XCircle className="h-5 w-5 text-red-600" />;
+        return <XCircle className="h-5 w-5" style={{ color: HORIZON.error }} />;
       case 'warning':
-        return <AlertCircle className="h-5 w-5 text-orange-600" />;
+        return <AlertCircle className="h-5 w-5" style={{ color: HORIZON.warning }} />;
       default:
-        return <Info className="h-5 w-5 text-slate-400" />;
-    }
-  };
-
-  const getStatusColor = () => {
-    switch (status) {
-      case 'good':
-        return 'bg-emerald-50 border-emerald-300';
-      case 'bad':
-        return 'bg-red-50 border-red-300';
-      case 'warning':
-        return 'bg-orange-50 border-orange-300';
-      default:
-        return 'bg-white border-slate-200';
+        return <Info className="h-5 w-5" style={{ color: HORIZON.textSecondary }} />;
     }
   };
 
   return (
-    <BentoCard className={cn('border-2', getStatusColor())}>
+    <HorizonCard className="border-none">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer hover:bg-slate-50/50 transition-colors">
+          <div className="cursor-pointer hover:opacity-80 transition-opacity">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {icon || getStatusIcon()}
-                <CardTitle className="text-base font-bold text-slate-900">
+                <div className="p-2 rounded-xl bg-[#F4F7FE] border border-[#E2E8F0]">
+                  {icon || getStatusIcon()}
+                </div>
+                <CardTitle className="text-base font-bold" style={{ color: HORIZON.textPrimary }}>
                   {title}
                 </CardTitle>
               </div>
@@ -353,18 +341,18 @@ function MinimalMetricCard({
                 {calculatedScore !== null && calculatedScore !== undefined ? (
                   <div className="flex items-center gap-2">
                     <span className={cn(
-                      'text-lg font-black italic',
-                      calculatedScore >= 90 ? 'text-emerald-500' :
-                        calculatedScore >= 50 ? 'text-orange-500' :
-                          'text-rose-500'
+                      'text-2xl font-bold tracking-tighter',
+                      calculatedScore >= 90 ? 'text-[#01B574]' :
+                        calculatedScore >= 50 ? 'text-[#FFB547]' :
+                          'text-[#EE5D50]'
                     )}>
                       {calculatedScore}
                     </span>
-                    <span className="text-sm text-slate-500">/100</span>
+                    <span className="text-sm font-bold" style={{ color: HORIZON.textSecondary }}>/100</span>
                   </div>
                 ) : null}
                 {value && (
-                  <span className="text-base font-bold text-slate-900">
+                  <span className="text-sm font-bold" style={{ color: HORIZON.textPrimary }}>
                     {value}
                   </span>
                 )}
@@ -375,23 +363,23 @@ function MinimalMetricCard({
               </div>
             </div>
             {calculatedScore !== null && calculatedScore !== undefined ? (
-              <div className="mt-3">
+              <div className="mt-4">
                 <ProgressBar value={calculatedScore} size="sm" showValue={false} />
               </div>
             ) : (
-              <div className="mt-3 h-2.5 w-full bg-slate-100 rounded-full border border-slate-200" />
+              <div className="mt-4 h-1.5 w-full bg-[#F4F7FE] rounded-full" />
             )}
-          </CardHeader>
+          </div>
         </CollapsibleTrigger>
         {children && (
           <CollapsibleContent>
-            <CardContent className="pt-0">
+            <div className="mt-6 pt-6 border-t" style={{ borderColor: HORIZON.background }}>
               {children}
-            </CardContent>
+            </div>
           </CollapsibleContent>
         )}
       </Collapsible>
-    </BentoCard>
+    </HorizonCard>
   );
 }
 
@@ -769,7 +757,7 @@ export function EEATAuditSection({
 
       {/* Loading State */}
       {isPending && (
-        <BentoCard className="border-2 border-emerald-300 bg-emerald-50">
+        <HorizonCard className="border-2 border-emerald-300 bg-emerald-50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-emerald-700">
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -780,112 +768,118 @@ export function EEATAuditSection({
               experience signals...
             </CardDescription>
           </CardHeader>
-        </BentoCard>
+        </HorizonCard>
       )}
 
       {/* Results */}
       {result && !isPending && (
         <>
           {/* Hero Section */}
-          <BentoCard className={cn('border-2 relative overflow-hidden bg-white', getScoreBgColor(overallScore))}>
+          <HorizonCard className={cn('border-2 relative overflow-hidden bg-white', getScoreBgColor(overallScore))}>
             <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
               <Shield className="w-24 h-24" />
             </div>
             <CardHeader>
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-8">
                 <div>
-                  <h1 className="text-3xl font-black italic tracking-tighter text-slate-900 mb-2">
+                  <h1 className="text-3xl font-bold tracking-tight mb-2" style={{ color: HORIZON.textPrimary }}>
                     {t('title')}
                   </h1>
-                  <p className="text-sm font-medium text-slate-700">
+                  <p className="text-sm font-medium" style={{ color: HORIZON.textSecondary }}>
                     {t('description')}
                   </p>
                 </div>
-                <div className="text-center">
-                  <div className={cn('text-5xl font-black italic tracking-tighter mb-1', getScoreColor(overallScore))}>
+                <div className="text-right">
+                  <div className={cn('text-5xl font-bold tracking-tighter mb-1', getScoreColor(overallScore))}>
                     {overallScore}
                   </div>
-                  <div className="text-sm font-bold text-slate-600">
+                  <div className="text-sm font-bold" style={{ color: HORIZON.textSecondary }}>
                     / 100
                   </div>
                 </div>
               </div>
 
               {/* Category Progress Bars */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
                 {categoryScores.experience !== null && (
-                  <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                  <div className="space-y-3 p-4 bg-[#F4F7FE] rounded-xl">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('groups.experience')}</span>
-                      <span className="text-xs font-black text-slate-900">{categoryScores.experience}%</span>
+                      <span className="text-xs font-bold uppercase tracking-wider" style={{ color: HORIZON.textSecondary }}>{t('groups.experience')}</span>
+                      <span className="text-xs font-bold" style={{ color: HORIZON.textPrimary }}>{categoryScores.experience}%</span>
                     </div>
                     <ProgressBar value={categoryScores.experience} size="md" showValue={false} />
                   </div>
                 )}
                 {categoryScores.expertise !== null && (
-                  <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                  <div className="space-y-3 p-4 bg-[#F4F7FE] rounded-xl">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('groups.expertise')}</span>
-                      <span className="text-xs font-black text-slate-900">{categoryScores.expertise}%</span>
+                      <span className="text-xs font-bold uppercase tracking-wider" style={{ color: HORIZON.textSecondary }}>{t('groups.expertise')}</span>
+                      <span className="text-xs font-bold" style={{ color: HORIZON.textPrimary }}>{categoryScores.expertise}%</span>
                     </div>
                     <ProgressBar value={categoryScores.expertise} size="md" showValue={false} />
                   </div>
                 )}
                 {categoryScores.authority !== null && (
-                  <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                  <div className="space-y-3 p-4 bg-[#F4F7FE] rounded-xl">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('groups.authority')}</span>
-                      <span className="text-xs font-black text-slate-900">{categoryScores.authority}%</span>
+                      <span className="text-xs font-bold uppercase tracking-wider" style={{ color: HORIZON.textSecondary }}>{t('groups.authority')}</span>
+                      <span className="text-xs font-bold" style={{ color: HORIZON.textPrimary }}>{categoryScores.authority}%</span>
                     </div>
                     <ProgressBar value={categoryScores.authority} size="md" showValue={false} />
                   </div>
                 )}
                 {categoryScores.trust !== null && (
-                  <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                  <div className="space-y-3 p-4 bg-[#F4F7FE] rounded-xl">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('groups.trust')}</span>
-                      <span className="text-xs font-black text-slate-900">{categoryScores.trust}%</span>
+                      <span className="text-xs font-bold uppercase tracking-wider" style={{ color: HORIZON.textSecondary }}>{t('groups.trust')}</span>
+                      <span className="text-xs font-bold" style={{ color: HORIZON.textPrimary }}>{categoryScores.trust}%</span>
                     </div>
                     <ProgressBar value={categoryScores.trust} size="md" showValue={false} />
                   </div>
                 )}
               </div>
             </CardHeader>
-          </BentoCard>
+          </HorizonCard>
 
           {/* Trust Signals Breakdown Bar Chart */}
-          <BentoCard title="Trust Signals Breakdown" subtitle="Key trust indicators and their status">
+          <HorizonCard title="Trust Signals Breakdown" subtitle="Key trust indicators and their status">
             <div className="h-[350px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={trustSignalsData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  margin={{ top: 20, right: 30, left: 40, bottom: 5 }}
                   layout="vertical"
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#E2E8F0" />
                   <XAxis
                     type="number"
                     domain={[0, 100]}
-                    tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }}
-                    axisLine={{ stroke: '#cbd5e1' }}
+                    tick={{ fill: HORIZON.textSecondary, fontSize: 11, fontWeight: 600 }}
+                    axisLine={false}
+                    tickLine={false}
                   />
                   <YAxis
                     type="category"
                     dataKey="name"
-                    tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }}
-                    axisLine={{ stroke: '#cbd5e1' }}
-                    width={120}
+                    tick={{ fill: HORIZON.textPrimary, fontSize: 12, fontWeight: 600 }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={100}
                   />
                   <Tooltip
+                    cursor={{ fill: '#F4F7FE' }}
                     contentStyle={{
                       backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      padding: '8px 12px',
+                      border: 'none',
+                      borderRadius: '12px',
+                      boxShadow: HORIZON.shadow,
+                      padding: '12px',
                     }}
+                    itemStyle={{ fontWeight: 'bold', color: HORIZON.textPrimary }}
+                    labelStyle={{ fontWeight: 'bold', color: HORIZON.textSecondary }}
                     formatter={(value: number) => [`${value}%`, 'Status']}
                   />
-                  <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                  <Bar dataKey="value" radius={[0, 10, 10, 0]} barSize={20}>
                     {trustSignalsData.map((entry, index) => (
                       <Cell
                         key={`cell-${index}`}
@@ -900,35 +894,36 @@ export function EEATAuditSection({
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {trustSignalsData.map((signal, idx) => (
-                <div key={idx} className="p-3 bg-slate-50/50 rounded-lg border border-slate-200">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-slate-700">{signal.name}</span>
+                <div key={idx} className="p-4 bg-[#F4F7FE] rounded-xl border border-[#E2E8F0]">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-bold" style={{ color: HORIZON.textSecondary }}>{signal.name}</span>
                     {signal.status === 'good' ? (
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                      <CheckCircle2 className="h-4 w-4" style={{ color: HORIZON.success }} />
                     ) : signal.status === 'warning' ? (
-                      <AlertCircle className="h-4 w-4 text-orange-600" />
+                      <AlertCircle className="h-4 w-4" style={{ color: HORIZON.warning }} />
                     ) : (
-                      <XCircle className="h-4 w-4 text-red-600" />
+                      <XCircle className="h-4 w-4" style={{ color: HORIZON.error }} />
                     )}
                   </div>
-                  <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden border border-slate-300">
+                  <div className="h-2 w-full bg-white rounded-full overflow-hidden">
                     <div
-                      className={cn(
-                        'h-full transition-all duration-500 ease-out rounded-full',
-                        signal.status === 'good' ? 'bg-emerald-600' :
-                          signal.status === 'warning' ? 'bg-orange-500' :
-                            'bg-red-600'
-                      )}
-                      style={{ width: `${signal.value}%`, minWidth: signal.value > 0 ? '4px' : '0' }}
+                      className="h-full transition-all duration-500 ease-out rounded-full shadow-sm"
+                      style={{
+                        width: `${signal.value}%`,
+                        backgroundColor: signal.status === 'good' ? HORIZON.success :
+                          signal.status === 'warning' ? HORIZON.warning :
+                            HORIZON.error,
+                        minWidth: signal.value > 0 ? '4px' : '0'
+                      }}
                     />
                   </div>
-                  <div className="text-xs text-slate-500 mt-1">{signal.value}%</div>
+                  <div className="text-xs font-bold mt-2" style={{ color: HORIZON.textPrimary }}>{signal.value}%</div>
                 </div>
               ))}
             </div>
-          </BentoCard>
+          </HorizonCard>
 
           {/* 5.1. Content Authors */}
           <MinimalMetricCard
@@ -971,18 +966,18 @@ export function EEATAuditSection({
               {result.authorship.metrics ? (
                 <>
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-slate-50/50 rounded-lg border border-slate-200">
+                    <div className="flex items-center justify-between p-3 bg-[#F4F7FE] border border-[#E2E8F0]">
                       <div>
-                        <p className="text-sm font-bold text-slate-900">
+                        <p style={{ color: HORIZON.textPrimary }}>
                           Blog pages with medical author
                         </p>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p style={{ color: HORIZON.textSecondary }}>
                           {result.authorship.metrics.articles_with_author} of{' '}
                           {result.authorship.metrics.total_articles} articles
                         </p>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-black italic text-slate-900">
+                        <div className="text-2xl font-bold tracking-tighter" style={{ color: HORIZON.textPrimary }}>
                           {result.authorship.metrics.blog_pages_with_author_percent.toFixed(1)}%
                         </div>
                         <Badge
@@ -1010,17 +1005,17 @@ export function EEATAuditSection({
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between p-3 bg-slate-50/50 rounded-lg border border-slate-200">
+                    <div className="flex items-center justify-between p-3 bg-[#F4F7FE] border border-[#E2E8F0]">
                       <div>
-                        <p className="text-sm font-bold text-slate-900">
+                        <p style={{ color: HORIZON.textPrimary }}>
                           Authors with verified credentials
                         </p>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p style={{ color: HORIZON.textSecondary }}>
                           Diploma, certificates, association memberships
                         </p>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-black italic text-slate-900">
+                        <div className="text-2xl font-bold tracking-tighter" style={{ color: HORIZON.textPrimary }}>
                           {result.authorship.metrics.authors_with_credentials_percent.toFixed(1)}%
                         </div>
                         <Badge
@@ -1051,25 +1046,25 @@ export function EEATAuditSection({
 
                   {/* Good/Bad Examples */}
                   <div className="pt-4 border-t border-border">
-                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3">
+                    <h4 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: HORIZON.textSecondary }}>
                       Best Practices
                     </h4>
                     <div className="space-y-3">
-                      <div className="p-3 bg-emerald-50/50 rounded-lg border border-emerald-100">
+                      <div className="p-3 bg-[#01B57410] border-[#01B57420]">
                         <div className="flex items-start gap-2">
                           <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />
                           <div className="text-xs text-slate-700">
-                            <strong className="text-emerald-600">Good Example:</strong> All
+                            <strong style={{ color: HORIZON.success }}>Good Example:</strong> All
                             treatment articles contain a block: &quot;Author: Cardiologist, PhD, Member of
                             [Association]&quot; with a link to their profile page.
                           </div>
                         </div>
                       </div>
-                      <div className="p-3 bg-rose-50/50 rounded-lg border border-rose-100">
+                      <div className="p-3 bg-[#EE5D5010] border-[#EE5D5020]">
                         <div className="flex items-start gap-2">
                           <XCircle className="h-4 w-4 text-rose-500 mt-0.5 flex-shrink-0" />
                           <div className="text-xs text-slate-700">
-                            <strong className="text-rose-600">Bad Example:</strong> Clinic
+                            <strong style={{ color: HORIZON.error }}>Bad Example:</strong> Clinic
                             blog without author names, listed only as &quot;Site Editorial Team,&quot; with no data
                             on education or experience.
                           </div>
@@ -1135,25 +1130,25 @@ export function EEATAuditSection({
 
                   {/* Good/Bad Examples */}
                   <div className="pt-4 border-t border-border">
-                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3">
+                    <h4 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: HORIZON.textSecondary }}>
                       Best Practices
                     </h4>
                     <div className="space-y-3">
-                      <div className="p-3 bg-emerald-50/50 rounded-lg border border-emerald-100">
+                      <div className="p-3 bg-[#01B57410] border-[#01B57420]">
                         <div className="flex items-start gap-2">
                           <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />
                           <div className="text-xs text-slate-700">
-                            <strong className="text-emerald-600">Good Example:</strong> All
+                            <strong style={{ color: HORIZON.success }}>Good Example:</strong> All
                             treatment articles contain a block: &quot;Author: Cardiologist, PhD, Member of
                             [Association]&quot; with a link to their profile page.
                           </div>
                         </div>
                       </div>
-                      <div className="p-3 bg-rose-50/50 rounded-lg border border-rose-100">
+                      <div className="p-3 bg-[#EE5D5010] border-[#EE5D5020]">
                         <div className="flex items-start gap-2">
                           <XCircle className="h-4 w-4 text-rose-500 mt-0.5 flex-shrink-0" />
                           <div className="text-xs text-slate-700">
-                            <strong className="text-rose-600">Bad Example:</strong> Clinic
+                            <strong style={{ color: HORIZON.error }}>Bad Example:</strong> Clinic
                             blog without author names, listed only as &quot;Site Editorial Team,&quot; with no data
                             on education or experience.
                           </div>
@@ -1206,18 +1201,18 @@ export function EEATAuditSection({
               {result.analysis_scope === 'multi_page' && result.multi_page_metrics?.doctor_expertise_metrics ? (
                 <>
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-slate-50/50 rounded-lg border border-slate-200">
+                    <div className="flex items-center justify-between p-3 bg-[#F4F7FE] border border-[#E2E8F0]">
                       <div>
-                        <p className="text-sm font-bold text-slate-900">
+                        <p style={{ color: HORIZON.textPrimary }}>
                           Doctor pages with verified credentials
                         </p>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p style={{ color: HORIZON.textSecondary }}>
                           {result.multi_page_metrics.doctor_expertise_metrics.doctor_pages_with_credentials || 0} of{' '}
                           {result.multi_page_metrics.doctor_expertise_metrics.total_doctor_pages || 0} doctor pages
                         </p>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-black italic text-slate-900">
+                        <div className="text-2xl font-bold tracking-tighter" style={{ color: HORIZON.textPrimary }}>
                           {result.multi_page_metrics.doctor_expertise_metrics.doctor_pages_with_credentials_percent?.toFixed(1) || 0}%
                         </div>
                         <Badge
@@ -1247,7 +1242,7 @@ export function EEATAuditSection({
                   </div>
 
                   <div className="pt-4 border-t border-border">
-                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3">
+                    <h4 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: HORIZON.textSecondary }}>
                       Calculation
                     </h4>
                     <p className="text-xs text-muted-foreground">
@@ -1296,7 +1291,7 @@ export function EEATAuditSection({
                   </div>
 
                   <div className="pt-4 border-t border-border">
-                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3">
+                    <h4 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: HORIZON.textSecondary }}>
                       Calculation
                     </h4>
                     <p className="text-sm text-muted-foreground">
@@ -1414,7 +1409,7 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-emerald-600">Good Example:</strong> &quot;Laser Vision
+                        <strong style={{ color: HORIZON.success }}>Good Example:</strong> &quot;Laser Vision
                         Correction&quot; page featuring data: &quot;15 years of experience, 5000+ surgeries.&quot;
                       </div>
                     </div>
@@ -1423,7 +1418,7 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <XCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-rose-600">Bad Example:</strong> Generic text like &quot;We
+                        <strong style={{ color: HORIZON.error }}>Bad Example:</strong> Generic text like &quot;We
                         are a professional clinic,&quot; without specifics or figures regarding experience.
                       </div>
                     </div>
@@ -1569,7 +1564,7 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-emerald-600">Good Example:</strong> 4.7+ stars on
+                        <strong style={{ color: HORIZON.success }}>Good Example:</strong> 4.7+ stars on
                         Google Maps with 200+ reviews and positive sentiment.
                       </div>
                     </div>
@@ -1578,7 +1573,7 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <XCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-rose-600">Bad Example:</strong> 3.0 stars, few reviews,
+                        <strong style={{ color: HORIZON.error }}>Bad Example:</strong> 3.0 stars, few reviews,
                         aggressive responses, or lack of responses to complaints.
                       </div>
                     </div>
@@ -1765,7 +1760,7 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-emerald-600">Good Example:</strong> On the &quot;Chronic
+                        <strong style={{ color: HORIZON.success }}>Good Example:</strong> On the &quot;Chronic
                         Gastritis Treatment&quot; page, there is a separate &quot;Patient Story&quot; block: a concise description of
                         the situation before the visit, the examination, the prescribed treatment, the condition dynamics
                         over 3 months, and the result (without PII/identifying data); added doctor&apos;s commentary on
@@ -1777,7 +1772,7 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <XCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-rose-600">Bad Example:</strong> Vague text like &quot;We
+                        <strong style={{ color: HORIZON.error }}>Bad Example:</strong> Vague text like &quot;We
                         have many patients we cured&quot; without specific stories, treatment stages, timelines, or metrics;
                         OR publication of a story with full personal patient data without consent.
                       </div>
@@ -1835,18 +1830,18 @@ export function EEATAuditSection({
               {result.authority.scientific_metrics ? (
                 <>
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-slate-50/50 rounded-lg border border-slate-200">
+                    <div className="flex items-center justify-between p-3 bg-[#F4F7FE] border border-[#E2E8F0]">
                       <div>
-                        <p className="text-sm font-bold text-slate-900">
+                        <p style={{ color: HORIZON.textPrimary }}>
                           Articles with scientific sources
                         </p>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p style={{ color: HORIZON.textSecondary }}>
                           {result.authority.scientific_metrics.articles_with_sources} of{' '}
                           {result.authority.scientific_metrics.total_articles} articles
                         </p>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-black italic text-slate-900">
+                        <div className="text-2xl font-bold tracking-tighter" style={{ color: HORIZON.textPrimary }}>
                           {(result.authority.scientific_metrics.articles_with_sources_percent || 0).toFixed(1)}%
                         </div>
                         <Badge
@@ -1884,17 +1879,17 @@ export function EEATAuditSection({
                       protocols.
                     </p>
 
-                    <div className="flex items-center justify-between p-3 bg-slate-50/50 rounded-lg border border-slate-200">
+                    <div className="flex items-center justify-between p-3 bg-[#F4F7FE] border border-[#E2E8F0]">
                       <div>
-                        <p className="text-sm font-bold text-slate-900">
+                        <p style={{ color: HORIZON.textPrimary }}>
                           Scientific Sources Found
                         </p>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p style={{ color: HORIZON.textSecondary }}>
                           Links to PubMed, WHO, Cochrane, MOZ.gov.ua, NCBI
                         </p>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-black italic text-slate-900">
+                        <div className="text-2xl font-bold tracking-tighter" style={{ color: HORIZON.textPrimary }}>
                           {result.authority.scientific_sources_count}
                         </div>
                         <Badge
@@ -1915,7 +1910,7 @@ export function EEATAuditSection({
 
               {/* Good/Bad Examples */}
               <div className="pt-4 border-t border-slate-100">
-                <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3">
+                <h4 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: HORIZON.textSecondary }}>
                   Best Practices
                 </h4>
                 <div className="space-y-3">
@@ -1923,7 +1918,7 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-emerald-600">Good Example:</strong> An article on
+                        <strong style={{ color: HORIZON.success }}>Good Example:</strong> An article on
                         diabetes treatment with links to clinical guidelines and journal publications.
                       </div>
                     </div>
@@ -1932,7 +1927,7 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <XCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-rose-600">Bad Example:</strong> Categorical medical
+                        <strong style={{ color: HORIZON.error }}>Bad Example:</strong> Categorical medical
                         advice without a single source or mention of protocols.
                       </div>
                     </div>
@@ -2081,7 +2076,7 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-emerald-600">Good Example:</strong> The site has an &quot;About Us&quot; block or section listing doctors&apos; speeches and publications.
+                        <strong style={{ color: HORIZON.success }}>Good Example:</strong> The site has an &quot;About Us&quot; block or section listing doctors&apos; speeches and publications.
                       </div>
                     </div>
                   </div>
@@ -2089,7 +2084,7 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <XCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-rose-600">Bad Example:</strong> The clinic positions itself as a &quot;leading center&quot; but has no verifiable mentions in professional sources.
+                        <strong style={{ color: HORIZON.error }}>Bad Example:</strong> The clinic positions itself as a &quot;leading center&quot; but has no verifiable mentions in professional sources.
                       </div>
                     </div>
                   </div>
@@ -2168,17 +2163,17 @@ export function EEATAuditSection({
                 {/* NAP Comparison */}
                 {result.trust.nap_comparison && (
                   <div className="pt-2">
-                    <div className="flex items-center justify-between p-3 bg-slate-50/50 rounded-lg border border-slate-200">
+                    <div className="flex items-center justify-between p-3 bg-[#F4F7FE] border border-[#E2E8F0]">
                       <div>
-                        <p className="text-sm font-bold text-slate-900">
+                        <p style={{ color: HORIZON.textPrimary }}>
                           NAP Consistency Match
                         </p>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p style={{ color: HORIZON.textSecondary }}>
                           Website vs Google Business Profile
                         </p>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-black italic text-slate-900">
+                        <div className="text-2xl font-bold tracking-tighter" style={{ color: HORIZON.textPrimary }}>
                           {result.trust.nap_comparison.match_percent?.toFixed(0) || 0}%
                         </div>
                         <Badge
@@ -2249,7 +2244,7 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-emerald-600">Good Example:</strong> Identical NAP
+                        <strong style={{ color: HORIZON.success }}>Good Example:</strong> Identical NAP
                         data on the website, Google Profile, and specialized city medical directories.
                       </div>
                     </div>
@@ -2258,7 +2253,7 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <XCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-rose-600">Bad Example:</strong> Different phone
+                        <strong style={{ color: HORIZON.error }}>Bad Example:</strong> Different phone
                         numbers/addresses in the catalog, on the site, and on the map; multiple duplicate listings for
                         one clinic.
                       </div>
@@ -2415,7 +2410,7 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-emerald-600">Good Example:</strong> An &quot;About Us&quot;
+                        <strong style={{ color: HORIZON.success }}>Good Example:</strong> An &quot;About Us&quot;
                         section with the legal entity name, address, licenses, phone numbers, email, booking form, and
                         map.
                       </div>
@@ -2425,7 +2420,7 @@ export function EEATAuditSection({
                     <div className="flex items-start gap-2">
                       <XCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                       <div className="text-xs text-foreground">
-                        <strong className="text-rose-600">Bad Example:</strong> Only a feedback form
+                        <strong style={{ color: HORIZON.error }}>Bad Example:</strong> Only a feedback form
                         without an address, phone number, or legal entity data.
                       </div>
                     </div>
@@ -2544,28 +2539,31 @@ export function EEATAuditSection({
           </MinimalMetricCard>
 
           {/* Recommendations */}
-          {result.recommendations.length > 0 && (
-            <BentoCard className="border-2 border-orange-300 bg-orange-50">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-orange-600 text-xl font-black italic">
-                  <AlertTriangle className="h-6 w-6 text-orange-600" />
-                  Recommendations ({result.recommendations.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  {result.recommendations.map((rec, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm">
-                      <span className="text-orange-500 mt-0.5 flex-shrink-0">•</span>
-                      <span className="text-slate-700">{rec}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </BentoCard>
-          )}
+          {
+            result.recommendations.length > 0 && (
+              <HorizonCard className="border-2 border-orange-300 bg-orange-50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-orange-600 text-xl font-black italic">
+                    <AlertTriangle className="h-6 w-6 text-orange-600" />
+                    Recommendations ({result.recommendations.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2">
+                    {result.recommendations.map((rec, index) => (
+                      <li key={index} className="flex items-start gap-2 text-sm">
+                        <span className="text-orange-500 mt-0.5 flex-shrink-0">•</span>
+                        <span className="text-slate-700">{rec}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </HorizonCard>
+            )
+          }
         </>
-      )}
+      )
+      }
     </div>
   );
 }

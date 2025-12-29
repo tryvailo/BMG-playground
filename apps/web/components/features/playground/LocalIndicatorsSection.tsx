@@ -23,20 +23,29 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@kit/ui/col
 import { cn } from '@kit/ui/utils';
 import type { LocalIndicatorsAuditResult } from '~/lib/server/services/local/types';
 
-// --- Premium 2026 Light Tokens ---
-  const _TOKENS = {
-    colors: {
-        primary: '#0d9488', // Teal
-        emerald: '#10b981',
-        red: '#f43f5e',
-        orange: '#f59e0b',
-        blue: '#3b82f6',
-        indigo: '#6366f1',
-    },
-    shadows: {
-        soft: 'shadow-[0_8px_30px_rgb(0,0,0,0.04)]',
-        deep: 'shadow-[0_20px_50px_rgba(0,0,0,0.06)]',
-    }
+// ============ HORIZON UI DESIGN TOKENS ============
+const HORIZON = {
+  primary: '#4318FF',
+  primaryLight: '#4318FF15',
+  primaryDark: '#3311CC',
+  secondary: '#A3AED0',
+  secondaryLight: '#A3AED015',
+  success: '#01B574',
+  successLight: '#01B57415',
+  warning: '#FFB547',
+  warningLight: '#FFB54715',
+  error: '#EE5D50',
+  errorLight: '#EE5D5015',
+  info: '#2B77E5',
+  infoLight: '#2B77E515',
+  textPrimary: '#1B2559',
+  textSecondary: '#A3AED0',
+  textMuted: '#8F9BBA',
+  background: '#F4F7FE',
+  cardBg: '#FFFFFF',
+  shadow: '0 18px 40px rgba(112, 144, 176, 0.12)',
+  shadowHover: '0 25px 50px rgba(112, 144, 176, 0.18)',
+  shadowSm: '0 4px 12px rgba(112, 144, 176, 0.1)',
 };
 
 // --- Custom Modern Components ---
@@ -47,21 +56,32 @@ interface BentoCardProps {
   subtitle?: string;
 }
 
-const BentoCard = ({ children, className, title, subtitle }: BentoCardProps) => (
-    <Card className={cn(
-        "border border-slate-200 bg-white shadow-[0_8px_32px_0_rgba(15,23,42,0.04)] overflow-hidden transition-all duration-300 hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] group",
-        className
-    )}>
-        {(title || subtitle) && (
-            <CardHeader className="pb-2">
-                {title && <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 group-hover:text-primary transition-colors">{title}</h3>}
-                {subtitle && <p className="text-sm font-bold text-slate-900">{subtitle}</p>}
-            </CardHeader>
+const HorizonCard = ({ children, className, title, subtitle }: BentoCardProps) => (
+  <Card
+    className={cn(
+      "border-none bg-white rounded-[20px] overflow-hidden transition-all duration-300",
+      className
+    )}
+    style={{ boxShadow: HORIZON.shadow }}
+  >
+    {(title || subtitle) && (
+      <CardHeader className="pb-2">
+        {title && (
+          <h3 className="text-sm font-bold uppercase tracking-widest mb-1" style={{ color: HORIZON.textSecondary }}>
+            {title}
+          </h3>
         )}
-        <CardContent className={cn("p-6", (title || subtitle) && "pt-2")}>
-            {children}
-        </CardContent>
-    </Card>
+        {subtitle && (
+          <p className="text-sm font-bold" style={{ color: HORIZON.textPrimary }}>
+            {subtitle}
+          </p>
+        )}
+      </CardHeader>
+    )}
+    <CardContent className={cn("p-6", (title || subtitle) && "pt-2")}>
+      {children}
+    </CardContent>
+  </Card>
 );
 
 interface LocalIndicatorsSectionProps {
@@ -82,39 +102,42 @@ interface ProgressBarProps {
 
 function ProgressBar({ value, max = 100, label, showValue = true, size = 'md' }: ProgressBarProps) {
   const percentage = Math.min(100, Math.max(0, (value / max) * 100));
-  
+
   const getColor = () => {
-    if (percentage < 50) return 'bg-red-600';
-    if (percentage < 90) return 'bg-orange-500';
-    return 'bg-emerald-600';
+    if (percentage < 50) return HORIZON.error;
+    if (percentage < 90) return HORIZON.warning;
+    return HORIZON.success;
   };
 
   const heightClasses = {
-    sm: 'h-2.5',
-    md: 'h-3',
-    lg: 'h-4',
+    sm: 'h-1.5',
+    md: 'h-2.5',
+    lg: 'h-3.5',
   };
 
   return (
     <div className="w-full">
       {label && (
         <div className="flex justify-between items-center mb-1.5">
-          <span className="text-sm font-bold text-slate-700">{label}</span>
+          <span className="text-xs font-bold" style={{ color: HORIZON.textSecondary }}>{label}</span>
           {showValue && (
-            <span className="text-sm font-black text-slate-900">
+            <span className="text-xs font-bold" style={{ color: HORIZON.textPrimary }}>
               {Math.round(percentage)}%
             </span>
           )}
         </div>
       )}
-      <div className={cn('w-full bg-slate-200 rounded-full overflow-hidden relative border border-slate-300', heightClasses[size])}>
+      <div
+        className={cn('w-full rounded-full overflow-hidden relative', heightClasses[size])}
+        style={{ backgroundColor: HORIZON.background }}
+      >
         <div
-          className={cn('transition-all duration-500 ease-out rounded-full shadow-sm', getColor())}
-          style={{ 
-            width: `${percentage}%`, 
+          className="transition-all duration-500 ease-out rounded-full"
+          style={{
+            width: `${percentage}%`,
             height: '100%',
+            backgroundColor: getColor(),
             minWidth: percentage > 0 ? '4px' : '0',
-            minHeight: '100%'
           }}
         />
       </div>
@@ -135,66 +158,66 @@ interface MinimalMetricCardProps {
   defaultOpen?: boolean;
 }
 
-function MinimalMetricCard({ 
-  title, 
-  icon, 
-  status, 
-  value, 
+function MinimalMetricCard({
+  title,
+  icon,
+  status,
+  value,
   score,
-  children, 
-  defaultOpen = false 
+  children,
+  defaultOpen = false
 }: MinimalMetricCardProps) {
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
 
   // Auto-calculate score from status if score is not provided
-  const calculatedScore = score !== undefined && score !== null 
-    ? score 
-    : status === 'good' 
-      ? 100 
-      : status === 'warning' 
-        ? 50 
-        : status === 'bad' 
-          ? 0 
+  const calculatedScore = score !== undefined && score !== null
+    ? score
+    : status === 'good'
+      ? 100
+      : status === 'warning'
+        ? 50
+        : status === 'bad'
+          ? 0
           : null;
 
   const getStatusIcon = () => {
     switch (status) {
       case 'good':
-        return <CheckCircle2 className="h-5 w-5 text-emerald-600" />;
+        return <CheckCircle2 className="h-5 w-5" style={{ color: HORIZON.success }} />;
       case 'bad':
-        return <XCircle className="h-5 w-5 text-red-600" />;
+        return <XCircle className="h-5 w-5" style={{ color: HORIZON.error }} />;
       case 'warning':
-        return <AlertCircle className="h-5 w-5 text-orange-600" />;
+        return <AlertCircle className="h-5 w-5" style={{ color: HORIZON.warning }} />;
       default:
-        return <Info className="h-5 w-5 text-slate-400" />;
+        return <Info className="h-5 w-5" style={{ color: HORIZON.textSecondary }} />;
     }
   };
 
   const getStatusColor = () => {
     switch (status) {
       case 'good':
-        return 'bg-emerald-50/30 border-emerald-100';
+        return 'bg-white';
       case 'bad':
-        return 'bg-red-50/30 border-red-100';
+        return 'bg-white';
       case 'warning':
-        return 'bg-orange-50/30 border-orange-100';
+        return 'bg-white';
       default:
-        return 'bg-slate-50/30 border-slate-100';
+        return 'bg-white';
     }
   };
 
   return (
-    <BentoCard className={cn('border', getStatusColor())}>
+    <HorizonCard className={cn('border-none', getStatusColor())}>
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
           <div className="cursor-pointer hover:opacity-80 transition-opacity">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className={cn("p-2 rounded-xl bg-white shadow-sm border", 
+                <div className={cn("p-2 rounded-xl bg-white shadow-sm border",
                   status === 'good' ? 'border-emerald-100' :
-                  status === 'bad' ? 'border-red-100' :
-                  status === 'warning' ? 'border-orange-100' :
-                  'border-slate-100'
+                    status === 'bad' ? 'border-red-100' :
+                      status === 'warning' ? 'border-orange-100' :
+                        'border-slate-100'
                 )}>
                   {icon || getStatusIcon()}
                 </div>
@@ -206,14 +229,14 @@ function MinimalMetricCard({
                 {calculatedScore !== null && calculatedScore !== undefined ? (
                   <div className="flex items-center gap-2">
                     <span className={cn(
-                      'text-2xl font-black italic tracking-tighter',
-                      calculatedScore >= 90 ? 'text-emerald-600' :
-                      calculatedScore >= 50 ? 'text-orange-600' :
-                      'text-red-600'
+                      'text-2xl font-bold tracking-tighter',
+                      calculatedScore >= 90 ? 'text-[#01B574]' :
+                        calculatedScore >= 50 ? 'text-[#FFB547]' :
+                          'text-[#EE5D50]'
                     )}>
                       {calculatedScore}
                     </span>
-                    <span className="text-sm font-bold text-slate-500">/100</span>
+                    <span className="text-sm font-bold" style={{ color: HORIZON.textSecondary }}>/100</span>
                   </div>
                 ) : null}
                 {value && (
@@ -238,13 +261,13 @@ function MinimalMetricCard({
         </CollapsibleTrigger>
         {children && (
           <CollapsibleContent>
-            <div className="pt-4 border-t border-slate-100">
+            <div className="pt-4 border-t" style={{ borderColor: HORIZON.background }}>
               {children}
             </div>
           </CollapsibleContent>
         )}
       </Collapsible>
-    </BentoCard>
+    </HorizonCard>
   );
 }
 
@@ -270,7 +293,7 @@ function ChecklistItem({ label, checked }: ChecklistItemProps) {
       )}
       <span className={cn(
         'text-sm font-medium',
-        checked ? 'text-slate-700' : 'text-slate-500'
+        checked ? 'text-[#1B2559]' : 'text-[#A3AED0]'
       )}>
         {label}
       </span>
@@ -294,8 +317,8 @@ function calculateOverallScore(data: LocalIndicatorsAuditResult): number {
   scores.push(data.gbp_engagement.ctr_percent);
 
   // Local backlinks (5+ is good = 100, <5 is proportional)
-  const backlinksScore = data.local_backlinks.unique_local_domains >= 5 
-    ? 100 
+  const backlinksScore = data.local_backlinks.unique_local_domains >= 5
+    ? 100
     : (data.local_backlinks.unique_local_domains / 5) * 100;
   scores.push(backlinksScore);
 
@@ -303,16 +326,16 @@ function calculateOverallScore(data: LocalIndicatorsAuditResult): number {
   const socialScore = data.local_social_media.facebook.has_profile && data.local_social_media.instagram.has_profile
     ? 100
     : data.local_social_media.facebook.has_profile || data.local_social_media.instagram.has_profile
-    ? 50
-    : 0;
+      ? 50
+      : 0;
   scores.push(socialScore);
 
   // Local Business Schema (implemented and functioning = 100, implemented = 50, not = 0)
   const schemaScore = data.local_business_schema.is_functioning_correctly
     ? 100
     : data.local_business_schema.is_implemented
-    ? 50
-    : 0;
+      ? 50
+      : 0;
   scores.push(schemaScore);
 
   if (scores.length === 0) return 0;
@@ -327,19 +350,19 @@ function calculateCategoryScores(data: LocalIndicatorsAuditResult) {
     gbp: data.google_business_profile.completeness_percent,
     reviews: data.review_response.response_rate_24h_percent,
     engagement: data.gbp_engagement.ctr_percent,
-    backlinks: data.local_backlinks.unique_local_domains >= 5 
-      ? 100 
+    backlinks: data.local_backlinks.unique_local_domains >= 5
+      ? 100
       : (data.local_backlinks.unique_local_domains / 5) * 100,
     social: data.local_social_media.facebook.has_profile && data.local_social_media.instagram.has_profile
       ? 100
       : data.local_social_media.facebook.has_profile || data.local_social_media.instagram.has_profile
-      ? 50
-      : 0,
+        ? 50
+        : 0,
     schema: data.local_business_schema.is_functioning_correctly
       ? 100
       : data.local_business_schema.is_implemented
-      ? 50
-      : 0,
+        ? 50
+        : 0,
   };
 }
 
@@ -351,91 +374,61 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
   const categoryScores = calculateCategoryScores(result);
 
   const getScoreColor = (score: number) => {
-    if (score >= 90) return 'text-emerald-700';
-    if (score >= 50) return 'text-orange-600';
-    return 'text-red-600';
-  };
-
-  const getScoreBgColor = (score: number) => {
-    if (score >= 90) return 'bg-emerald-50 border-emerald-300';
-    if (score >= 50) return 'bg-orange-50 border-orange-300';
-    return 'bg-red-50 border-red-300';
+    if (score >= 90) return HORIZON.success;
+    if (score >= 50) return HORIZON.warning;
+    return HORIZON.error;
   };
 
   return (
     <div className={cn('space-y-6 pb-20 animate-in fade-in duration-700', className)}>
       {/* Hero Section */}
-      <BentoCard className={cn('border-2 relative overflow-hidden bg-white', getScoreBgColor(overallScore))}>
+      <HorizonCard className="border-none relative overflow-hidden bg-white">
         <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
-          <MapPin className="w-24 h-24" />
+          <MapPin className="w-24 h-24" style={{ color: HORIZON.primary }} />
         </div>
         <CardHeader>
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-black italic tracking-tighter text-slate-900 mb-2">
+              <h1 className="text-3xl font-bold tracking-tight mb-2" style={{ color: HORIZON.textPrimary }}>
                 Local Score
               </h1>
-              <p className="text-sm font-medium text-slate-700">
-                Overall assessment of your local SEO and business presence
+              <p className="text-sm font-medium" style={{ color: HORIZON.textSecondary }}>
+                Комплексна оцінка вашого локального SEO та присутності бізнесу
               </p>
             </div>
             <div className="text-center">
-              <div className={cn('text-5xl font-black italic tracking-tighter mb-1', getScoreColor(overallScore))}>
+              <div className="text-5xl font-bold tracking-tighter mb-1" style={{ color: getScoreColor(overallScore) }}>
                 {overallScore}
               </div>
-              <div className="text-sm font-bold text-slate-600">
+              <div className="text-sm font-bold" style={{ color: HORIZON.textSecondary }}>
                 / 100
               </div>
             </div>
           </div>
-          
+
           {/* Category Progress Bars */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-            <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">GBP</span>
-                <span className="text-xs font-black text-slate-900">{categoryScores.gbp}%</span>
-              </div>
-              <ProgressBar value={categoryScores.gbp} size="md" showValue={false} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+            <div className="space-y-3 p-4 rounded-[20px]" style={{ backgroundColor: HORIZON.background }}>
+              <ProgressBar value={categoryScores.gbp} size="md" label="Google Business Profile" />
             </div>
-            <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Reviews</span>
-                <span className="text-xs font-black text-slate-900">{categoryScores.reviews}%</span>
-              </div>
-              <ProgressBar value={categoryScores.reviews} size="md" showValue={false} />
+            <div className="space-y-3 p-4 rounded-[20px]" style={{ backgroundColor: HORIZON.background }}>
+              <ProgressBar value={categoryScores.reviews} size="md" label="Reviews Response" />
             </div>
-            <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Engagement</span>
-                <span className="text-xs font-black text-slate-900">{categoryScores.engagement}%</span>
-              </div>
-              <ProgressBar value={categoryScores.engagement} size="md" showValue={false} />
+            <div className="space-y-3 p-4 rounded-[20px]" style={{ backgroundColor: HORIZON.background }}>
+              <ProgressBar value={categoryScores.engagement} size="md" label="Profile Engagement" />
             </div>
-            <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Backlinks</span>
-                <span className="text-xs font-black text-slate-900">{categoryScores.backlinks}%</span>
-              </div>
-              <ProgressBar value={categoryScores.backlinks} size="md" showValue={false} />
+            <div className="space-y-3 p-4 rounded-[20px]" style={{ backgroundColor: HORIZON.background }}>
+              <ProgressBar value={categoryScores.backlinks} size="md" label="Local Backlinks" />
             </div>
-            <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Social</span>
-                <span className="text-xs font-black text-slate-900">{categoryScores.social}%</span>
-              </div>
-              <ProgressBar value={categoryScores.social} size="md" showValue={false} />
+            <div className="space-y-3 p-4 rounded-[20px]" style={{ backgroundColor: HORIZON.background }}>
+              <ProgressBar value={categoryScores.social} size="md" label="Social Presence" />
             </div>
-            <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Schema</span>
-                <span className="text-xs font-black text-slate-900">{categoryScores.schema}%</span>
-              </div>
-              <ProgressBar value={categoryScores.schema} size="md" showValue={false} />
+            <div className="space-y-3 p-4 rounded-[20px]" style={{ backgroundColor: HORIZON.background }}>
+              <ProgressBar value={categoryScores.schema} size="md" label="Local Schema" />
             </div>
           </div>
         </CardHeader>
-      </BentoCard>
+      </HorizonCard>
 
       {/* 1. Google Business Profile (Completeness) */}
       <MinimalMetricCard
@@ -445,8 +438,8 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
           result.google_business_profile.completeness_percent >= 80
             ? 'good'
             : result.google_business_profile.completeness_percent >= 50
-            ? 'warning'
-            : 'bad'
+              ? 'warning'
+              : 'bad'
         }
         score={result.google_business_profile.completeness_percent}
         value={`${result.google_business_profile.completeness_percent}% complete`}
@@ -456,7 +449,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
             <p className="text-sm font-medium text-slate-600 mb-4 leading-relaxed">
               The degree to which all available fields in the Google Business Profile are filled: categories, business hours, attributes, description, photos, services, Q&A, posts.
             </p>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 bg-white/50 rounded-xl border border-slate-100 shadow-sm">
                 <div className="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">Fields Filled</div>
@@ -517,7 +510,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
 
           {/* Good/Bad Examples */}
           <div className="pt-4 border-t border-slate-100">
-            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 mb-4">
+            <h4 style={{ color: HORIZON.textSecondary }}>
               Best Practices
             </h4>
             <div className="space-y-3">
@@ -546,7 +539,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
 
           {/* Calculation */}
           <div className="pt-4 border-t border-slate-100">
-            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 mb-3">
+            <h4 style={{ color: HORIZON.textSecondary }}>
               Calculation
             </h4>
             <div className="space-y-2 text-sm font-medium text-slate-600">
@@ -567,8 +560,8 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
           result.review_response.response_rate_24h_percent >= 90
             ? 'good'
             : result.review_response.response_rate_24h_percent >= 50
-            ? 'warning'
-            : 'bad'
+              ? 'warning'
+              : 'bad'
         }
         score={result.review_response.response_rate_24h_percent}
         value={`${result.review_response.response_rate_24h_percent}% within 24h`}
@@ -578,7 +571,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
             <p className="text-sm font-medium text-slate-600 mb-4 leading-relaxed">
               The speed and quality of the clinic&apos;s responses to new reviews on Google, DOC.ua, and Helsi.
             </p>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 bg-white/50 rounded-xl border border-slate-100 shadow-sm">
                 <div className="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">Total Reviews</div>
@@ -618,7 +611,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
             {/* Platforms breakdown */}
             {result.review_response.platforms.length > 0 && (
               <div className="pt-2">
-                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 mb-3">
+                <h4 style={{ color: HORIZON.textSecondary }}>
                   By Platform
                 </h4>
                 <div className="space-y-2">
@@ -644,7 +637,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
 
           {/* Good/Bad Examples */}
           <div className="pt-4 border-t border-slate-100">
-            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 mb-4">
+            <h4 style={{ color: HORIZON.textSecondary }}>
               Best Practices
             </h4>
             <div className="space-y-3">
@@ -673,7 +666,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
 
           {/* Calculation */}
           <div className="pt-4 border-t border-slate-100">
-            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 mb-3">
+            <h4 style={{ color: HORIZON.textSecondary }}>
               Calculation
             </h4>
             <p className="text-sm font-medium text-slate-600">
@@ -691,8 +684,8 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
           result.gbp_engagement.ctr_percent >= 5
             ? 'good'
             : result.gbp_engagement.ctr_percent >= 1
-            ? 'warning'
-            : 'bad'
+              ? 'warning'
+              : 'bad'
         }
         score={result.gbp_engagement.ctr_percent}
         value={`${result.gbp_engagement.ctr_percent}% CTR`}
@@ -702,7 +695,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
             <p className="text-sm font-medium text-slate-600 mb-4 leading-relaxed">
               The number of times the clinic&apos;s profile appeared in search or on the map (Impressions), and the actions users took: website clicks, direction requests, calls, photo views, bookings.
             </p>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 bg-white/50 rounded-xl border border-slate-100 shadow-sm">
                 <div className="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">Impressions/Month</div>
@@ -739,8 +732,8 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
                 <span className={cn(
                   'text-3xl font-black italic tracking-tighter',
                   result.gbp_engagement.ctr_percent >= 5 ? 'text-emerald-600' :
-                  result.gbp_engagement.ctr_percent >= 1 ? 'text-orange-600' :
-                  'text-red-600'
+                    result.gbp_engagement.ctr_percent >= 1 ? 'text-orange-600' :
+                      'text-red-600'
                 )}>
                   {result.gbp_engagement.ctr_percent.toFixed(1)}%
                 </span>
@@ -750,7 +743,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
 
           {/* Good/Bad Examples */}
           <div className="pt-4 border-t border-slate-100">
-            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 mb-4">
+            <h4 style={{ color: HORIZON.textSecondary }}>
               Best Practices
             </h4>
             <div className="space-y-3">
@@ -779,7 +772,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
 
           {/* Calculation */}
           <div className="pt-4 border-t border-slate-100">
-            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 mb-3">
+            <h4 style={{ color: HORIZON.textSecondary }}>
               Calculation
             </h4>
             <div className="space-y-2 text-sm font-medium text-slate-600">
@@ -799,8 +792,8 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
           result.local_backlinks.unique_local_domains >= 5
             ? 'good'
             : result.local_backlinks.unique_local_domains > 0
-            ? 'warning'
-            : 'bad'
+              ? 'warning'
+              : 'bad'
         }
         score={result.local_backlinks.unique_local_domains >= 5 ? 100 : (result.local_backlinks.unique_local_domains / 5) * 100}
         value={`${result.local_backlinks.unique_local_domains} local domains`}
@@ -810,7 +803,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
             <p className="text-sm font-medium text-slate-600 mb-4 leading-relaxed">
               Links to the clinic&apos;s website from local sources: city portals, news sites, partners, medical associations, charity foundations, and local bloggers.
             </p>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 bg-white/50 rounded-xl border border-slate-100 shadow-sm">
                 <div className="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">Total Backlinks</div>
@@ -831,7 +824,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
 
             {/* Backlinks by type */}
             <div className="pt-2">
-              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 mb-3">
+              <h4 style={{ color: HORIZON.textSecondary }}>
                 By Source Type
               </h4>
               <div className="grid grid-cols-2 gap-3">
@@ -877,7 +870,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
             {/* Backlinks list */}
             {result.local_backlinks.backlinks.length > 0 && (
               <div className="pt-2">
-                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 mb-3">
+                <h4 style={{ color: HORIZON.textSecondary }}>
                   Backlinks List
                 </h4>
                 <div className="space-y-2 max-h-60 overflow-y-auto">
@@ -905,7 +898,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
 
           {/* Good/Bad Examples */}
           <div className="pt-4 border-t border-slate-100">
-            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 mb-4">
+            <h4 style={{ color: HORIZON.textSecondary }}>
               Best Practices
             </h4>
             <div className="space-y-3">
@@ -934,7 +927,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
 
           {/* Calculation */}
           <div className="pt-4 border-t border-slate-100">
-            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 mb-3">
+            <h4 style={{ color: HORIZON.textSecondary }}>
               Calculation
             </h4>
             <p className="text-sm font-medium text-slate-600">
@@ -952,22 +945,22 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
           result.local_social_media.facebook.has_profile && result.local_social_media.instagram.has_profile
             ? 'good'
             : result.local_social_media.facebook.has_profile || result.local_social_media.instagram.has_profile
-            ? 'warning'
-            : 'bad'
+              ? 'warning'
+              : 'bad'
         }
         score={
           result.local_social_media.facebook.has_profile && result.local_social_media.instagram.has_profile
             ? 100
             : result.local_social_media.facebook.has_profile || result.local_social_media.instagram.has_profile
-            ? 50
-            : 0
+              ? 50
+              : 0
         }
         value={
           result.local_social_media.facebook.has_profile && result.local_social_media.instagram.has_profile
             ? 'Both profiles'
             : result.local_social_media.facebook.has_profile || result.local_social_media.instagram.has_profile
-            ? 'One profile'
-            : 'No profiles'
+              ? 'One profile'
+              : 'No profiles'
         }
       >
         <div className="space-y-4">
@@ -975,7 +968,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
             <p className="text-sm font-medium text-slate-600 mb-4 leading-relaxed">
               Active clinic profiles on Facebook and Instagram with geotags, mentions of the city/district, posts about participation in local events, and interaction with the local audience.
             </p>
-            
+
             {/* Facebook */}
             <div className="p-4 bg-white/50 rounded-xl border border-slate-100 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
@@ -1075,7 +1068,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
 
           {/* Calculation */}
           <div className="pt-4 border-t border-slate-100">
-            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 mb-3">
+            <h4 style={{ color: HORIZON.textSecondary }}>
               Calculation
             </h4>
             <p className="text-sm font-medium text-slate-600">
@@ -1093,22 +1086,22 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
           result.local_business_schema.is_functioning_correctly
             ? 'good'
             : result.local_business_schema.is_implemented
-            ? 'warning'
-            : 'bad'
+              ? 'warning'
+              : 'bad'
         }
         score={
           result.local_business_schema.is_functioning_correctly
             ? 100
             : result.local_business_schema.is_implemented
-            ? 50
-            : 0
+              ? 50
+              : 0
         }
         value={
           result.local_business_schema.is_functioning_correctly
             ? 'Valid'
             : result.local_business_schema.is_implemented
-            ? 'Has errors'
-            : 'Not implemented'
+              ? 'Has errors'
+              : 'Not implemented'
         }
       >
         <div className="space-y-4">
@@ -1116,7 +1109,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
             <p className="text-sm font-medium text-slate-600 mb-4 leading-relaxed">
               LocalBusiness schema markup is structured data that helps search engines and AI better understand information about a local business, specifically a medical clinic.
             </p>
-            
+
             <div className="space-y-2">
               <ChecklistItem
                 label="Schema implemented"
@@ -1137,7 +1130,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
 
             {/* Required fields */}
             <div className="pt-2">
-              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 mb-3">
+              <h4 style={{ color: HORIZON.textSecondary }}>
                 Required Fields
               </h4>
               <div className="space-y-2">
@@ -1163,7 +1156,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
             {/* Optional fields */}
             {(result.local_business_schema.has_price_range || result.local_business_schema.has_aggregate_rating) && (
               <div className="pt-2">
-                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 mb-3">
+                <h4 style={{ color: HORIZON.textSecondary }}>
                   Optional Fields
                 </h4>
                 <div className="space-y-2">
@@ -1189,15 +1182,15 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
                       result.local_business_schema.validation_status === 'valid'
                         ? 'default'
                         : result.local_business_schema.validation_status === 'warning'
-                        ? 'secondary'
-                        : 'destructive'
+                          ? 'secondary'
+                          : 'destructive'
                     }
                     className={
                       result.local_business_schema.validation_status === 'valid'
                         ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
                         : result.local_business_schema.validation_status === 'warning'
-                        ? 'bg-orange-100 text-orange-800 border-orange-200'
-                        : ''
+                          ? 'bg-orange-100 text-orange-800 border-orange-200'
+                          : ''
                     }
                   >
                     {result.local_business_schema.validation_status}
@@ -1241,7 +1234,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
 
           {/* Calculation */}
           <div className="pt-4 border-t border-slate-100">
-            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 mb-3">
+            <h4 style={{ color: HORIZON.textSecondary }}>
               Calculation
             </h4>
             <div className="space-y-2 text-sm font-medium text-slate-600">
@@ -1254,14 +1247,14 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
 
       {/* Recommendations */}
       {result.recommendations.length > 0 && (
-        <BentoCard className="border-2 border-orange-200 bg-orange-50/30 relative overflow-hidden">
+        <HorizonCard className="border-none relative overflow-hidden bg-white shadow-[0_18px_40px_rgba(255,181,71,0.12)]">
           <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
-            <AlertTriangle className="w-24 h-24" />
+            <AlertTriangle className="w-24 h-24" style={{ color: HORIZON.warning }} />
           </div>
           <CardHeader>
-            <CardTitle className="flex items-center gap-3 text-orange-700 text-xl font-black italic tracking-tighter">
-              <div className="p-2 rounded-xl bg-white shadow-sm border border-orange-100">
-                <AlertTriangle className="h-6 w-6" />
+            <CardTitle className="flex items-center gap-3 text-xl font-bold" style={{ color: HORIZON.textPrimary }}>
+              <div className="p-2 rounded-xl bg-[#FFB54715] shadow-sm">
+                <AlertTriangle className="h-6 w-6" style={{ color: HORIZON.warning }} />
               </div>
               Recommendations ({result.recommendations.length})
             </CardTitle>
@@ -1269,14 +1262,14 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
           <CardContent>
             <ul className="space-y-3">
               {result.recommendations.map((rec, index) => (
-                <li key={index} className="flex items-start gap-3 text-sm p-3 bg-white/50 rounded-xl border border-orange-100">
-                  <span className="text-orange-600 mt-0.5 flex-shrink-0 font-black">•</span>
-                  <span className="text-slate-700 font-medium leading-relaxed">{rec}</span>
+                <li key={index} className="flex items-start gap-4 text-sm p-4 rounded-xl transition-all duration-200 hover:bg-[#F4F7FE]" style={{ border: `1px solid ${HORIZON.background}` }}>
+                  <span className="mt-1 flex-shrink-0 w-1.5 h-1.5 rounded-full" style={{ backgroundColor: HORIZON.warning }} />
+                  <span className="font-medium leading-relaxed" style={{ color: HORIZON.textPrimary }}>{rec}</span>
                 </li>
               ))}
             </ul>
           </CardContent>
-        </BentoCard>
+        </HorizonCard>
       )}
     </div>
   );

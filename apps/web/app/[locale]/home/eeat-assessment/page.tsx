@@ -181,7 +181,7 @@ export default function EEATAssessmentPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col space-y-8 p-4 lg:p-12 min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
+    <div className="flex-1 flex flex-col space-y-8 p-4 lg:p-8 min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold" style={{ color: '#1B2559' }}>
