@@ -57,12 +57,12 @@ export function StepAnalysis({ onContinue }: StepAnalysisProps) {
 
 const data = [
     { name: 'Day 1', visibility: 12 },
-    { name: 'Day 5', visibility: 18 },
-    { name: 'Day 10', visibility: 25 },
-    { name: 'Day 15', visibility: 42 },
-    { name: 'Day 20', visibility: 58 },
-    { name: 'Day 25', visibility: 72 },
-    { name: 'Day 30', visibility: 85 },
+    { name: 'Day 15', visibility: 18 },
+    { name: 'Day 30', visibility: 25 },
+    { name: 'Day 45', visibility: 42 },
+    { name: 'Day 60', visibility: 58 },
+    { name: 'Day 75', visibility: 72 },
+    { name: 'Day 90', visibility: 85 },
 ];
 
 export function VisualAnalysis() {
@@ -129,7 +129,7 @@ export function VisualAnalysis() {
                         className="px-3 py-1 rounded-lg text-xs font-bold"
                         style={{ backgroundColor: HORIZON.primaryLight, color: HORIZON.primary, border: `1px solid ${HORIZON.primary}30` }}
                     >
-                        30 Day Simulation
+                        90 Day Simulation
                     </div>
                 </div>
 

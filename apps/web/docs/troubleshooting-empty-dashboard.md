@@ -75,3 +75,4 @@ SELECT kit.ensure_user_has_project('<ваш_user_id>');
 
 
 
+

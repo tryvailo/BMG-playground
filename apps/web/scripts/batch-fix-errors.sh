@@ -61,3 +61,4 @@ echo "   2. Проверить TypeScript: pnpm --filter web typecheck"
 echo "   3. Если все ок - коммитить: git add -A && git commit -m 'fix: исправление ошибок' && git push"
 
 
+

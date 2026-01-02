@@ -7,10 +7,11 @@ import { StepBenchmark, VisualBenchmark } from '~/components/onboarding/StepBenc
 import { StepTopics, VisualTopics } from '~/components/onboarding/StepTopics';
 import { StepAnalysis, VisualAnalysis } from '~/components/onboarding/StepAnalysis';
 import { StepRegion, VisualRegion } from '~/components/onboarding/StepRegion';
+import { StepCity, VisualCity } from '~/components/onboarding/StepCity';
 import { StepPricing } from '~/components/onboarding/StepPricing';
 import { useRouter } from '~/lib/navigation';
 
-type OnboardingStep = 'domain' | 'benchmark' | 'topics' | 'analysis' | 'region' | 'pricing';
+type OnboardingStep = 'domain' | 'benchmark' | 'topics' | 'analysis' | 'region' | 'city' | 'pricing';
 
 /**
  * Extract clinic name from domain
@@ -44,23 +45,43 @@ function extractClinicName(domain: string): string {
 }
 
 export default function OnboardingPage() {
-    const [currentStep, setCurrentStep] = useState<OnboardingStep>('domain');
+    const [currentStep, setCurrentStep] = useState<OnboardingStep>('region');
     const [onboardingData, setOnboardingData] = useState({
         domain: '',
+        clinicName: '', // Store found clinic name for Ukraine
         topics: [] as string[],
         region: 'US',
         language: 'en',
+        city: '',
+        competitors: [] as Array<{ name: string; url: string }>, // Competitors for Ukraine
         planId: '',
         interval: 'month' as 'month' | 'year'
     });
+    // Store selected region separately to ensure it's available immediately
+    const [selectedRegion, setSelectedRegion] = useState<string>('US');
 
     const router = useRouter();
     
-    // Extract clinic name from domain
-    const clinicName = useMemo(() => extractClinicName(onboardingData.domain), [onboardingData.domain]);
+    // Extract clinic name from domain or use found clinic name for Ukraine
+    const clinicName = useMemo(() => {
+        // If we have a found clinic name for Ukraine (from database lookup), use it
+        if (onboardingData.region === 'UA' && onboardingData.clinicName) {
+            return onboardingData.clinicName;
+        }
+        // Otherwise, extract from domain (fallback for all cases)
+        return extractClinicName(onboardingData.domain);
+    }, [onboardingData.domain, onboardingData.clinicName, onboardingData.region]);
 
-    const steps: OnboardingStep[] = ['domain', 'benchmark', 'topics', 'analysis', 'region', 'pricing'];
+    // Determine steps based on region selection
+    // New order: 1) region (country) 2) city (for all countries) 3) domain (URL) 4) other steps
+    const getSteps = (): OnboardingStep[] => {
+        // All countries have city selection step
+        return ['region', 'city', 'domain', 'benchmark', 'topics', 'analysis', 'pricing'];
+    };
+
+    const steps = useMemo(() => getSteps(), []);
     const currentIndex = steps.indexOf(currentStep);
+
 
     const handleNext = () => {
         const nextStep = steps[currentIndex + 1];
@@ -70,7 +91,10 @@ export default function OnboardingPage() {
     };
 
     const handleBack = () => {
-        const prevStep = steps[currentIndex - 1];
+        // Recalculate steps in case region changed
+        const currentSteps = getSteps();
+        const currentIdx = currentSteps.indexOf(currentStep);
+        const prevStep = currentSteps[currentIdx - 1];
         if (prevStep) {
             setCurrentStep(prevStep);
         } else {
@@ -83,14 +107,23 @@ export default function OnboardingPage() {
             case 'domain':
                 return (
                     <StepDomain
-                        onContinue={(domain) => {
-                            setOnboardingData({ ...onboardingData, domain });
+                        region={selectedRegion || onboardingData.region}
+                        city={onboardingData.city}
+                        onContinue={(domain, clinicName, competitors) => {
+                            setOnboardingData(prev => ({ 
+                                ...prev, 
+                                domain,
+                                // Only set clinicName if found in database, otherwise leave empty to use domain extraction
+                                clinicName: clinicName || '',
+                                // Store competitors for Ukraine
+                                competitors: competitors || []
+                            }));
                             handleNext();
                         }}
                     />
                 );
             case 'benchmark':
-                return <StepBenchmark onContinue={handleNext} clinicName={clinicName} />;
+                return <StepBenchmark onContinue={handleNext} clinicName={clinicName} competitors={onboardingData.competitors} />;
             case 'topics':
                 return (
                     <StepTopics
@@ -106,8 +139,23 @@ export default function OnboardingPage() {
                 return (
                     <StepRegion
                         onContinue={(region, language) => {
-                            setOnboardingData({ ...onboardingData, region, language });
-                            handleNext();
+                            // Store region immediately for use in next step
+                            setSelectedRegion(region);
+                            // Update state
+                            setOnboardingData(prev => ({ ...prev, region, language }));
+                            // Navigate to city step for all countries
+                            setCurrentStep('city');
+                        }}
+                    />
+                );
+            case 'city':
+                return (
+                    <StepCity
+                        countryCode={selectedRegion || 'UA'}
+                        onContinue={(city) => {
+                            setOnboardingData(prev => ({ ...prev, city }));
+                            // After city selection, go to domain step
+                            setCurrentStep('domain');
                         }}
                     />
                 );
@@ -162,7 +210,7 @@ export default function OnboardingPage() {
     const renderVisualWithProps = () => {
         switch (currentStep) {
             case 'benchmark':
-                return <VisualBenchmark clinicName={clinicName} />;
+                return <VisualBenchmark clinicName={clinicName} competitors={onboardingData.competitors} />;
             case 'domain':
                 return <VisualDomain />;
             case 'topics':
@@ -171,6 +219,8 @@ export default function OnboardingPage() {
                 return <VisualAnalysis />;
             case 'region':
                 return <VisualRegion />;
+            case 'city':
+                return <VisualCity />;
             default:
                 return null;
         }

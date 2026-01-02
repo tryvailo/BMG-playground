@@ -32,7 +32,9 @@
     "supabase:typegen:packages": "supabase gen types typescript --local > ../../packages/supabase/src/database.types.ts",
     "supabase:typegen:app": "supabase gen types typescript --local > ./lib/database.types.ts",
     "supabase:db:dump:local": "supabase db dump --local --data-only",
-    "verify-metrics": "tsx scripts/verify-metrics.ts"
+    "verify-metrics": "tsx scripts/verify-metrics.ts",
+    "import-ukraine-cities": "tsx scripts/import-ukraine-cities.ts",
+    "import-ukraine-cities-tsv": "tsx scripts/import-ukraine-cities-tsv.ts"
   },
   "dependencies": {
     "@edge-csrf/nextjs": "2.5.3-cloudflare-rc1",
@@ -87,7 +89,8 @@
     "tailwindcss": "4.1.14",
     "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.20.6",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "xlsx": "^0.18.5"
   },
   "optionalDependencies": {
     "supabase": "^2.48.3"

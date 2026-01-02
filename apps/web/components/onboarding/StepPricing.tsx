@@ -23,6 +23,7 @@ interface StepPricingProps {
 
 export function StepPricing({ onPlanSelect }: StepPricingProps) {
     const [interval, setInterval] = useState<'month' | 'year'>('month');
+    const [selectedPlan, setSelectedPlan] = useState<'starter' | 'growth'>('starter');
 
     const plans = [
         {
@@ -88,105 +89,127 @@ export function StepPricing({ onPlanSelect }: StepPricingProps) {
                 </button>
             </div>
 
-            {/* Pricing Cards */}
+            {/* Pricing Cards - Both cards side by side with selection */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full mb-12">
-                {plans.map((plan) => (
-                    <div
-                        key={plan.id}
-                        className={cn(
-                            "relative rounded-[20px] p-8 transition-all group overflow-hidden flex flex-col h-full hover:-translate-y-2 duration-300",
-                            plan.popular
-                                ? "z-10 scale-[1.02]"
-                                : ""
-                        )}
-                        style={{
-                            backgroundColor: 'white',
-                            boxShadow: plan.popular ? `0 25px 50px ${HORIZON.primary}20` : HORIZON.shadow,
-                            border: plan.popular ? `2px solid ${HORIZON.primary}` : '2px solid transparent'
-                        }}
-                    >
-                        {plan.popular && (
-                            <div
-                                className="text-white text-[10px] font-bold uppercase tracking-widest py-2 text-center absolute top-0 left-0 right-0"
-                                style={{ backgroundColor: HORIZON.primary }}
-                            >
-                                Popular
-                            </div>
-                        )}
-
-                        {plan.popular && (
-                            <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-                                <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
-                                    <circle cx="60" cy="60" r="60" fill="url(#grad1)" />
-                                    <defs>
-                                        <linearGradient id="grad1" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
-                                            <stop stopColor={HORIZON.primary} />
-                                            <stop offset="1" stopColor="#7551FF" />
-                                        </linearGradient>
-                                    </defs>
-                                </svg>
-                            </div>
-                        )}
-
-                        <div className={cn("flex flex-col h-full", plan.popular ? "pt-6" : "")}>
-                            <div className="mb-6">
-                                <div className="flex items-center justify-between mb-2">
-                                    <h3 className="text-xl font-bold" style={{ color: HORIZON.textPrimary }}>{plan.name}</h3>
-                                    {plan.id === 'starter' ? (
-                                        <div className="w-6 h-6 rounded-md flex items-center justify-center p-1" style={{ backgroundColor: HORIZON.textPrimary }}>
-                                            <svg viewBox="0 0 24 24" fill="white"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-4.7471-3.124 5.9847 5.9847 0 0 0-5.188-1.5547 6.0462 6.0462 0 0 0-4.667 3.243 5.9847 5.9847 0 0 0-.5157 4.9108 6.0462 6.0462 0 0 0-3.321 4.615 5.9847 5.9847 0 0 0 1.5547 5.188 6.0462 6.0462 0 0 0 3.243 4.667 5.9847 5.9847 0 0 0 4.9108.5157 6.0462 6.0462 0 0 0 4.615 3.321 5.9847 5.9847 0 0 0 5.188-1.5547 6.0462 6.0462 0 0 0 4.667-3.243 5.9847 5.9847 0 0 0 .5157-4.9108 6.0462 6.0462 0 0 0 3.321-4.615 5.9847 5.9847 0 0 0-1.5547-5.188 6.0462 6.0462 0 0 0-3.243-4.667zm-2.127 8.018a4.479 4.479 0 0 1-2.427 2.404l-.147.06-.015.158a4.438 4.438 0 0 1-1.155 2.628 4.479 4.479 0 0 1-3.865 1.155l-.158-.023-.105.12a4.438 4.438 0 0 1-2.427 1.411 4.479 4.479 0 0 1-4.041-2.381l-.098-.165-.181.015a4.438 4.438 0 0 1-2.628-1.155 4.479 4.479 0 0 1-1.155-3.865l.023-.158-.12-.105a4.438 4.438 0 0 1-1.411-2.427 4.479 4.479 0 0 1 2.381-4.041l.165-.098-.015-.181a4.438 4.438 0 0 1 1.155-2.628 4.479 4.479 0 0 1 3.865-1.155l.158.023.105-.12a4.438 4.438 0 0 1 2.427-1.411 4.479 4.479 0 0 1 4.041 2.381l.098.165.181-.015a4.438 4.438 0 0 1 2.628 1.155 4.479 4.479 0 0 1 1.155 3.865l-.023.158.12.105a4.438 4.438 0 0 1 1.411 2.427 4.479 4.479 0 0 1-2.381 4.041l-.165.098.015.181zM11.4785 15.657l-3.321-3.321 1.1325-1.1325 2.1885 2.1885 4.908-4.908 1.1325 1.1325-6.0405 6.0405z" /></svg>
-                                        </div>
-                                    ) : (
-                                        <div className="flex gap-1">
-                                            <div className="w-5 h-5 rounded flex items-center justify-center p-0.5" style={{ backgroundColor: HORIZON.textPrimary }}>
-                                                <svg viewBox="0 0 24 24" fill="white"><path d="M22.28 9.82a6 6 0 0 0-.52-4.91 6.05 6.05 0 0 0-4.75-3.12 6 6 0 0 0-5.19-1.55 6.05 6.05 0 0 0-4.67 3.24 6 6 0 0 0-.52 4.91 6.05 6.05 0 0 0-3.32 4.62 6 6 0 0 0 1.55 5.19 6.05 6.05 0 0 0 3.24 4.67 6 6 0 0 0 4.91.52 6.05 6.05 0 0 0 4.62 3.32 6 6 0 0 0 5.19-1.55 6.05 6.05 0 0 0 4.67-3.24 6 6 0 0 0 .52-4.91 6.05 6.05 0 0 0 3.32-4.62 6 6 0 0 0-1.55-5.19z" /></svg>
-                                            </div>
-                                            <div className="w-5 h-5 rounded flex items-center justify-center p-0.5" style={{ backgroundColor: HORIZON.primary }}>
-                                                <svg viewBox="0 0 24 24" fill="white"><path d="M12 2L2 7l10 5 10-5-10-5z" /></svg>
-                                            </div>
-                                            <div className="w-5 h-5 rounded flex items-center justify-center p-0.5" style={{ backgroundColor: HORIZON.success }}>
-                                                <svg viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" /></svg>
-                                            </div>
-                                        </div>
-                                    )}
+                {plans.map((plan) => {
+                    const isSelected = selectedPlan === plan.id;
+                    return (
+                        <div
+                            key={plan.id}
+                            onClick={() => setSelectedPlan(plan.id as 'starter' | 'growth')}
+                            className={cn(
+                                "relative rounded-[20px] p-8 transition-all group overflow-hidden flex flex-col h-full cursor-pointer duration-300",
+                                isSelected
+                                    ? "z-10 scale-[1.02] -translate-y-2"
+                                    : "hover:-translate-y-2"
+                            )}
+                            style={{
+                                backgroundColor: 'white',
+                                boxShadow: isSelected 
+                                    ? `0 25px 50px ${HORIZON.primary}20` 
+                                    : plan.popular 
+                                        ? `0 18px 40px ${HORIZON.primary}15`
+                                        : HORIZON.shadow,
+                                border: isSelected 
+                                    ? `2px solid ${HORIZON.primary}` 
+                                    : plan.popular 
+                                        ? `2px solid ${HORIZON.primary}40`
+                                        : '2px solid transparent'
+                            }}
+                        >
+                            {plan.popular && (
+                                <div
+                                    className="text-white text-[10px] font-bold uppercase tracking-widest py-2 text-center absolute top-0 left-0 right-0"
+                                    style={{ backgroundColor: HORIZON.primary }}
+                                >
+                                    Popular
                                 </div>
-                                <div className="flex items-baseline gap-1 mb-2">
-                                    <span className="text-4xl font-bold" style={{ color: HORIZON.textPrimary }}>${plan.price[interval]}</span>
-                                    <span className="font-medium" style={{ color: HORIZON.textSecondary }}>/month</span>
+                            )}
+
+                            {plan.popular && (
+                                <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                                    <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
+                                        <circle cx="60" cy="60" r="60" fill="url(#grad1)" />
+                                        <defs>
+                                            <linearGradient id="grad1" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+                                                <stop stopColor={HORIZON.primary} />
+                                                <stop offset="1" stopColor="#7551FF" />
+                                            </linearGradient>
+                                        </defs>
+                                    </svg>
                                 </div>
-                                <p className="text-sm font-medium leading-relaxed" style={{ color: HORIZON.textSecondary }}>{plan.description}</p>
-                            </div>
+                            )}
 
-                            <Button
-                                variant={plan.popular ? 'default' : 'outline'}
-                                onClick={() => onPlanSelect(plan.id, interval)}
-                                className={cn(
-                                    "w-full py-6 rounded-xl font-bold transition-all mb-8 hover:-translate-y-0.5",
-                                    plan.popular
-                                        ? "text-white"
-                                        : ""
-                                )}
-                                style={{
-                                    backgroundColor: plan.popular ? HORIZON.primary : 'transparent',
-                                    boxShadow: plan.popular ? `0 15px 30px ${HORIZON.primary}30` : 'none',
-                                    borderColor: plan.popular ? 'transparent' : HORIZON.secondary,
-                                    color: plan.popular ? 'white' : HORIZON.textPrimary
-                                }}
-                            >
-                                Purchase Plan
-                            </Button>
+                            {/* Selection indicator */}
+                            {isSelected && (
+                                <div className="absolute top-4 right-4 w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: HORIZON.primary }}>
+                                    <Check size={14} className="text-white" />
+                                </div>
+                            )}
 
-                            <div className="space-y-4 flex-1">
-                                {plan.features.map((feature, i) => (
-                                    <div key={i} className="flex gap-3">
-                                        <Check size={18} style={{ color: HORIZON.success }} className="mt-0.5 flex-shrink-0" />
-                                        <span className="text-sm font-medium leading-snug" style={{ color: HORIZON.textSecondary }}>{feature}</span>
+                            <div className={cn("flex flex-col h-full", plan.popular ? "pt-6" : "")}>
+                                <div className="mb-6">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h3 className="text-xl font-bold" style={{ color: HORIZON.textPrimary }}>{plan.name}</h3>
+                                        {plan.id === 'starter' ? (
+                                            <div className="w-6 h-6 rounded-md flex items-center justify-center p-1" style={{ backgroundColor: HORIZON.textPrimary }}>
+                                                <svg viewBox="0 0 24 24" fill="white"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-4.7471-3.124 5.9847 5.9847 0 0 0-5.188-1.5547 6.0462 6.0462 0 0 0-4.667 3.243 5.9847 5.9847 0 0 0-.5157 4.9108 6.0462 6.0462 0 0 0-3.321 4.615 5.9847 5.9847 0 0 0 1.5547 5.188 6.0462 6.0462 0 0 0 3.243 4.667 5.9847 5.9847 0 0 0 4.9108.5157 6.0462 6.0462 0 0 0 4.615 3.321 5.9847 5.9847 0 0 0 5.188-1.5547 6.0462 6.0462 0 0 0 4.667-3.243 5.9847 5.9847 0 0 0 .5157-4.9108 6.0462 6.0462 0 0 0 3.321-4.615 5.9847 5.9847 0 0 0-1.5547-5.188 6.0462 6.0462 0 0 0-3.243-4.667zm-2.127 8.018a4.479 4.479 0 0 1-2.427 2.404l-.147.06-.015.158a4.438 4.438 0 0 1-1.155 2.628 4.479 4.479 0 0 1-3.865 1.155l-.158-.023-.105.12a4.438 4.438 0 0 1-2.427 1.411 4.479 4.479 0 0 1-4.041-2.381l-.098-.165-.181.015a4.438 4.438 0 0 1-2.628-1.155 4.479 4.479 0 0 1-1.155-3.865l.023-.158-.12-.105a4.438 4.438 0 0 1-1.411-2.427 4.479 4.479 0 0 1 2.381-4.041l.165-.098-.015-.181a4.438 4.438 0 0 1 1.155-2.628 4.479 4.479 0 0 1 3.865-1.155l.158.023.105-.12a4.438 4.438 0 0 1 2.427-1.411 4.479 4.479 0 0 1 4.041 2.381l.098.165.181-.015a4.438 4.438 0 0 1 2.628 1.155 4.479 4.479 0 0 1 1.155 3.865l-.023.158.12.105a4.438 4.438 0 0 1 1.411 2.427 4.479 4.479 0 0 1-2.381 4.041l-.165.098.015.181zM11.4785 15.657l-3.321-3.321 1.1325-1.1325 2.1885 2.1885 4.908-4.908 1.1325 1.1325-6.0405 6.0405z" /></svg>
+                                            </div>
+                                        ) : (
+                                            <div className="flex gap-1">
+                                                <div className="w-5 h-5 rounded flex items-center justify-center p-0.5" style={{ backgroundColor: HORIZON.textPrimary }}>
+                                                    <svg viewBox="0 0 24 24" fill="white"><path d="M22.28 9.82a6 6 0 0 0-.52-4.91 6.05 6.05 0 0 0-4.75-3.12 6 6 0 0 0-5.19-1.55 6.05 6.05 0 0 0-4.67 3.24 6 6 0 0 0-.52 4.91 6.05 6.05 0 0 0-3.32 4.62 6 6 0 0 0 1.55 5.19 6.05 6.05 0 0 0 3.24 4.67 6 6 0 0 0 4.91.52 6.05 6.05 0 0 0 4.62 3.32 6 6 0 0 0 5.19-1.55 6.05 6.05 0 0 0 4.67-3.24 6 6 0 0 0 .52-4.91 6.05 6.05 0 0 0 3.32-4.62 6 6 0 0 0-1.55-5.19z" /></svg>
+                                                </div>
+                                                <div className="w-5 h-5 rounded flex items-center justify-center p-0.5" style={{ backgroundColor: HORIZON.primary }}>
+                                                    <svg viewBox="0 0 24 24" fill="white"><path d="M12 2L2 7l10 5 10-5-10-5z" /></svg>
+                                                </div>
+                                                <div className="w-5 h-5 rounded flex items-center justify-center p-0.5" style={{ backgroundColor: HORIZON.success }}>
+                                                    <svg viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" /></svg>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
-                                ))}
+                                    <div className="flex items-baseline gap-1 mb-2">
+                                        <span className="text-4xl font-bold" style={{ color: HORIZON.textPrimary }}>${plan.price[interval]}</span>
+                                        <span className="font-medium" style={{ color: HORIZON.textSecondary }}>/month</span>
+                                    </div>
+                                    <p className="text-sm font-medium leading-relaxed" style={{ color: HORIZON.textSecondary }}>{plan.description}</p>
+                                </div>
+
+                                <Button
+                                    variant={isSelected ? 'default' : 'outline'}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onPlanSelect(plan.id, interval);
+                                    }}
+                                    className={cn(
+                                        "w-full py-6 rounded-xl font-bold transition-all mb-8 hover:-translate-y-0.5",
+                                        isSelected
+                                            ? "text-white"
+                                            : ""
+                                    )}
+                                    style={{
+                                        backgroundColor: isSelected ? HORIZON.primary : 'transparent',
+                                        boxShadow: isSelected ? `0 15px 30px ${HORIZON.primary}30` : 'none',
+                                        borderColor: isSelected ? 'transparent' : HORIZON.secondary,
+                                        color: isSelected ? 'white' : HORIZON.textPrimary
+                                    }}
+                                >
+                                    Purchase Plan
+                                </Button>
+
+                                <div className="space-y-4 flex-1">
+                                    {plan.features.map((feature, i) => (
+                                        <div key={i} className="flex gap-3">
+                                            <Check size={18} style={{ color: HORIZON.success }} className="mt-0.5 flex-shrink-0" />
+                                            <span className="text-sm font-medium leading-snug" style={{ color: HORIZON.textSecondary }}>{feature}</span>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
 
             {/* Product Tour Video Block */}

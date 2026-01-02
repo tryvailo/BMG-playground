@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@kit/ui/button';
 import {
     Select,
@@ -100,7 +100,33 @@ export function StepRegion({ onContinue }: StepRegionProps) {
     );
 }
 
+// Deterministic pseudo-random function for consistent rendering
+function seededRandom(seed: number): number {
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+}
+
+// Pre-calculate dots positions to avoid hydration mismatch
+function generateDots() {
+    return Array.from({ length: 120 }).map((_, i) => {
+        const angle = (i / 120) * Math.PI * 2;
+        const r = 10 + seededRandom(i * 7.3) * 38;
+        const x = 50 + Math.cos(angle) * r;
+        const y = 50 + Math.sin(angle) * r;
+        return { x, y, key: i };
+    });
+}
+
 export function VisualRegion() {
+    const [dots, setDots] = useState<Array<{ x: number; y: number; key: number }>>([]);
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        // Generate dots only on client to avoid hydration mismatch
+        setIsMounted(true);
+        setDots(generateDots());
+    }, []);
+
     return (
         <div className="flex items-center justify-center animate-in zoom-in-95 duration-1000">
             <div className="relative w-[480px] h-[480px] opacity-40">
@@ -110,14 +136,10 @@ export function VisualRegion() {
                     <circle cx="50" cy="50" r="28" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="1 3" />
                     <circle cx="50" cy="50" r="18" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="1 3" />
 
-                    {/* Mock Globe Dots */}
-                    {Array.from({ length: 120 }).map((_, i) => {
-                        const angle = (i / 120) * Math.PI * 2;
-                        const r = 10 + Math.random() * 38;
-                        const x = 50 + Math.cos(angle) * r;
-                        const y = 50 + Math.sin(angle) * r;
-                        return <circle key={i} cx={x} cy={y} r="0.4" fill="currentColor" />;
-                    })}
+                    {/* Mock Globe Dots - rendered only on client to avoid hydration mismatch */}
+                    {isMounted && dots.map((dot) => (
+                        <circle key={dot.key} cx={dot.x} cy={dot.y} r="0.4" fill="currentColor" />
+                    ))}
                 </svg>
 
                 {/* Glow Effect with Horizon primary */}

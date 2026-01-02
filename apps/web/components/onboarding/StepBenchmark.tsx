@@ -18,12 +18,18 @@ const HORIZON = {
     shadow: '0 18px 40px rgba(112, 144, 176, 0.12)',
 };
 
+interface Competitor {
+    name: string;
+    url: string;
+}
+
 interface StepBenchmarkProps {
     onContinue: () => void;
     clinicName?: string;
+    competitors?: Competitor[];
 }
 
-export function StepBenchmark({ onContinue, clinicName = 'My Clinic' }: StepBenchmarkProps) {
+export function StepBenchmark({ onContinue, clinicName = 'My Clinic', competitors: _competitors = [] }: StepBenchmarkProps) {
     return (
         <div className="flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Platform Icons */}
@@ -66,9 +72,10 @@ export function StepBenchmark({ onContinue, clinicName = 'My Clinic' }: StepBenc
 
 interface VisualBenchmarkProps {
     clinicName?: string;
+    competitors?: Competitor[];
 }
 
-export function VisualBenchmark({ clinicName = 'My Clinic' }: VisualBenchmarkProps) {
+export function VisualBenchmark({ clinicName = 'My Clinic', competitors: propCompetitors = [] }: VisualBenchmarkProps) {
     const [isScanning, setIsScanning] = React.useState(true);
 
     React.useEffect(() => {
@@ -76,13 +83,31 @@ export function VisualBenchmark({ clinicName = 'My Clinic' }: VisualBenchmarkPro
         return () => clearTimeout(timer);
     }, []);
 
-    const competitors = [
-        { rank: 1, name: 'UnitedHealth Group', score: '94%' },
-        { rank: 2, name: 'CVS Health', score: '88%' },
-        { rank: 3, name: 'McKesson Corp.', score: '85%' },
-        { rank: 4, name: 'Oracle Health', score: '82%' },
-        { rank: 21, name: clinicName, current: true, score: '12%' },
-    ];
+    // Use provided competitors if available (for Ukraine), otherwise use default
+    const hasUkraineCompetitors = propCompetitors.length > 0;
+    
+    // Deterministic score generation based on index to avoid hydration mismatch
+    const getScoreForRank = (rank: number) => {
+        const scores = [94, 88, 85, 82, 79, 76, 73, 70];
+        return `${scores[(rank - 1) % scores.length]}%`;
+    };
+    
+    const competitors: { rank: number; name: string; score: string; current?: boolean }[] = hasUkraineCompetitors
+        ? [
+            ...propCompetitors.slice(0, 4).map((comp, i) => ({
+                rank: i + 1,
+                name: comp.name,
+                score: getScoreForRank(i + 1),
+            })),
+            { rank: 18, name: clinicName, current: true, score: '12%' },
+          ]
+        : [
+            { rank: 1, name: 'UnitedHealth Group', score: '94%' },
+            { rank: 2, name: 'CVS Health', score: '88%' },
+            { rank: 3, name: 'McKesson Corp.', score: '85%' },
+            { rank: 4, name: 'Oracle Health', score: '82%' },
+            { rank: 18, name: clinicName, current: true, score: '12%' },
+          ];
 
     return (
         <div

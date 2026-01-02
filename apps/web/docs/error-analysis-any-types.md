@@ -252,3 +252,4 @@ const { data: savedData, error: saveError } = await (supabase as any)
 **Все ошибки могут быть исправлены добавлением комментариев `eslint-disable-next-line @typescript-eslint/no-explicit-any`**, что является консистентным подходом, используемым в других частях проекта.
 
 
+

@@ -172,3 +172,4 @@ grant select, insert, update, delete on public.local_indicators_audits to anon;
 
 
 
+

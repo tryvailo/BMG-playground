@@ -5,6 +5,7 @@ import { Button } from '@kit/ui/button';
 import { Input } from '@kit/ui/input';
 import { Search, Globe, ChevronRight } from 'lucide-react';
 import { cn } from '@kit/ui/utils';
+import { findClinicByUrl, findCompetitors } from '~/lib/data/ukraine-clinics';
 
 // Horizon UI Design Tokens
 const HORIZON = {
@@ -18,16 +19,42 @@ const HORIZON = {
 };
 
 interface StepDomainProps {
-    onContinue: (domain: string) => void;
+    onContinue: (domain: string, clinicName?: string, competitors?: Array<{ name: string; url: string }>) => void;
+    region?: string;
+    city?: string;
 }
 
-export function StepDomain({ onContinue }: StepDomainProps) {
+export function StepDomain({ onContinue, region, city }: StepDomainProps) {
     const [domain, setDomain] = useState('');
+    const [isSearching, setIsSearching] = useState(false);
 
-    const handleSubmit = (e?: React.FormEvent) => {
+    const handleSubmit = async (e?: React.FormEvent) => {
         e?.preventDefault();
-        if (domain.trim()) {
-            onContinue(domain.trim());
+        const trimmedDomain = domain.trim();
+        if (!trimmedDomain) {
+            return;
+        }
+
+        // If region is Ukraine, try to find clinic name and competitors in database
+        if (region === 'UA' && city) {
+            setIsSearching(true);
+            try {
+                const clinicName = await findClinicByUrl(trimmedDomain);
+                // Find competitors from the same city
+                const competitors = await findCompetitors(city, trimmedDomain);
+                const competitorsData = competitors.map(c => ({ name: c.name, url: c.url }));
+                // If found, use it; otherwise pass undefined to use domain extraction
+                onContinue(trimmedDomain, clinicName || undefined, competitorsData);
+            } catch (error) {
+                console.error('Error finding clinic or competitors:', error);
+                // On error, continue without clinic name and competitors (will use domain extraction)
+                onContinue(trimmedDomain);
+            } finally {
+                setIsSearching(false);
+            }
+        } else {
+            // For non-UA regions, don't pass clinic name or competitors (will use domain extraction)
+            onContinue(trimmedDomain);
         }
     };
 
@@ -63,21 +90,21 @@ export function StepDomain({ onContinue }: StepDomainProps) {
                 </div>
 
                 <Button
-                    disabled={!domain.trim()}
+                    disabled={!domain.trim() || isSearching}
                     type="submit"
                     className={cn(
                         "w-full lg:w-fit px-12 py-6 text-lg rounded-xl transition-all flex items-center gap-3 font-semibold",
-                        domain.trim()
+                        domain.trim() && !isSearching
                             ? "text-white shadow-xl animate-pulse-subtle hover:-translate-y-0.5"
                             : "cursor-not-allowed opacity-50"
                     )}
                     style={{
-                        backgroundColor: domain.trim() ? HORIZON.primary : HORIZON.secondary,
-                        boxShadow: domain.trim() ? `0 15px 30px ${HORIZON.primary}30` : 'none'
+                        backgroundColor: domain.trim() && !isSearching ? HORIZON.primary : HORIZON.secondary,
+                        boxShadow: domain.trim() && !isSearching ? `0 15px 30px ${HORIZON.primary}30` : 'none'
                     }}
                 >
-                    Analyze Visibility
-                    <ChevronRight size={20} />
+                    {isSearching ? 'Searching...' : 'Analyze Visibility'}
+                    {!isSearching && <ChevronRight size={20} />}
                 </Button>
             </form>
 

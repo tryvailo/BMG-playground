@@ -61,3 +61,4 @@ WHERE schema_name = 'kit';
 2. ✅ `20251201_add_dashboard_metrics.sql` - добавит колонки в weekly_stats
 
 
+
