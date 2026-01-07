@@ -64,6 +64,7 @@ export const performLocalIndicatorsAudit = enhanceAction(
     // Get API keys from input or environment
     const apiKey =
       googleApiKey ||
+      process.env.GOOGLE_PLACES_API_KEY ||
       process.env.GOOGLE_MAPS_API_KEY ||
       process.env.GOOGLE_BUSINESS_API_KEY ||
       process.env.GOOGLE_PAGESPEED_API_KEY;
