@@ -66,7 +66,20 @@ export function SubscriptionStatus() {
   }
 
   if (!subscription) {
-    return null; // No subscription, don't show anything
+    // Show warning when no subscription exists
+    return (
+      <div className="bg-yellow-50 rounded-xl shadow-sm border border-yellow-200 p-6">
+        <div className="flex items-start gap-3">
+          <AlertCircle size={20} className="text-yellow-600 mt-0.5" />
+          <div>
+            <h3 className="font-semibold text-yellow-900">No Subscription Found</h3>
+            <p className="text-sm text-yellow-700 mt-1">
+              Your account doesn&apos;t have an active subscription. Please contact support or complete the onboarding process.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const getStatusConfig = (status: string) => {

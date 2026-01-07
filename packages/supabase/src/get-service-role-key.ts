@@ -11,6 +11,18 @@ const message =
  * ONLY USE IN SERVER-SIDE CODE. DO NOT EXPOSE THIS TO CLIENT-SIDE CODE.
  */
 export function getServiceRoleKey() {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  // Debug logging in development
+  if (process.env.NODE_ENV !== 'production') {
+    if (!key) {
+      console.error('[Supabase] SUPABASE_SERVICE_ROLE_KEY is not set in environment variables');
+      console.error('[Supabase] Available env vars:', Object.keys(process.env).filter(k => k.includes('SUPABASE')));
+    } else {
+      console.log('[Supabase] Service role key found, length:', key.length);
+    }
+  }
+  
   return z
     .string({
       required_error: message,
@@ -18,7 +30,7 @@ export function getServiceRoleKey() {
     .min(1, {
       message: message,
     })
-    .parse(process.env.SUPABASE_SERVICE_ROLE_KEY);
+    .parse(key);
 }
 
 /**

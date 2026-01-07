@@ -242,9 +242,9 @@ export async function POST(request: NextRequest) {
     // If error is about schema cache, try to use RPC function as fallback
     if (checkError && checkError.message?.includes('schema cache')) {
       console.warn('[CreateProject] Schema cache error, using RPC fallback');
-      // Use RPC function to ensure project exists
+      // Use RPC function to ensure project exists (in kit schema)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (client as any).rpc('ensure_user_has_project', { account_id: userId });
+      await (client as any).rpc('kit.ensure_user_has_project', { account_id: userId });
       // Try again
       const { data: retryProject } = await client
         .from('projects')
@@ -347,8 +347,16 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('[CreateProject] Error creating project:', error);
+      console.error('[CreateProject] Error code:', error.code);
+      console.error('[CreateProject] Error message:', error.message);
+      console.error('[CreateProject] Error details:', error.details);
       return NextResponse.json(
-        { error: 'Failed to create project' },
+        { 
+          error: 'Failed to create project',
+          code: error.code,
+          message: error.message,
+          details: error.details,
+        },
         { status: 500 }
       );
     }
@@ -403,8 +411,14 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('[CreateProject] Unexpected error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        message: errorMessage,
+        stack: process.env.NODE_ENV === 'development' ? errorStack : undefined,
+      },
       { status: 500 }
     );
   }
