@@ -10,6 +10,7 @@ import {
   MapPin,
   MessageSquare,
   TrendingUp,
+  TrendingDown,
   Link2,
   Share2,
   Code,
@@ -54,6 +55,7 @@ interface BentoCardProps {
   className?: string;
   title?: string;
   subtitle?: string;
+  style?: React.CSSProperties;
 }
 
 const HorizonCard = ({ children, className, title, subtitle }: BentoCardProps) => (
@@ -111,8 +113,8 @@ function ProgressBar({ value, max = 100, label, showValue = true, size = 'md' }:
 
   const heightClasses = {
     sm: 'h-1.5',
-    md: 'h-2.5',
-    lg: 'h-3.5',
+    md: 'h-2',
+    lg: 'h-3',
   };
 
   return (
@@ -127,17 +129,14 @@ function ProgressBar({ value, max = 100, label, showValue = true, size = 'md' }:
           )}
         </div>
       )}
-      <div
-        className={cn('w-full rounded-full overflow-hidden relative', heightClasses[size])}
-        style={{ backgroundColor: HORIZON.background }}
-      >
+      <div className={cn('w-full bg-[#F4F7FE] rounded-full overflow-hidden', heightClasses[size])}>
         <div
-          className="transition-all duration-500 ease-out rounded-full"
+          className="transition-all duration-500 ease-out rounded-full shadow-sm"
           style={{
             width: `${percentage}%`,
             height: '100%',
             backgroundColor: getColor(),
-            minWidth: percentage > 0 ? '4px' : '0',
+            minWidth: percentage > 0 ? '4px' : '0'
           }}
         />
       </div>
@@ -193,35 +192,17 @@ function MinimalMetricCard({
     }
   };
 
-  const getStatusColor = () => {
-    switch (status) {
-      case 'good':
-        return 'bg-white';
-      case 'bad':
-        return 'bg-white';
-      case 'warning':
-        return 'bg-white';
-      default:
-        return 'bg-white';
-    }
-  };
-
   return (
-    <HorizonCard className={cn('border-none', getStatusColor())}>
+    <HorizonCard className="border-none">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
           <div className="cursor-pointer hover:opacity-80 transition-opacity">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className={cn("p-2 rounded-xl bg-white shadow-sm border",
-                  status === 'good' ? 'border-emerald-100' :
-                    status === 'bad' ? 'border-red-100' :
-                      status === 'warning' ? 'border-orange-100' :
-                        'border-slate-100'
-                )}>
+                <div className="p-2 rounded-xl bg-[#F4F7FE] border border-[#E2E8F0]">
                   {icon || getStatusIcon()}
                 </div>
-                <CardTitle className="text-base font-bold text-slate-900">
+                <CardTitle className="text-base font-bold" style={{ color: HORIZON.textPrimary }}>
                   {title}
                 </CardTitle>
               </div>
@@ -240,7 +221,7 @@ function MinimalMetricCard({
                   </div>
                 ) : null}
                 {value && (
-                  <span className="text-sm font-bold text-slate-700">
+                  <span className="text-sm font-bold" style={{ color: HORIZON.textPrimary }}>
                     {value}
                   </span>
                 )}
@@ -251,17 +232,17 @@ function MinimalMetricCard({
               </div>
             </div>
             {calculatedScore !== null && calculatedScore !== undefined ? (
-              <div className="mt-2">
+              <div className="mt-4">
                 <ProgressBar value={calculatedScore} size="sm" showValue={false} />
               </div>
             ) : (
-              <div className="mt-2 h-2 w-full bg-slate-100 rounded-full" />
+              <div className="mt-4 h-1.5 w-full bg-[#F4F7FE] rounded-full" />
             )}
           </div>
         </CollapsibleTrigger>
         {children && (
           <CollapsibleContent>
-            <div className="pt-4 border-t" style={{ borderColor: HORIZON.background }}>
+            <div className="mt-6 pt-6 border-t" style={{ borderColor: HORIZON.background }}>
               {children}
             </div>
           </CollapsibleContent>
@@ -281,20 +262,20 @@ interface ChecklistItemProps {
 
 function ChecklistItem({ label, checked }: ChecklistItemProps) {
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-3 py-2">
       {checked ? (
-        <div className="p-1 rounded-lg bg-emerald-50 border border-emerald-100">
-          <CheckCircle2 className="h-4 w-4 text-emerald-600 flex-shrink-0" />
-        </div>
+        <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-emerald-600" />
       ) : (
-        <div className="p-1 rounded-lg bg-red-50 border border-red-100">
-          <XCircle className="h-4 w-4 text-red-600 flex-shrink-0" />
-        </div>
+        <XCircle className="h-5 w-5 flex-shrink-0 text-red-500" />
       )}
-      <span className={cn(
-        'text-sm font-medium',
-        checked ? 'text-[#1B2559]' : 'text-[#A3AED0]'
-      )}>
+      <span
+        className={cn(
+          'text-sm font-medium',
+          checked
+            ? 'text-slate-900'
+            : 'text-slate-600',
+        )}
+      >
         {label}
       </span>
     </div>
@@ -302,44 +283,57 @@ function ChecklistItem({ label, checked }: ChecklistItemProps) {
 }
 
 /**
- * Calculate Overall Score for Local Indicators
+ * KPI Card Component (same style as CompetitorsHorizon)
  */
-function calculateOverallScore(data: LocalIndicatorsAuditResult): number {
-  const scores: number[] = [];
+interface KpiCardProps {
+  label: string;
+  value: string;
+  benchmark?: string;
+  trend?: string;
+  icon: React.ElementType;
+  iconBg: string;
+  iconColor: string;
+}
 
-  // Google Business Profile completeness
-  scores.push(data.google_business_profile.completeness_percent);
+function KpiCard({ label, value, benchmark, trend, icon: Icon, iconBg, iconColor }: KpiCardProps) {
+  const isPositive = trend?.startsWith('+') ?? true;
 
-  // Review response rate
-  scores.push(data.review_response.response_rate_24h_percent);
-
-  // GBP engagement CTR
-  scores.push(data.gbp_engagement.ctr_percent);
-
-  // Local backlinks (5+ is good = 100, <5 is proportional)
-  const backlinksScore = data.local_backlinks.unique_local_domains >= 5
-    ? 100
-    : (data.local_backlinks.unique_local_domains / 5) * 100;
-  scores.push(backlinksScore);
-
-  // Social media (both profiles = 100, one = 50, none = 0)
-  const socialScore = data.local_social_media.facebook.has_profile && data.local_social_media.instagram.has_profile
-    ? 100
-    : data.local_social_media.facebook.has_profile || data.local_social_media.instagram.has_profile
-      ? 50
-      : 0;
-  scores.push(socialScore);
-
-  // Local Business Schema (implemented and functioning = 100, implemented = 50, not = 0)
-  const schemaScore = data.local_business_schema.is_functioning_correctly
-    ? 100
-    : data.local_business_schema.is_implemented
-      ? 50
-      : 0;
-  scores.push(schemaScore);
-
-  if (scores.length === 0) return 0;
-  return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+  return (
+    <HorizonCard 
+      className="group hover:-translate-y-1 transition-all duration-300"
+      style={{ boxShadow: HORIZON.shadowSm }}
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div
+          className="w-12 h-12 rounded-full flex items-center justify-center"
+          style={{ backgroundColor: iconBg }}
+        >
+          <Icon className="w-6 h-6" style={{ color: iconColor }} />
+        </div>
+        {trend && (
+          <div className={cn(
+            "flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold",
+            isPositive ? "bg-[#01B57415] text-[#01B574]" : "bg-[#EE5D5015] text-[#EE5D50]"
+          )}>
+            {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+            {trend}
+          </div>
+        )}
+      </div>
+      <div className="text-sm font-medium mb-1" style={{ color: HORIZON.textSecondary }}>
+        {label}
+      </div>
+      <div className="text-lg font-bold" style={{ color: HORIZON.textPrimary }}>
+        <span>{value}</span>
+        {benchmark && (
+          <>
+            <span className="text-sm font-medium mx-1" style={{ color: HORIZON.textSecondary }}>vs</span>
+            <span style={{ color: HORIZON.textSecondary }}>{benchmark}</span>
+          </>
+        )}
+      </div>
+    </HorizonCard>
+  );
 }
 
 /**
@@ -370,65 +364,75 @@ function calculateCategoryScores(data: LocalIndicatorsAuditResult) {
  * Local Indicators Audit Section Component
  */
 export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSectionProps) {
-  const overallScore = calculateOverallScore(result);
   const categoryScores = calculateCategoryScores(result);
-
-  const getScoreColor = (score: number) => {
-    if (score >= 90) return HORIZON.success;
-    if (score >= 50) return HORIZON.warning;
-    return HORIZON.error;
-  };
 
   return (
     <div className={cn('space-y-6 pb-20 animate-in fade-in duration-700', className)}>
-      {/* Hero Section */}
-      <HorizonCard className="border-none relative overflow-hidden bg-white">
-        <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
-          <MapPin className="w-24 h-24" style={{ color: HORIZON.primary }} />
+      {/* KPI Summary Cards */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-2 mb-2 ml-1">
+          <MapPin className="w-5 h-5" style={{ color: HORIZON.primary }} />
+          <h3 className="text-sm font-bold uppercase tracking-widest" style={{ color: HORIZON.textPrimary }}>
+            Локальні показники
+          </h3>
         </div>
-        <CardHeader>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight mb-2" style={{ color: HORIZON.textPrimary }}>
-                Local Score
-              </h1>
-              <p className="text-sm font-medium" style={{ color: HORIZON.textSecondary }}>
-                Комплексна оцінка вашого локального SEO та присутності бізнесу
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="text-5xl font-bold tracking-tighter mb-1" style={{ color: getScoreColor(overallScore) }}>
-                {overallScore}
-              </div>
-              <div className="text-sm font-bold" style={{ color: HORIZON.textSecondary }}>
-                / 100
-              </div>
-            </div>
-          </div>
-
-          {/* Category Progress Bars */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-            <div className="space-y-3 p-4 rounded-[20px]" style={{ backgroundColor: HORIZON.background }}>
-              <ProgressBar value={categoryScores.gbp} size="md" label="Google Business Profile" />
-            </div>
-            <div className="space-y-3 p-4 rounded-[20px]" style={{ backgroundColor: HORIZON.background }}>
-              <ProgressBar value={categoryScores.reviews} size="md" label="Reviews Response" />
-            </div>
-            <div className="space-y-3 p-4 rounded-[20px]" style={{ backgroundColor: HORIZON.background }}>
-              <ProgressBar value={categoryScores.engagement} size="md" label="Profile Engagement" />
-            </div>
-            <div className="space-y-3 p-4 rounded-[20px]" style={{ backgroundColor: HORIZON.background }}>
-              <ProgressBar value={categoryScores.backlinks} size="md" label="Local Backlinks" />
-            </div>
-            <div className="space-y-3 p-4 rounded-[20px]" style={{ backgroundColor: HORIZON.background }}>
-              <ProgressBar value={categoryScores.social} size="md" label="Social Presence" />
-            </div>
-            <div className="space-y-3 p-4 rounded-[20px]" style={{ backgroundColor: HORIZON.background }}>
-              <ProgressBar value={categoryScores.schema} size="md" label="Local Schema" />
-            </div>
-          </div>
-        </CardHeader>
-      </HorizonCard>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          <KpiCard
+            label="GBP Профіль"
+            value={`${Math.round(categoryScores.gbp)}%`}
+            benchmark="90%"
+            trend={categoryScores.gbp >= 90 ? '+' + Math.round(categoryScores.gbp - 90) + '%' : '-' + Math.round(90 - categoryScores.gbp) + '%'}
+            icon={MapPin}
+            iconBg={HORIZON.primaryLight}
+            iconColor={HORIZON.primary}
+          />
+          <KpiCard
+            label="Відгуки"
+            value={`${Math.round(categoryScores.reviews)}%`}
+            benchmark="80%"
+            trend={categoryScores.reviews >= 80 ? '+' + Math.round(categoryScores.reviews - 80) + '%' : '-' + Math.round(80 - categoryScores.reviews) + '%'}
+            icon={MessageSquare}
+            iconBg={HORIZON.successLight}
+            iconColor={HORIZON.success}
+          />
+          <KpiCard
+            label="CTR Залученість"
+            value={`${Math.round(categoryScores.engagement)}%`}
+            benchmark="5%"
+            trend={categoryScores.engagement >= 5 ? '+' + Math.round(categoryScores.engagement - 5) + '%' : '-' + Math.round(5 - categoryScores.engagement) + '%'}
+            icon={TrendingUp}
+            iconBg={HORIZON.infoLight}
+            iconColor={HORIZON.info}
+          />
+          <KpiCard
+            label="Локальні посилання"
+            value={`${Math.round(categoryScores.backlinks)}%`}
+            benchmark="100%"
+            trend={categoryScores.backlinks >= 100 ? '+0%' : '-' + Math.round(100 - categoryScores.backlinks) + '%'}
+            icon={Link2}
+            iconBg={HORIZON.warningLight}
+            iconColor={HORIZON.warning}
+          />
+          <KpiCard
+            label="Соцмережі"
+            value={`${Math.round(categoryScores.social)}%`}
+            benchmark="100%"
+            trend={categoryScores.social >= 100 ? '+0%' : '-' + Math.round(100 - categoryScores.social) + '%'}
+            icon={Share2}
+            iconBg={HORIZON.errorLight}
+            iconColor={HORIZON.error}
+          />
+          <KpiCard
+            label="Schema Markup"
+            value={`${Math.round(categoryScores.schema)}%`}
+            benchmark="100%"
+            trend={categoryScores.schema >= 100 ? '+0%' : '-' + Math.round(100 - categoryScores.schema) + '%'}
+            icon={Code}
+            iconBg={HORIZON.secondaryLight}
+            iconColor={HORIZON.secondary}
+          />
+        </div>
+      </section>
 
       {/* 1. Google Business Profile (Completeness) */}
       <MinimalMetricCard

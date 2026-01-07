@@ -1,15 +1,27 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from '~/lib/navigation';
 import { CheckCircle2, Zap, Rocket, Crown } from 'lucide-react';
+
+// Horizon UI Design Tokens
+const HORIZON = {
+  primary: '#4318FF',
+  primaryLight: '#4318FF15',
+  secondary: '#A3AED0',
+  success: '#01B574',
+  background: '#F4F7FE',
+  textPrimary: '#1B2559',
+  textSecondary: '#A3AED0',
+  shadow: '0 18px 40px rgba(112, 144, 176, 0.12)',
+  shadowLg: '0 25px 50px rgba(67, 24, 255, 0.15)',
+};
 
 const plans = [
   {
     id: 'starter',
     name: 'Starter',
-    price: 99,
-    period: 'month',
+    price: { month: 99, year: 79 },
     icon: Zap,
     description: 'Perfect for small clinics getting started',
     features: [
@@ -24,8 +36,7 @@ const plans = [
   {
     id: 'professional',
     name: 'Professional',
-    price: 149,
-    period: 'month',
+    price: { month: 149, year: 119 },
     icon: Rocket,
     description: 'Best for growing medical practices',
     features: [
@@ -42,8 +53,7 @@ const plans = [
   {
     id: 'enterprise',
     name: 'Enterprise',
-    price: 499,
-    period: 'month',
+    price: { month: 499, year: 399 },
     icon: Crown,
     description: 'For large clinics and medical groups',
     features: [
@@ -61,27 +71,65 @@ const plans = [
 ];
 
 export default function PricingPage() {
+  const [interval, setInterval] = useState<'month' | 'year'>('month');
+
   return (
-    <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900">
+    <div className="min-h-screen font-sans" style={{ backgroundColor: HORIZON.background, color: HORIZON.textPrimary }}>
       {/* Hero Section */}
       <section className="relative pt-32 pb-16 lg:pt-40 lg:pb-24 overflow-hidden">
         {/* Background Decorations */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full overflow-hidden -z-10">
-          <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-indigo-400/20 blur-[120px]"></div>
-          <div className="absolute bottom-[10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-purple-400/20 blur-[120px]"></div>
+          <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full blur-[120px]" style={{ backgroundColor: `${HORIZON.primary}20` }}></div>
+          <div className="absolute bottom-[10%] right-[-5%] w-[600px] h-[600px] rounded-full blur-[120px]" style={{ backgroundColor: '#7551FF20' }}></div>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto">
-            <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-slate-900 mb-6">
+            <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-6" style={{ color: HORIZON.textPrimary }}>
               Simple, Transparent{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600">
+              <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #4318FF, #7551FF)' }}>
                 Pricing
               </span>
             </h1>
-            <p className="text-xl text-slate-600 mb-10">
+            <p className="text-xl mb-10" style={{ color: HORIZON.textSecondary }}>
               Choose the perfect plan for your clinic. All plans include a 14-day free trial.
             </p>
+
+            {/* Interval Toggle */}
+            <div 
+              className="inline-flex items-center p-1 rounded-xl mb-12"
+              style={{ backgroundColor: 'white', boxShadow: HORIZON.shadow }}
+            >
+              <button
+                onClick={() => setInterval('month')}
+                className="px-8 py-2.5 rounded-lg text-sm font-bold transition-all"
+                style={{ 
+                  backgroundColor: interval === 'month' ? HORIZON.primary : 'transparent',
+                  color: interval === 'month' ? 'white' : HORIZON.textSecondary
+                }}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setInterval('year')}
+                className="px-8 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2"
+                style={{ 
+                  backgroundColor: interval === 'year' ? HORIZON.primary : 'transparent',
+                  color: interval === 'year' ? 'white' : HORIZON.textSecondary
+                }}
+              >
+                Yearly
+                <span
+                  className="text-[10px] px-1.5 py-0.5 rounded-md uppercase tracking-tight font-bold"
+                  style={{ 
+                    backgroundColor: interval === 'year' ? 'rgba(255,255,255,0.2)' : HORIZON.primaryLight, 
+                    color: interval === 'year' ? 'white' : HORIZON.primary
+                  }}
+                >
+                  2 months free
+                </span>
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -95,16 +143,21 @@ export default function PricingPage() {
               return (
                 <div
                   key={plan.id}
-                  className={`relative bg-white rounded-2xl border-2 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 ${plan.popular
-                      ? 'border-indigo-500 shadow-xl scale-105 md:scale-110'
-                      : 'border-slate-200 shadow-lg'
-                    }`}
+                  className={`relative rounded-[20px] transition-all duration-300 hover:-translate-y-2 ${
+                    plan.popular ? 'scale-105 md:scale-110 z-10' : ''
+                  }`}
+                  style={{ 
+                    backgroundColor: 'white',
+                    boxShadow: plan.popular ? HORIZON.shadowLg : HORIZON.shadow,
+                    border: plan.popular ? `2px solid ${HORIZON.primary}` : '2px solid transparent'
+                  }}
                 >
                   {plan.popular && (
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                      <span className="bg-indigo-600 text-white px-4 py-1 rounded-full text-sm font-semibold">
-                        Most Popular
-                      </span>
+                    <div 
+                      className="absolute -top-4 left-1/2 -translate-x-1/2 text-white px-4 py-1 rounded-full text-sm font-bold"
+                      style={{ backgroundColor: HORIZON.primary }}
+                    >
+                      Most Popular
                     </div>
                   )}
 
@@ -112,25 +165,31 @@ export default function PricingPage() {
                     {/* Plan Header */}
                     <div className="flex items-center gap-3 mb-4">
                       <div
-                        className={`p-3 rounded-xl ${plan.popular
-                            ? 'bg-indigo-100 text-indigo-600'
-                            : 'bg-slate-100 text-slate-600'
-                          }`}
+                        className="p-3 rounded-xl"
+                        style={{ 
+                          backgroundColor: plan.popular ? HORIZON.primaryLight : HORIZON.background,
+                          color: plan.popular ? HORIZON.primary : HORIZON.textSecondary
+                        }}
                       >
                         <Icon size={24} />
                       </div>
                       <div>
-                        <h3 className="text-2xl font-bold text-slate-900">{plan.name}</h3>
-                        <p className="text-sm text-slate-500">{plan.description}</p>
+                        <h3 className="text-2xl font-bold" style={{ color: HORIZON.textPrimary }}>{plan.name}</h3>
+                        <p className="text-sm" style={{ color: HORIZON.textSecondary }}>{plan.description}</p>
                       </div>
                     </div>
 
                     {/* Price */}
                     <div className="my-8">
                       <div className="flex items-baseline gap-2">
-                        <span className="text-5xl font-bold text-slate-900">${plan.price}</span>
-                        <span className="text-slate-500">/{plan.period}</span>
+                        <span className="text-5xl font-bold" style={{ color: HORIZON.textPrimary }}>${plan.price[interval]}</span>
+                        <span style={{ color: HORIZON.textSecondary }}>/month</span>
                       </div>
+                      {interval === 'year' && (
+                        <p className="text-sm mt-1" style={{ color: HORIZON.success }}>
+                          Save ${(plan.price.month - plan.price.year) * 12}/year
+                        </p>
+                      )}
                     </div>
 
                     {/* Features */}
@@ -139,10 +198,10 @@ export default function PricingPage() {
                         <li key={index} className="flex items-start gap-3">
                           <CheckCircle2
                             size={20}
-                            className={`flex-shrink-0 mt-0.5 ${plan.popular ? 'text-indigo-600' : 'text-green-500'
-                              }`}
+                            className="flex-shrink-0 mt-0.5"
+                            style={{ color: plan.popular ? HORIZON.primary : HORIZON.success }}
                           />
-                          <span className="text-slate-700">{feature}</span>
+                          <span style={{ color: HORIZON.textSecondary }}>{feature}</span>
                         </li>
                       ))}
                     </ul>
@@ -150,10 +209,12 @@ export default function PricingPage() {
                     {/* CTA Button */}
                     <Link
                       href="/onboarding"
-                      className={`block w-full text-center py-4 px-6 rounded-xl font-semibold transition-all ${plan.popular
-                          ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg hover:shadow-xl'
-                          : 'bg-slate-900 hover:bg-slate-800 text-white'
-                        }`}
+                      className="block w-full text-center py-4 px-6 rounded-xl font-semibold transition-all hover:-translate-y-0.5"
+                      style={{ 
+                        backgroundColor: plan.popular ? HORIZON.primary : HORIZON.textPrimary,
+                        color: 'white',
+                        boxShadow: plan.popular ? `0 15px 30px ${HORIZON.primary}30` : 'none'
+                      }}
                     >
                       Get Started
                     </Link>
@@ -168,12 +229,12 @@ export default function PricingPage() {
       {/* FAQ or Additional Info */}
       <section className="pb-24 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <p className="text-slate-600 mb-4">
+          <p className="mb-4" style={{ color: HORIZON.textSecondary }}>
             All plans include a 14-day free trial. No credit card required.
           </p>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm" style={{ color: HORIZON.textSecondary }}>
             Cancel anytime. Questions?{' '}
-            <a href="mailto:support@example.com" className="text-indigo-600 hover:underline">
+            <a href="mailto:support@example.com" style={{ color: HORIZON.primary }} className="hover:underline">
               Contact our support team
             </a>
           </p>
@@ -182,4 +243,3 @@ export default function PricingPage() {
     </div>
   );
 }
-

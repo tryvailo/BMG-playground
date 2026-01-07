@@ -7,13 +7,15 @@ import { getSupabaseServerClient } from '@kit/supabase/server-client';
 
 import type { Scan, WeeklyStats, Project } from '~/lib/types/domain';
 import {
-  calculateClinicAIScore,
   calculateVisibilityRate,
   calculateAveragePosition,
   countVisibleServices,
   aggregateCompetitorStats,
-  type ClinicAIScoreInputs,
 } from '~/lib/modules/analytics/calculator';
+import {
+  calculateClinicAIScore as calculateClinicAIScoreNew,
+  type ClinicAIScoreComponents,
+} from '~/lib/modules/dashboard/metrics-calculator';
 
 import {
   DashboardFiltersSchema,
@@ -436,27 +438,29 @@ export const getDashboardMetrics = enhanceAction(
         avgPosition = latestStats.avg_position ?? avgPosition;
 
         // Calculate ClinicAI Score using the full formula
-        // Formula: 0.25*Visibility + 0.2*Tech + 0.2*Content + 0.15*E-E-A-T + 0.1*Local
-        // Use the stored clinic_ai_score if available (calculated by trigger), otherwise calculate
-        if (latestStats.clinic_ai_score !== null && latestStats.clinic_ai_score > 0) {
-          // Use the pre-calculated score from database (more reliable)
-          avgAivScore = latestStats.clinic_ai_score;
-          console.log('[Dashboard] Using stored clinic_ai_score from DB:', avgAivScore);
-        } else {
-          // Calculate if not stored (shouldn't happen if trigger works)
-          const visibilityScore = latestStats.visability_score ?? serviceVisibility;
+         // Formula: 0.25*Visibility + 0.2*Tech + 0.2*Content + 0.15*E-E-A-T + 0.1*Local
+         // Use the stored clinic_ai_score if available (calculated by trigger), otherwise calculate
+         if (latestStats.clinic_ai_score !== null && latestStats.clinic_ai_score > 0) {
+           // Use the pre-calculated score from database (more reliable)
+           avgAivScore = latestStats.clinic_ai_score;
+           console.log('[Dashboard] Using stored clinic_ai_score from DB:', avgAivScore);
+         } else {
+           // Calculate if not stored (shouldn't happen if trigger works)
+           const visibilityScore = latestStats.visability_score ?? serviceVisibility;
 
-          const scoreInputs: ClinicAIScoreInputs = {
-            visibility: visibilityScore,
-            tech: techScore,
-            content: contentScore,
-            eeat: eeatScore,
-            local: localScore,
-          };
+           // Use the new metrics calculator with proper component scores
+           const scoreComponents: ClinicAIScoreComponents = {
+             visibility: visibilityScore,
+             techOptimization: techScore,
+             contentOptimization: contentScore,
+             eeatSignals: eeatScore,
+             localSignals: localScore,
+           };
 
-          avgAivScore = calculateClinicAIScore(scoreInputs);
-          console.log('[Dashboard] Calculated ClinicAI Score:', avgAivScore, 'from inputs:', scoreInputs);
-        }
+           const scoreResult = calculateClinicAIScoreNew(scoreComponents);
+           avgAivScore = scoreResult.score;
+           console.log('[Dashboard] Calculated ClinicAI Score:', avgAivScore, 'from components:', scoreComponents);
+         }
 
       } else {
         // Calculate from scans if no weekly stats available

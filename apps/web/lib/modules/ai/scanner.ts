@@ -28,7 +28,7 @@ export function generateUserPrompt(query: string, city: string): string {
     throw new Error('Query and city are required');
   }
 
-  return `I'm looking for ${query} in ${city}. Can you recommend the top 5 clinics or medical facilities that provide this service? Please include their names, locations, and any relevant details about why you're recommending them.`;
+  return `I'm looking for ${query} in ${city}. Please recommend at least 5 clinics or medical facilities that provide this service. You MUST include a minimum of 5 recommendations, even if some are less well-known. For each clinic, include their name, location, and any relevant details about why you're recommending them.`;
 }
 
 /**

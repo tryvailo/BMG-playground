@@ -180,6 +180,7 @@ export function StepPricing({ onPlanSelect }: StepPricingProps) {
                                     variant={isSelected ? 'default' : 'outline'}
                                     onClick={(e) => {
                                         e.stopPropagation();
+                                        console.log('[StepPricing] Calling onPlanSelect with:', { planId: plan.id, interval });
                                         onPlanSelect(plan.id, interval);
                                     }}
                                     className={cn(

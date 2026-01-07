@@ -1,651 +1,300 @@
-import { load, type CheerioAPI } from 'cheerio';
-
-/*
- * -------------------------------------------------------
- * Type Definitions
- * -------------------------------------------------------
- */
-
 /**
- * Schema analysis result
+ * HTML Parser Utility
+ * Week 4: Parse and extract data from HTML content
  */
-interface SchemaAnalysis {
-  hasMedicalOrganization: boolean;
-  hasLocalBusiness: boolean;
-  hasPhysician: boolean;
-  hasMedicalSpecialty: boolean;
-  hasMedicalProcedure: boolean;
-  hasFAQPage: boolean;
-  hasReview: boolean;
-  hasBreadcrumbList: boolean;
-}
 
-/**
- * Image analysis result
- */
-interface ImageAnalysis {
-  total: number;
-  missingAlt: number;
-}
-
-/**
- * External link analysis result
- */
-interface ExternalLinkAnalysis {
-  total: number;
-  broken: number;
-  list: Array<{
-    url: string;
-    status: number;
-    isTrusted: boolean;
-    rel?: string;
-  }>;
-}
-
-/**
- * Hreflang entry
- */
-interface HreflangEntry {
+export interface ParsedHTML {
+  title: string;
+  description: string;
+  canonical: string;
+  charset: string;
+  viewport: string;
   lang: string;
-  url: string;
+  headings: HeadingAnalysis;
+  images: ImageAnalysis[];
+  links: LinkAnalysis[];
+  scripts: number;
+  stylesheets: number;
+}
+
+export interface HeadingAnalysis {
+  h1Count: number;
+  h1Texts: string[];
+  h2Count: number;
+  h3Count: number;
+}
+
+export interface ImageAnalysis {
+  src: string;
+  alt: string;
+  hasAlt: boolean;
+  width?: string;
+  height?: string;
+}
+
+export interface LinkAnalysis {
+  href: string;
+  text: string;
+  isExternal: boolean;
+  isNofollow: boolean;
 }
 
 /**
- * Complete page parse result
+ * Parse HTML and extract key information
  */
-export interface PageParseResult {
-  // Meta Tags
-  meta: {
-    title: string | null;
-    titleLength: number | null;
-    description: string | null;
-    descriptionLength: number | null;
-    h1: string | null;
-    canonical: string | null;
-    robots: string | null;
-    viewport: boolean;
-    lang: string | null;
-    hreflangs: HreflangEntry[];
+export function parseHTML(html: string, pageUrl?: string): ParsedHTML {
+  return {
+    title: extractTitle(html),
+    description: extractDescription(html),
+    canonical: extractCanonical(html),
+    charset: extractCharset(html),
+    viewport: extractViewport(html),
+    lang: extractLang(html),
+    headings: analyzeHeadings(html),
+    images: analyzeImages(html),
+    links: analyzeLinks(html, pageUrl),
+    scripts: countScripts(html),
+    stylesheets: countStylesheets(html),
   };
-  // Links
-  links: string[];
-  // Images
-  images: ImageAnalysis;
-  // Schema Markup
-  schema: SchemaAnalysis;
-  // External Links
-  externalLinks: ExternalLinkAnalysis;
 }
 
 /**
- * JSON-LD schema object (can be in various formats)
+ * Extract title
  */
-type JsonLdSchema =
-  | { '@type'?: string | string[]; '@graph'?: JsonLdSchema[]; type?: string | string[];[key: string]: unknown }
-  | JsonLdSchema[];
-
-/*
- * -------------------------------------------------------
- * Helper Functions
- * -------------------------------------------------------
- */
-
-/**
- * Safely parse JSON-LD content
- * Handles various formats including escaped HTML entities
- */
-function parseJsonLd(content: string): JsonLdSchema | null {
-  try {
-    // Clean up content - remove HTML entities and whitespace
-    let cleanedContent = content.trim();
-    
-    // Remove HTML comments if present
-    cleanedContent = cleanedContent.replace(/<!--[\s\S]*?-->/g, '');
-    
-    // Try to parse directly
-    try {
-      const parsed = JSON.parse(cleanedContent);
-      return parsed as JsonLdSchema;
-    } catch (_directParseError) {
-      // If direct parse fails, try to unescape HTML entities
-      // Some sites embed JSON-LD with HTML entities
-      const unescaped = cleanedContent
-        .replace(/&quot;/g, '"')
-        .replace(/&#39;/g, "'")
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&amp;/g, '&');
-      
-      try {
-        const parsed = JSON.parse(unescaped);
-        return parsed as JsonLdSchema;
-      } catch (unescapedParseError) {
-        console.warn('[HTMLParser] Failed to parse JSON-LD after unescaping:', unescapedParseError);
-        console.warn('[HTMLParser] Original content preview:', content.substring(0, 200));
-        return null;
-      }
-    }
-  } catch (error) {
-    // Malformed JSON - return null instead of throwing
-    console.warn('[HTMLParser] Failed to parse JSON-LD:', error);
-    return null;
-  }
+function extractTitle(html: string): string {
+  const match = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+  return match?.[1]?.trim() ?? '';
 }
 
 /**
- * Extract schema types from a JSON-LD object
- * Handles various formats: @type, type, arrays, @graph, nested objects
+ * Extract meta description
  */
-function extractSchemaTypes(schema: JsonLdSchema, visited = new Set<unknown>()): string[] {
-  const types: string[] = [];
-
-  // Prevent infinite recursion
-  if (visited.has(schema)) {
-    return types;
-  }
-  visited.add(schema);
-
-  // Handle arrays
-  if (Array.isArray(schema)) {
-    for (const item of schema) {
-      types.push(...extractSchemaTypes(item, visited));
-    }
-    return types;
-  }
-
-  // Handle objects
-  if (typeof schema === 'object' && schema !== null) {
-    // Handle @graph (array of schema objects)
-    if ('@graph' in schema && Array.isArray(schema['@graph'])) {
-      for (const item of schema['@graph']) {
-        types.push(...extractSchemaTypes(item, visited));
-      }
-    }
-
-    // Extract @type or type field (primary type)
-    const typeValue = schema['@type'] || schema['type'];
-
-    if (typeValue) {
-      if (Array.isArray(typeValue)) {
-        types.push(...typeValue.map((t) => String(t)));
-      } else {
-        types.push(String(typeValue));
-      }
-    }
-
-    // Also check nested objects that might have types
-    // This handles cases like: { "@type": "Organization", "member": { "@type": "Physician" } }
-    for (const key in schema) {
-      if (key === '@type' || key === 'type' || key === '@graph' || key === '@context') {
-        continue; // Skip already processed fields
-      }
-      
-      const value = schema[key];
-      if (typeof value === 'object' && value !== null) {
-        // Recursively extract types from nested objects
-        // Type guard to ensure value is JsonLdSchema
-        if (Array.isArray(value) || ('@type' in value || 'type' in value || '@graph' in value || typeof value === 'object')) {
-          types.push(...extractSchemaTypes(value as JsonLdSchema, visited));
-        }
-      } else if (Array.isArray(value)) {
-        // Check if array contains objects with types
-        for (const item of value) {
-          if (typeof item === 'object' && item !== null) {
-            types.push(...extractSchemaTypes(item, visited));
-          }
-        }
-      }
-    }
-  }
-
-  return types;
+function extractDescription(html: string): string {
+  const match = html.match(/<meta\s+name=["']description["']\s+content=["']([^"']+)["']/i);
+  return match?.[1]?.trim() ?? '';
 }
 
 /**
- * Check if schema types match any of the target types
- * Handles various formats:
- * - "MedicalOrganization"
- * - "https://schema.org/MedicalOrganization"
- * - "http://schema.org/MedicalOrganization"
- * - "schema.org/MedicalOrganization"
+ * Extract canonical URL
  */
-function hasSchemaType(types: string[], targetTypes: string[]): boolean {
-  const normalizedTypes = types.map((t) => {
-    const trimmed = t.toLowerCase().trim();
-    // Remove schema.org URL prefix if present
-    return trimmed.replace(/^https?:\/\/schema\.org\//, '').replace(/^schema\.org\//, '');
-  });
-  
-  const normalizedTargets = targetTypes.map((t) => t.toLowerCase().trim());
-
-  return normalizedTypes.some((type) =>
-    normalizedTargets.some((target) => {
-      // Exact match
-      if (type === target) return true;
-      // Ends with /target (e.g., "schema.org/MedicalOrganization")
-      if (type.endsWith(`/${target}`)) return true;
-      // Contains target (e.g., "MedicalOrganizationType")
-      if (type.includes(target)) return true;
-      // Handle namespace prefixes (e.g., "schema:MedicalOrganization")
-      if (type.includes(`:${target}`)) return true;
-      return false;
-    })
-  );
+export function extractCanonical(html: string): string {
+  const match = html.match(/<link\s+rel=["']canonical["']\s+href=["']([^"']+)["']/i);
+  return match?.[1]?.trim() ?? '';
 }
 
 /**
- * Analyze all JSON-LD blocks for schema types
+ * Extract charset
  */
-function analyzeSchemaMarkup($: CheerioAPI): SchemaAnalysis {
-  const result: SchemaAnalysis = {
-    hasMedicalOrganization: false,
-    hasLocalBusiness: false,
-    hasPhysician: false,
-    hasMedicalSpecialty: false,
-    hasMedicalProcedure: false,
-    hasFAQPage: false,
-    hasReview: false,
-    hasBreadcrumbList: false,
+function extractCharset(html: string): string {
+  const match = html.match(/<meta\s+charset=["']?([^"'\s>]+)/i);
+  return match?.[1]?.trim() ?? '';
+}
+
+/**
+ * Extract viewport
+ */
+function extractViewport(html: string): string {
+  const match = html.match(/<meta\s+name=["']viewport["']\s+content=["']([^"']+)["']/i);
+  return match?.[1]?.trim() ?? '';
+}
+
+/**
+ * Extract language
+ */
+function extractLang(html: string): string {
+  const match = html.match(/<html[^>]*\s+lang=["']([^"']+)["']/i);
+  return match?.[1]?.trim() ?? '';
+}
+
+/**
+ * Analyze heading structure
+ */
+function analyzeHeadings(html: string): HeadingAnalysis {
+  const h1Regex = /<h1[^>]*>([^<]+)<\/h1>/gi;
+  const h2Regex = /<h2[^>]*>([^<]*)<\/h2>/gi;
+  const h3Regex = /<h3[^>]*>([^<]*)<\/h3>/gi;
+
+  const h1Texts: string[] = [];
+  let h1Match;
+  while ((h1Match = h1Regex.exec(html)) !== null) {
+    const text = h1Match[1];
+    if (text) h1Texts.push(text.trim());
+  }
+
+  let h2Count = 0;
+  while (h2Regex.exec(html) !== null) {
+    h2Count++;
+  }
+
+  let h3Count = 0;
+  while (h3Regex.exec(html) !== null) {
+    h3Count++;
+  }
+
+  return {
+    h1Count: h1Texts.length,
+    h1Texts,
+    h2Count,
+    h3Count,
   };
-
-  // Find all JSON-LD script tags
-  const jsonLdScripts = $('script[type="application/ld+json"]');
-
-  if (jsonLdScripts.length === 0) {
-    console.debug('[SchemaAnalysis] No JSON-LD script tags found');
-    return result;
-  }
-
-  console.debug(`[SchemaAnalysis] Found ${jsonLdScripts.length} JSON-LD script tag(s)`);
-
-  // Collect all schema types from all JSON-LD blocks
-  const allTypes: string[] = [];
-
-  jsonLdScripts.each((_, element) => {
-    const content = $(element).html();
-    if (!content) {
-      console.debug('[SchemaAnalysis] Empty JSON-LD script tag content');
-      return;
-    }
-
-    const parsed = parseJsonLd(content);
-    if (!parsed) {
-      console.debug('[SchemaAnalysis] Failed to parse JSON-LD content');
-      return;
-    }
-
-    const types = extractSchemaTypes(parsed);
-    console.debug(`[SchemaAnalysis] Extracted types from JSON-LD:`, types);
-    allTypes.push(...types);
-  });
-
-  console.debug(`[SchemaAnalysis] All extracted types:`, allTypes);
-
-  // Check for specific schema types
-  // MedicalOrganization
-  result.hasMedicalOrganization = hasSchemaType(allTypes, [
-    'MedicalOrganization',
-    'Organization',
-  ]);
-  console.debug(`[SchemaAnalysis] hasMedicalOrganization: ${result.hasMedicalOrganization}`);
-
-  // LocalBusiness (often used by medical clinics)
-  result.hasLocalBusiness = hasSchemaType(allTypes, [
-    'LocalBusiness',
-    'MedicalBusiness',
-    'Dentist',
-    'Physician',
-    'Hospital',
-    'Clinic',
-  ]);
-  console.debug(`[SchemaAnalysis] hasLocalBusiness: ${result.hasLocalBusiness}`);
-
-  // Physician
-  result.hasPhysician = hasSchemaType(allTypes, [
-    'Physician',
-    'Doctor',
-    'MedicalPerson',
-  ]);
-  console.debug(`[SchemaAnalysis] hasPhysician: ${result.hasPhysician}`);
-
-  // MedicalSpecialty
-  result.hasMedicalSpecialty = hasSchemaType(allTypes, [
-    'MedicalSpecialty',
-    'Specialty',
-  ]);
-  console.debug(`[SchemaAnalysis] hasMedicalSpecialty: ${result.hasMedicalSpecialty}`);
-
-  // MedicalProcedure
-  result.hasMedicalProcedure = hasSchemaType(allTypes, [
-    'MedicalProcedure',
-    'Procedure',
-  ]);
-  console.debug(`[SchemaAnalysis] hasMedicalProcedure: ${result.hasMedicalProcedure}`);
-
-  // FAQPage
-  result.hasFAQPage = hasSchemaType(allTypes, [
-    'FAQPage',
-  ]);
-  console.debug(`[SchemaAnalysis] hasFAQPage: ${result.hasFAQPage}`);
-
-  // Review
-  result.hasReview = hasSchemaType(allTypes, [
-    'Review',
-    'AggregateRating',
-    'Rating',
-  ]);
-  console.debug(`[SchemaAnalysis] hasReview: ${result.hasReview}`);
-
-  // BreadcrumbList
-  result.hasBreadcrumbList = hasSchemaType(allTypes, [
-    'BreadcrumbList',
-  ]);
-  console.debug(`[SchemaAnalysis] hasBreadcrumbList: ${result.hasBreadcrumbList}`);
-
-  return result;
 }
 
 /**
- * Extract all links from the page
+ * Analyze images
  */
-function extractLinks($: CheerioAPI, baseUrl: string): string[] {
-  const links: string[] = [];
-  const seen = new Set<string>();
+function analyzeImages(html: string): ImageAnalysis[] {
+  const imgRegex = /<img[^>]*>/gi;
+  const images: ImageAnalysis[] = [];
 
-  // Extract from <a> tags
-  $('a[href]').each((_, element) => {
-    const href = $(element).attr('href');
-    if (!href) return;
+  let match;
+  while ((match = imgRegex.exec(html)) !== null) {
+    const imgTag = match[0];
 
-    try {
-      // Resolve relative URLs
-      const absoluteUrl = new URL(href, baseUrl).toString();
-      if (!seen.has(absoluteUrl)) {
-        seen.add(absoluteUrl);
-        links.push(absoluteUrl);
-      }
-      } catch (_error) {
-        // Invalid URL - skip
-      }
-  });
+    const srcMatch = imgTag.match(/src=["']([^"']+)["']/i);
+    const altMatch = imgTag.match(/alt=["']([^"']*?)["']/i);
+    const widthMatch = imgTag.match(/width=["']?([^"'\s>]+)/i);
+    const heightMatch = imgTag.match(/height=["']?([^"'\s>]+)/i);
 
-  // Extract from <link> tags (canonical, alternate, etc.)
-  $('link[href]').each((_, element) => {
-    const href = $(element).attr('href');
-    if (!href) return;
+    const src = srcMatch?.[1] ?? '';
+    const alt = altMatch?.[1] ?? '';
+    images.push({
+      src,
+      alt,
+      hasAlt: alt.length > 0,
+      width: widthMatch?.[1],
+      height: heightMatch?.[1],
+    });
+  }
 
-    try {
-      const absoluteUrl = new URL(href, baseUrl).toString();
-      if (!seen.has(absoluteUrl)) {
-        seen.add(absoluteUrl);
-        links.push(absoluteUrl);
-      }
-      } catch (_error) {
-        // Invalid URL - skip
-      }
-  });
+  return images;
+}
+
+/**
+ * Analyze links
+ */
+function analyzeLinks(html: string, pageUrl?: string): LinkAnalysis[] {
+  const linkRegex = /<a[^>]*href=["']([^"']+)["'][^>]*>([^<]*)<\/a>/gi;
+  const links: LinkAnalysis[] = [];
+
+  let match;
+  while ((match = linkRegex.exec(html)) !== null) {
+    const href = match[1] ?? '';
+    const text = match[2]?.trim() ?? '';
+    const fullTag = match[0] ?? '';
+
+    const isExternal = isExternalLink(href, pageUrl);
+    const isNofollow = /rel=["']([^"']*)["']/i.test(fullTag) &&
+      /rel=["']([^"']*)["']/i.exec(fullTag)?.[1]?.includes('nofollow');
+
+    links.push({
+      href,
+      text,
+      isExternal,
+      isNofollow: !!isNofollow,
+    });
+  }
 
   return links;
 }
 
 /**
- * Extract hreflang tags from the page
+ * Check if link is external
  */
-function extractHreflangs($: CheerioAPI, baseUrl: string): HreflangEntry[] {
-  const hreflangs: HreflangEntry[] = [];
+function isExternalLink(href: string, pageUrl?: string): boolean {
+  if (!href || href.startsWith('#') || href.startsWith('/') || href.startsWith('.')) {
+    return false;
+  }
 
-  $('link[rel="alternate"][hreflang]').each((_, element) => {
-    const lang = $(element).attr('hreflang');
-    const href = $(element).attr('href');
+  if (!pageUrl) return href.startsWith('http');
 
-    if (lang && href) {
-      try {
-        const absoluteUrl = new URL(href, baseUrl).toString();
-        hreflangs.push({ lang, url: absoluteUrl });
-      } catch (_error) {
-        // Skip invalid URLs
-      }
-    }
-  });
-
-  return hreflangs;
-}
-
-/**
- * Analyze images on the page
- */
-function analyzeImages($: CheerioAPI): ImageAnalysis {
-  let total = 0;
-  let missingAlt = 0;
-
-  $('img').each((_, element) => {
-    total++;
-    const alt = $(element).attr('alt');
-    if (!alt || alt.trim() === '') {
-      missingAlt++;
-    }
-  });
-
-  return {
-    total,
-    missingAlt,
-  };
-}
-
-/**
- * Extract domain from URL
- */
-function getDomain(url: string): string | null {
   try {
-    const urlObj = new URL(url);
-    // Remove www. prefix for comparison
-    return urlObj.hostname.replace(/^www\./, '');
-  } catch (_error) {
-    return null;
+    const pageHost = new URL(pageUrl).hostname;
+    const linkHost = new URL(href).hostname;
+    return pageHost !== linkHost;
+  } catch {
+    return false;
   }
 }
 
 /**
- * Check if a domain is in the trusted/authoritative list
+ * Count script tags
  */
-function isTrustedDomain(domain: string | null): boolean {
-  if (!domain) return false;
-
-  const trustedDomains = [
-    'who.int',
-    'nih.gov',
-    'cdc.gov',
-    'wikipedia.org',
-    'google.com',
-    'mayo.edu',
-    'clevelandclinic.org',
-    'hopkinsmedicine.org',
-    'webmd.com',
-    'healthline.com',
-    'medlineplus.gov',
-    'pubmed.ncbi.nlm.nih.gov',
-    'ncbi.nlm.nih.gov',
-  ];
-
-  const normalizedDomain = domain.toLowerCase();
-  return trustedDomains.some((trusted) =>
-    normalizedDomain === trusted || normalizedDomain.endsWith(`.${trusted}`)
-  );
+function countScripts(html: string): number {
+  const scriptRegex = /<script[^>]*>/gi;
+  const matches = html.match(scriptRegex);
+  return matches ? matches.length : 0;
 }
 
 /**
- * Extract rel attribute and other link metadata
+ * Count stylesheets
  */
-function getLinkMetadata($: CheerioAPI, url: string): { rel?: string } {
-  const link = $(`a[href="${url}"]`).first();
+function countStylesheets(html: string): number {
+  const linkRegex = /<link[^>]*rel=["']stylesheet["'][^>]*>/gi;
+  const styleRegex = /<style[^>]*>/gi;
+
+  const linkMatches = html.match(linkRegex);
+  const styleMatches = html.match(styleRegex);
+
+  return (linkMatches ? linkMatches.length : 0) + (styleMatches ? styleMatches.length : 0);
+}
+
+/**
+ * Analyze content structure
+ */
+export function analyzeContentStructure(html: string) {
+  const parsed = parseHTML(html);
+
+  const issues: string[] = [];
+  const recommendations: string[] = [];
+
+  // H1 check
+  if (parsed.headings.h1Count === 0) {
+    issues.push('Missing H1 tag');
+    recommendations.push('Add exactly one H1 tag');
+  } else if (parsed.headings.h1Count > 1) {
+    issues.push('Multiple H1 tags found');
+    recommendations.push('Use only one H1 tag per page');
+  }
+
+  // H2 check
+  if (parsed.headings.h2Count === 0) {
+    recommendations.push('Consider adding H2 tags for better structure');
+  }
+
+  // Image alt text check
+  const imagesWithoutAlt = parsed.images.filter((img) => !img.hasAlt);
+  if (imagesWithoutAlt.length > 0) {
+    issues.push(`${imagesWithoutAlt.length} images missing alt text`);
+    recommendations.push('Add descriptive alt text to all images');
+  }
+
+  // Charset check
+  if (!parsed.charset) {
+    issues.push('Missing charset declaration');
+    recommendations.push('Add <meta charset="UTF-8"> in <head>');
+  }
+
+  // Viewport check
+  if (!parsed.viewport) {
+    issues.push('Missing viewport meta tag');
+    recommendations.push('Add <meta name="viewport" content="width=device-width, initial-scale=1">');
+  }
+
   return {
-    rel: link.attr('rel'),
+    parsed,
+    issues,
+    recommendations,
+    score: calculateStructureScore(issues),
   };
 }
 
 /**
- * Check status of external links
- * Limits to max 15 links to avoid timeouts
+ * Calculate structure score
  */
-async function checkLinksStatus(
-  $: CheerioAPI,
-  links: string[],
-  targetDomain: string,
-): Promise<ExternalLinkAnalysis> {
-  const targetDomainNormalized = getDomain(targetDomain);
-  if (!targetDomainNormalized) {
-    return {
-      total: 0,
-      broken: 0,
-      list: [],
-    };
-  }
-
-  // Filter external links (different domain)
-  const externalLinks = links
-    .map((link) => {
-      const linkDomain = getDomain(link);
-      return linkDomain && linkDomain !== targetDomainNormalized ? link : null;
-    })
-    .filter((link): link is string => link !== null);
-
-  // Remove duplicates
-  const uniqueExternalLinks = Array.from(new Set(externalLinks));
-
-  // Limit to 15 links to avoid timeouts
-  const linksToCheck = uniqueExternalLinks.slice(0, 15);
-
-  const linkResults: Array<{ url: string; status: number; isTrusted: boolean }> = [];
-
-  // Check each link in parallel (with limit)
-  const checkPromises = linksToCheck.map(async (url) => {
-    const domain = getDomain(url);
-    const isTrusted = isTrustedDomain(domain);
-    const { rel } = getLinkMetadata($, url);
-
-    try {
-      const response = await fetch(url, {
-        method: 'HEAD',
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; TechAuditBot/1.0)',
-        },
-        signal: AbortSignal.timeout(5000), // 5 second timeout per link
-      });
-
-      return {
-        url,
-        status: response.status,
-        isTrusted,
-        rel,
-      };
-    } catch (_error) {
-      // If fetch fails, assume it's broken (404 or network error)
-      return {
-        url,
-        status: 404,
-        isTrusted,
-      };
-    }
+function calculateStructureScore(issues: string[]): number {
+  let score = 100;
+  issues.forEach(() => {
+    score -= 15;
   });
-
-  // Wait for all checks to complete (or fail)
-  const results = await Promise.allSettled(checkPromises);
-
-  results.forEach((result) => {
-    if (result.status === 'fulfilled') {
-      linkResults.push(result.value);
-    } else {
-      // If promise rejected, add as broken
-      console.warn('[HTMLParser] Link check failed:', result.reason);
-    }
-  });
-
-  const broken = linkResults.filter((link) => link.status === 404 || link.status >= 500).length;
-
-  return {
-    total: uniqueExternalLinks.length,
-    broken,
-    list: linkResults,
-  };
+  return Math.max(0, score);
 }
-
-/*
- * -------------------------------------------------------
- * Main Function
- * -------------------------------------------------------
- */
-
-/**
- * Parse HTML content and extract structured metadata
- * 
- * @param html - The HTML content to parse
- * @param url - The URL of the page (for resolving relative links)
- * @returns Structured PageParseResult with all extracted data
- */
-export async function parseHtml(html: string, url: string): Promise<PageParseResult> {
-  const $ = load(html);
-
-  // Extract meta tags
-  const title = $('title').text().trim() || null;
-  const titleLength = title ? title.length : null;
-
-  const description = $('meta[name="description"]').attr('content')?.trim() || null;
-  const descriptionLength = description ? description.length : null;
-
-  const h1 = $('h1').first().text().trim() || null;
-
-  // Canonical URL
-  let canonical: string | null = null;
-  const canonicalHref = $('link[rel="canonical"]').attr('href');
-  if (canonicalHref) {
-    try {
-      canonical = new URL(canonicalHref, url).toString();
-    } catch (_error) {
-      canonical = canonicalHref; // Fallback to raw value
-    }
-  }
-
-  // Robots meta tag
-  const robots = $('meta[name="robots"]').attr('content') || null;
-
-  // Viewport meta tag (for mobile-friendliness)
-  const viewport = $('meta[name="viewport"]').length > 0;
-
-  // Lang attribute on html tag
-  const lang = $('html').attr('lang') || null;
-
-  // Extract links
-  const links = extractLinks($, url);
-
-  // Extract and analyze hreflangs
-  const hreflangs = extractHreflangs($, url);
-
-  // Analyze images
-  const images = analyzeImages($);
-
-  // Analyze schema markup
-  const schema = analyzeSchemaMarkup($);
-
-  // Analyze external links (async)
-  const externalLinks = await checkLinksStatus($, links, url);
-
-  return {
-    meta: {
-      title,
-      titleLength,
-      description,
-      descriptionLength,
-      h1,
-      canonical,
-      robots,
-      viewport,
-      lang,
-      hreflangs,
-    },
-    links,
-    images,
-    schema,
-    externalLinks,
-  };
-}
-

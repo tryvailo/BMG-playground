@@ -20,6 +20,8 @@ import {
   Info,
   Globe,
   Share2,
+  TrendingUp,
+  TrendingDown,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -407,78 +409,57 @@ function _CategorySection({ title, icon, children }: CategorySectionProps) {
 }
 
 /**
- * Calculate Overall Score for E-E-A-T
+ * KPI Card Component (same style as CompetitorsHorizon)
  */
-function calculateOverallScore(data: EEATAuditResult): number {
-  const scores: number[] = [];
+interface KpiCardProps {
+  label: string;
+  value: string;
+  benchmark?: string;
+  trend?: string;
+  icon: React.ElementType;
+  iconBg: string;
+  iconColor: string;
+}
 
-  // Experience scores
-  if (data.experience.has_case_studies) scores.push(100);
-  if (data.experience.experience_figures_found) scores.push(100);
-  if (data.experience.case_study_structure) {
-    scores.push(data.experience.case_study_structure.completeness_score);
-  }
+function KpiCard({ label, value, benchmark, trend, icon: Icon, iconBg, iconColor }: KpiCardProps) {
+  const isPositive = trend?.startsWith('+') ?? true;
 
-  // Expertise scores
-  if (data.authorship.metrics) {
-    scores.push(data.authorship.metrics.blog_pages_with_author_percent);
-    scores.push(data.authorship.metrics.authors_with_credentials_percent);
-  } else {
-    if (data.authorship.has_author_blocks) scores.push(100);
-    if (data.authorship.author_credentials_found) scores.push(100);
-  }
-  if (data.authorship.author_profile) {
-    const profileChecks = [
-      data.authorship.author_profile.has_qualifications,
-      data.authorship.author_profile.has_position,
-      data.authorship.author_profile.has_experience_years,
-      data.authorship.author_profile.has_credentials_links,
-    ];
-    scores.push((profileChecks.filter(Boolean).length / 4) * 100);
-  }
-
-  // Authoritativeness scores
-  if (data.authority.scientific_metrics?.articles_with_sources_percent !== undefined) {
-    scores.push(data.authority.scientific_metrics.articles_with_sources_percent);
-  } else if (data.authority.scientific_sources_count > 0) {
-    scores.push(Math.min(100, data.authority.scientific_sources_count * 20));
-  }
-  if (data.authority.has_community_mentions) scores.push(100);
-  if (data.authority.media_links && data.authority.media_links.length > 0) scores.push(100);
-  if (data.authority.publications && data.authority.publications.length > 0) scores.push(100);
-  if (data.authority.association_memberships && data.authority.association_memberships.length > 0) scores.push(100);
-
-  // Trustworthiness scores
-  if (data.trust.has_privacy_policy) scores.push(100);
-  if (data.trust.has_licenses) scores.push(100);
-  if (data.trust.contact_page_found) scores.push(100);
-  if (data.trust.nap_present) scores.push(100);
-  if (data.trust.nap_comparison && data.trust.nap_comparison.match_percent !== undefined) {
-    scores.push(data.trust.nap_comparison.match_percent);
-  }
-  if (data.trust.legal_entity?.has_legal_entity_name) scores.push(100);
-  if (data.trust.about_us?.has_about_us_link) scores.push(100);
-  if (data.trust.contact_block) {
-    const contactChecks = [
-      data.trust.contact_block.has_email,
-      data.trust.contact_block.has_booking_form,
-      data.trust.contact_block.has_map,
-    ];
-    scores.push((contactChecks.filter(Boolean).length / 3) * 100);
-  }
-
-  // Reputation scores
-  if (data.reputation.google_maps_rating?.fetched && data.reputation.google_maps_rating.rating) {
-    scores.push((data.reputation.google_maps_rating.rating / 5) * 100);
-  }
-  if (data.reputation.average_rating?.average_rating) {
-    scores.push((data.reputation.average_rating.average_rating / 5) * 100);
-  }
-  const totalPlatforms = data.reputation.linked_platforms.length + data.reputation.social_links.length;
-  if (totalPlatforms > 0) scores.push(Math.min(100, totalPlatforms * 20));
-
-  if (scores.length === 0) return 0;
-  return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+  return (
+    <HorizonCard 
+      className="group hover:-translate-y-1 transition-all duration-300"
+      style={{ boxShadow: HORIZON.shadowSm }}
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div
+          className="w-12 h-12 rounded-full flex items-center justify-center"
+          style={{ backgroundColor: iconBg }}
+        >
+          <Icon className="w-6 h-6" style={{ color: iconColor }} />
+        </div>
+        {trend && (
+          <div className={cn(
+            "flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold",
+            isPositive ? "bg-[#01B57415] text-[#01B574]" : "bg-[#EE5D5015] text-[#EE5D50]"
+          )}>
+            {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+            {trend}
+          </div>
+        )}
+      </div>
+      <div className="text-sm font-medium mb-1" style={{ color: HORIZON.textSecondary }}>
+        {label}
+      </div>
+      <div className="text-lg font-bold" style={{ color: HORIZON.textPrimary }}>
+        <span>{value}</span>
+        {benchmark && (
+          <>
+            <span className="text-sm font-medium mx-1" style={{ color: HORIZON.textSecondary }}>vs</span>
+            <span style={{ color: HORIZON.textSecondary }}>{benchmark}</span>
+          </>
+        )}
+      </div>
+    </HorizonCard>
+  );
 }
 
 /**
@@ -636,20 +617,7 @@ export function EEATAuditSection({
     return null;
   }
 
-  const overallScore = calculateOverallScore(result);
   const categoryScores = calculateCategoryScores(result);
-
-  const getScoreColor = (score: number) => {
-    if (score >= 90) return 'text-emerald-600 dark:text-emerald-400';
-    if (score >= 50) return 'text-orange-600 dark:text-orange-400';
-    return 'text-red-600 dark:text-red-400';
-  };
-
-  const getScoreBgColor = (score: number) => {
-    if (score >= 90) return 'bg-emerald-50 border-emerald-300';
-    if (score >= 50) return 'bg-orange-50 border-orange-300';
-    return 'bg-red-50 border-red-300';
-  };
 
   // Prepare Trust Signals data for Bar Chart
   const trustSignalsData = [
@@ -743,9 +711,7 @@ export function EEATAuditSection({
   };
 
   return (
-    <div className={cn('space-y-8', className)}>
-
-
+    <div className={cn('space-y-6 pb-20 animate-in fade-in duration-700', className)}>
       {/* Error State */}
       {error && (
         <Alert variant="destructive">
@@ -774,72 +740,53 @@ export function EEATAuditSection({
       {/* Results */}
       {result && !isPending && (
         <>
-          {/* Hero Section */}
-          <HorizonCard className={cn('border-2 relative overflow-hidden bg-white', getScoreBgColor(overallScore))}>
-            <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
-              <Shield className="w-24 h-24" />
+          {/* KPI Summary Cards */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-2 mb-2 ml-1">
+              <Shield className="w-5 h-5" style={{ color: HORIZON.primary }} />
+              <h3 className="text-sm font-bold uppercase tracking-widest" style={{ color: HORIZON.textPrimary }}>
+                E-E-A-T Сигнали
+              </h3>
             </div>
-            <CardHeader>
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h1 className="text-3xl font-bold tracking-tight mb-2" style={{ color: HORIZON.textPrimary }}>
-                    {t('title')}
-                  </h1>
-                  <p className="text-sm font-medium" style={{ color: HORIZON.textSecondary }}>
-                    {t('description')}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <div className={cn('text-5xl font-bold tracking-tighter mb-1', getScoreColor(overallScore))}>
-                    {overallScore}
-                  </div>
-                  <div className="text-sm font-bold" style={{ color: HORIZON.textSecondary }}>
-                    / 100
-                  </div>
-                </div>
-              </div>
-
-              {/* Category Progress Bars */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
-                {categoryScores.experience !== null && (
-                  <div className="space-y-3 p-4 bg-[#F4F7FE] rounded-xl">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold uppercase tracking-wider" style={{ color: HORIZON.textSecondary }}>{t('groups.experience')}</span>
-                      <span className="text-xs font-bold" style={{ color: HORIZON.textPrimary }}>{categoryScores.experience}%</span>
-                    </div>
-                    <ProgressBar value={categoryScores.experience} size="md" showValue={false} />
-                  </div>
-                )}
-                {categoryScores.expertise !== null && (
-                  <div className="space-y-3 p-4 bg-[#F4F7FE] rounded-xl">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold uppercase tracking-wider" style={{ color: HORIZON.textSecondary }}>{t('groups.expertise')}</span>
-                      <span className="text-xs font-bold" style={{ color: HORIZON.textPrimary }}>{categoryScores.expertise}%</span>
-                    </div>
-                    <ProgressBar value={categoryScores.expertise} size="md" showValue={false} />
-                  </div>
-                )}
-                {categoryScores.authority !== null && (
-                  <div className="space-y-3 p-4 bg-[#F4F7FE] rounded-xl">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold uppercase tracking-wider" style={{ color: HORIZON.textSecondary }}>{t('groups.authority')}</span>
-                      <span className="text-xs font-bold" style={{ color: HORIZON.textPrimary }}>{categoryScores.authority}%</span>
-                    </div>
-                    <ProgressBar value={categoryScores.authority} size="md" showValue={false} />
-                  </div>
-                )}
-                {categoryScores.trust !== null && (
-                  <div className="space-y-3 p-4 bg-[#F4F7FE] rounded-xl">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold uppercase tracking-wider" style={{ color: HORIZON.textSecondary }}>{t('groups.trust')}</span>
-                      <span className="text-xs font-bold" style={{ color: HORIZON.textPrimary }}>{categoryScores.trust}%</span>
-                    </div>
-                    <ProgressBar value={categoryScores.trust} size="md" showValue={false} />
-                  </div>
-                )}
-              </div>
-            </CardHeader>
-          </HorizonCard>
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <KpiCard
+                label="Досвід"
+                value={`${categoryScores.experience ?? 0}%`}
+                benchmark="75%"
+                trend={(categoryScores.experience ?? 0) >= 75 ? '+' + ((categoryScores.experience ?? 0) - 75) + '%' : '-' + (75 - (categoryScores.experience ?? 0)) + '%'}
+                icon={Briefcase}
+                iconBg={HORIZON.primaryLight}
+                iconColor={HORIZON.primary}
+              />
+              <KpiCard
+                label="Експертність"
+                value={`${categoryScores.expertise ?? 0}%`}
+                benchmark="80%"
+                trend={(categoryScores.expertise ?? 0) >= 80 ? '+' + ((categoryScores.expertise ?? 0) - 80) + '%' : '-' + (80 - (categoryScores.expertise ?? 0)) + '%'}
+                icon={Award}
+                iconBg={HORIZON.successLight}
+                iconColor={HORIZON.success}
+              />
+              <KpiCard
+                label="Авторитетність"
+                value={`${categoryScores.authority ?? 0}%`}
+                benchmark="70%"
+                trend={(categoryScores.authority ?? 0) >= 70 ? '+' + ((categoryScores.authority ?? 0) - 70) + '%' : '-' + (70 - (categoryScores.authority ?? 0)) + '%'}
+                icon={Globe}
+                iconBg={HORIZON.infoLight}
+                iconColor={HORIZON.info}
+              />
+              <KpiCard
+                label="Довіра"
+                value={`${categoryScores.trust ?? 0}%`}
+                benchmark="85%"
+                trend={(categoryScores.trust ?? 0) >= 85 ? '+' + ((categoryScores.trust ?? 0) - 85) + '%' : '-' + (85 - (categoryScores.trust ?? 0)) + '%'}
+                icon={Shield}
+                iconBg={HORIZON.warningLight}
+                iconColor={HORIZON.warning}
+              />
+            </div>
+          </section>
 
           {/* Trust Signals Breakdown Bar Chart */}
           <HorizonCard title="Trust Signals Breakdown" subtitle="Key trust indicators and their status">

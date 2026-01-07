@@ -163,7 +163,7 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        'flex items-center justify-between py-5 lg:px-4',
+        'flex items-center justify-between py-5 lg:px-4 relative z-10 bg-background',
         className,
       )}
     >

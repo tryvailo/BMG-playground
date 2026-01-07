@@ -8,12 +8,13 @@ import { PageBody } from '@kit/ui/page';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@kit/ui/card';
 
 import { ServicesTable } from '~/components/dashboard/playground/ServicesTable';
+import { getProjectSettings, type ProjectSettings } from '~/lib/actions/project';
+import { deleteService } from '~/lib/actions/services';
 
 /**
  * LocalStorage Keys - Using global configuration keys
  */
 const STORAGE_KEYS = {
-  DOMAIN: 'configuration_domain',
   API_KEY_OPENAI: 'configuration_api_key_openai',
   API_KEY_PERPLEXITY: 'configuration_api_key_perplexity',
 } as const;
@@ -30,37 +31,66 @@ const getStoredValue = (key: string): string => {
   }
 };
 
-// setStoredValue removed - not used in this component
-
 /**
  * Services Management Page
  */
 export default function ServicesManagementPage() {
   const [isMounted, setIsMounted] = useState(false);
+  const [projectSettings, setProjectSettings] = useState<ProjectSettings | null>(null);
+  const [apiKeyOpenAI, setApiKeyOpenAI] = useState('');
+  const [apiKeyPerplexity, setApiKeyPerplexity] = useState('');
 
-  // Load configuration values from localStorage on mount
   useEffect(() => {
     setIsMounted(true);
     
+    const loadSettings = async () => {
+      try {
+        const result = await getProjectSettings({});
+        if (result.success && result.data) {
+          setProjectSettings(result.data);
+        }
+      } catch (error) {
+        console.error('[Services Management] Error loading project settings:', error);
+      }
+    };
+    
+    loadSettings();
+    
     if (typeof window === 'undefined') return;
 
-    const domain = getStoredValue(STORAGE_KEYS.DOMAIN);
-    const apiKeyOpenAI = getStoredValue(STORAGE_KEYS.API_KEY_OPENAI);
-    const apiKeyPerplexity = getStoredValue(STORAGE_KEYS.API_KEY_PERPLEXITY);
+    const storedApiKeyOpenAI = getStoredValue(STORAGE_KEYS.API_KEY_OPENAI);
+    const storedApiKeyPerplexity = getStoredValue(STORAGE_KEYS.API_KEY_PERPLEXITY);
+
+    setApiKeyOpenAI(storedApiKeyOpenAI);
+    setApiKeyPerplexity(storedApiKeyPerplexity);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted || projectSettings === null) return;
+
+    const domain = projectSettings?.domain || '';
 
     if (!domain || !apiKeyOpenAI || !apiKeyPerplexity) {
       toast.warning('Please configure your domain and API keys in the Configuration page first.');
     } else if (!apiKeyOpenAI.startsWith('sk-') || !apiKeyPerplexity.startsWith('pplx-')) {
       toast.warning('Invalid API key format. Please update your API keys in the Configuration page.');
     }
-  }, []);
+  }, [isMounted, projectSettings, apiKeyOpenAI, apiKeyPerplexity]);
 
-  const domain = isMounted ? getStoredValue(STORAGE_KEYS.DOMAIN) : '';
-  const apiKeyOpenAI = isMounted ? getStoredValue(STORAGE_KEYS.API_KEY_OPENAI) : '';
-  const apiKeyPerplexity = isMounted ? getStoredValue(STORAGE_KEYS.API_KEY_PERPLEXITY) : '';
+  const domain = projectSettings?.domain || '';
 
   const isReady = domain && apiKeyOpenAI && apiKeyPerplexity && 
                   apiKeyOpenAI.startsWith('sk-') && apiKeyPerplexity.startsWith('pplx-');
+
+  const handleDeleteService = async (id: string) => {
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    if (isUUID) {
+      const result = await deleteService({ id });
+      if (!result.success) {
+        throw new Error('Failed to delete service from database');
+      }
+    }
+  };
 
   return (
     <PageBody className="overflow-auto">
@@ -86,6 +116,7 @@ export default function ServicesManagementPage() {
               apiKeyOpenAI={apiKeyOpenAI}
               apiKeyPerplexity={apiKeyPerplexity}
               storageKey="services_management_services"
+              onDeleteService={handleDeleteService}
             />
           ) : (
             <Card>
@@ -104,4 +135,3 @@ export default function ServicesManagementPage() {
     </PageBody>
   );
 }
-

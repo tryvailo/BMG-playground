@@ -1,9 +1,11 @@
 'use server';
 
-import { parseHtml } from './utils/html-parser';
+import { extractCanonical } from './utils/html-parser';
 import { analyzeLlmsTxt } from './utils/llms-analyzer';
 import { analyzeTechAudit } from './utils/tech-audit-analyzer';
 import type { TechAuditAnalysis } from './utils/tech-audit-analyzer';
+import { fetchAndAnalyzeRobotsTxt, type RobotsTxtAnalysis } from './utils/robots-parser';
+import { analyzeTitle, analyzeDescription, analyzeCanonical, type TitleAnalysis, type DescriptionAnalysis, type CanonicalAnalysis } from './utils/meta-analyzer';
 
 /*
  * -------------------------------------------------------
@@ -107,6 +109,7 @@ export interface EphemeralAuditResult {
   files: {
     robots: boolean;
     sitemap: boolean;
+    robotsTxt: RobotsTxtAnalysis; // Detailed robots.txt analysis
     llmsTxt: {
       present: boolean;
       score: number;
@@ -126,14 +129,18 @@ export interface EphemeralAuditResult {
   meta: {
     title: string;
     titleLength: number | null;
+    titleAnalysis: TitleAnalysis; // Detailed title quality analysis
     description: string;
     descriptionLength: number | null;
+    descriptionAnalysis: DescriptionAnalysis; // Detailed description quality analysis
     h1: string | null;
     canonical: string | null;
+    canonicalAnalysis: CanonicalAnalysis; // Detailed canonical URL analysis
     robots: string | null;
     lang: string | null;
     hreflangs: Array<{ lang: string; url: string }>;
     noindexPages?: string[];
+    hasNoindex: boolean;
   };
   images: {
     total: number;
@@ -143,7 +150,10 @@ export interface EphemeralAuditResult {
     total: number;
     broken: number;
     trusted: number;
-    list: Array<{ url: string; status: number; isTrusted: boolean }>;
+    dofollow: number;
+    nofollow: number;
+    dofollowPercent: number; // Target: 70-80%
+    list: Array<{ url: string; status: number; isTrusted: boolean; isNofollow: boolean }>;
   };
   duplicates: {
     wwwRedirect: 'ok' | 'duplicate' | 'error'; // 'ok' = redirects properly, 'duplicate' = both work, 'error' = check failed
@@ -169,6 +179,156 @@ function normalizeUrl(url: string): string {
   }
   // Default to https
   return `https://${trimmed}`;
+}
+
+/**
+ * Parse HTML and extract meta, schema, and image data for audit
+ */
+interface ParsedHTMLForAudit {
+  meta: {
+    title: string;
+    titleLength: number;
+    description: string;
+    descriptionLength: number;
+    h1: string | null;
+    canonical: string | null;
+    robots: string | null;
+    lang: string | null;
+    viewport: boolean;
+    hreflangs: Array<{ lang: string; url: string }>;
+  };
+  schema: {
+    hasMedicalOrganization: boolean;
+    hasPhysician: boolean;
+    hasMedicalProcedure: boolean;
+    hasLocalBusiness: boolean;
+    hasFAQPage: boolean;
+    hasReview: boolean;
+    hasMedicalSpecialty: boolean;
+    hasBreadcrumbList: boolean;
+  };
+  images: {
+    total: number;
+    missingAlt: number;
+  };
+}
+
+function parseHTMLForAudit(html: string, _pageUrl: string): ParsedHTMLForAudit {
+  // Extract title
+  const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+  const title = titleMatch && titleMatch[1] ? titleMatch[1].trim() : '';
+
+  // Extract meta description
+  const descMatch = html.match(/<meta\s+name=["']description["']\s+content=["']([^"']+)["']/i) ||
+                   html.match(/<meta\s+content=["']([^"']+)["']\s+name=["']description["']/i);
+  const description = descMatch && descMatch[1] ? descMatch[1].trim() : '';
+
+  // Extract H1
+  const h1Match = html.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+  const h1 = h1Match && h1Match[1] ? h1Match[1].trim() : null;
+
+  // Extract canonical
+  const canonical = extractCanonical(html) || null;
+
+  // Extract robots meta
+  const robotsMatch = html.match(/<meta\s+name=["']robots["']\s+content=["']([^"']+)["']/i) ||
+                      html.match(/<meta\s+content=["']([^"']+)["']\s+name=["']robots["']/i);
+  const robots = robotsMatch && robotsMatch[1] ? robotsMatch[1].trim() : null;
+
+  // Extract lang
+  const langMatch = html.match(/<html[^>]*\s+lang=["']([^"']+)["']/i);
+  const lang = langMatch && langMatch[1] ? langMatch[1].trim() : null;
+
+  // Extract viewport
+  const viewportMatch = html.match(/<meta\s+name=["']viewport["']/i);
+  const viewport = !!viewportMatch;
+
+  // Extract hreflangs
+  const hreflangs: Array<{ lang: string; url: string }> = [];
+  const hreflangRegex = /<link[^>]*rel=["']alternate["'][^>]*hreflang=["']([^"']+)["'][^>]*href=["']([^"']+)["']/gi;
+  let hreflangMatch;
+  while ((hreflangMatch = hreflangRegex.exec(html)) !== null) {
+    const lang = hreflangMatch[1];
+    const url = hreflangMatch[2];
+    if (lang && url) {
+      hreflangs.push({ lang, url });
+    }
+  }
+
+  // Extract JSON-LD schemas
+  const jsonLdRegex = /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  const schemas: string[] = [];
+  let jsonLdMatch;
+  while ((jsonLdMatch = jsonLdRegex.exec(html)) !== null) {
+    const content = jsonLdMatch[1];
+    if (content) {
+      schemas.push(content);
+    }
+  }
+
+  // Parse schemas to detect types
+  const schemaTypes = new Set<string>();
+  schemas.forEach(jsonStr => {
+    try {
+      const parsed = JSON.parse(jsonStr);
+      const extractTypes = (obj: unknown) => {
+        if (Array.isArray(obj)) {
+          obj.forEach(extractTypes);
+        } else if (obj && typeof obj === 'object') {
+          const record = obj as Record<string, unknown>;
+          if (record['@type']) {
+            const types = Array.isArray(record['@type']) ? record['@type'] : [record['@type']];
+            types.forEach(t => schemaTypes.add(String(t).toLowerCase()));
+          }
+          if (record['@graph'] && Array.isArray(record['@graph'])) {
+            record['@graph'].forEach(extractTypes);
+          }
+        }
+      };
+      extractTypes(parsed);
+    } catch {
+      // Ignore parse errors
+    }
+  });
+
+  const hasSchemaType = (types: string[]) => types.some(t => schemaTypes.has(t.toLowerCase()));
+
+  const schema = {
+    hasMedicalOrganization: hasSchemaType(['medicalorganization', 'hospital', 'medicalclinic', 'dentist']),
+    hasPhysician: hasSchemaType(['physician', 'doctor']),
+    hasMedicalProcedure: hasSchemaType(['medicalprocedure', 'therapeuticprocedure', 'diagnosticprocedure']),
+    hasLocalBusiness: hasSchemaType(['localbusiness', 'medicalbusiness', 'healthandbeautybusiness']),
+    hasFAQPage: hasSchemaType(['faqpage']),
+    hasReview: hasSchemaType(['review', 'aggregaterating']),
+    hasMedicalSpecialty: hasSchemaType(['medicalspecialty']),
+    hasBreadcrumbList: hasSchemaType(['breadcrumblist']),
+  };
+
+  // Count images
+  const imgRegex = /<img[^>]*>/gi;
+  const imgMatches = html.match(imgRegex) || [];
+  const total = imgMatches.length;
+  const missingAlt = imgMatches.filter(img => !img.match(/alt=["'][^"']+["']/i)).length;
+
+  return {
+    meta: {
+      title,
+      titleLength: title.length,
+      description,
+      descriptionLength: description.length,
+      h1,
+      canonical,
+      robots,
+      lang,
+      viewport,
+      hreflangs,
+    },
+    schema,
+    images: {
+      total,
+      missingAlt,
+    },
+  };
 }
 
 /**
@@ -601,7 +761,7 @@ export async function performEphemeralTechAudit(
     desktopSpeedResult,
     mobileSpeedResult,
     htmlFetchResult,
-    robotsTxtResult,
+    robotsTxtAnalysisResult,
     sitemapResult,
     llmsTxtResult,
     duplicatesResult,
@@ -626,10 +786,10 @@ export async function performEphemeralTechAudit(
         }
         return response.text();
       })
-      .then((html) => parseHtml(html, normalizedUrl)),
+      .then((html) => parseHTMLForAudit(html, normalizedUrl)),
 
-    // robots.txt check
-    checkFileExists(new URL('/robots.txt', normalizedUrl).toString()),
+    // robots.txt detailed analysis (replaces simple checkFileExists)
+    fetchAndAnalyzeRobotsTxt(baseUrl),
 
     // sitemap.xml check
     checkFileExists(new URL('/sitemap.xml', normalizedUrl).toString()),
@@ -656,23 +816,30 @@ export async function performEphemeralTechAudit(
   const mobileDetails = mobileSpeedData.details;
 
   // Extract HTML parse results
-  let htmlData = null;
+  let htmlData: ParsedHTMLForAudit | null = null;
   if (htmlFetchResult.status === 'fulfilled') {
-    htmlData = htmlFetchResult.value;
-    console.log('[EphemeralAudit] HTML parsed successfully');
-    console.log('[EphemeralAudit] Schema data:', JSON.stringify(htmlData.schema, null, 2));
-    
-    // Detailed schema analysis
-    const schemaKeys = Object.keys(htmlData.schema || {});
-    const schemaValues = Object.values(htmlData.schema || {});
-    const trueValues = schemaValues.filter(v => v === true).length;
-    console.log(`[EphemeralAudit] Schema keys found: ${schemaKeys.length}, true values: ${trueValues}`);
-    
-    if (trueValues === 0) {
-      console.warn('[EphemeralAudit] ⚠️  WARNING: No schema types detected! This could mean:');
-      console.warn('[EphemeralAudit]   1. The website has no JSON-LD markup');
-      console.warn('[EphemeralAudit]   2. JSON-LD is malformed');
-      console.warn('[EphemeralAudit]   3. Schema types don\'t match expected patterns');
+    try {
+      htmlData = htmlFetchResult.value;
+      console.log('[EphemeralAudit] HTML parsed successfully');
+      if (htmlData?.schema) {
+        console.log('[EphemeralAudit] Schema data:', JSON.stringify(htmlData.schema, null, 2));
+        
+        // Detailed schema analysis
+        const schemaKeys = Object.keys(htmlData.schema || {});
+        const schemaValues = Object.values(htmlData.schema || {});
+        const trueValues = schemaValues.filter(v => v === true).length;
+        console.log(`[EphemeralAudit] Schema keys found: ${schemaKeys.length}, true values: ${trueValues}`);
+        
+        if (trueValues === 0) {
+          console.warn('[EphemeralAudit] ⚠️  WARNING: No schema types detected! This could mean:');
+          console.warn('[EphemeralAudit]   1. The website has no JSON-LD markup');
+          console.warn('[EphemeralAudit]   2. JSON-LD is malformed');
+          console.warn('[EphemeralAudit]   3. Schema types don\'t match expected patterns');
+        }
+      }
+    } catch (error) {
+      console.error('[EphemeralAudit] Error processing HTML data:', error);
+      htmlData = null;
     }
   } else {
     console.error('[EphemeralAudit] Error fetching HTML:', htmlFetchResult.reason);
@@ -683,14 +850,29 @@ export async function performEphemeralTechAudit(
     }
   }
 
-  // Extract file check results
-  const robotsPresent = robotsTxtResult.status === 'fulfilled'
-    ? robotsTxtResult.value
-    : false;
+  // Extract robots.txt analysis results
+  const robotsTxtAnalysis: RobotsTxtAnalysis = robotsTxtAnalysisResult.status === 'fulfilled'
+    ? robotsTxtAnalysisResult.value
+    : {
+      present: false,
+      content: '',
+      hasSitemap: false,
+      sitemapUrls: [],
+      rules: [],
+      disallowAll: false,
+      blocksAIBots: false,
+      blockedAIBots: [],
+      hasWildcardUserAgent: false,
+      issues: ['Помилка при аналізі robots.txt'],
+      recommendations: [],
+      score: 0,
+    };
+
+  const robotsPresent = robotsTxtAnalysis.present;
 
   const sitemapPresent = sitemapResult.status === 'fulfilled'
     ? sitemapResult.value
-    : false;
+    : robotsTxtAnalysis.hasSitemap; // Fallback to robots.txt sitemap info
 
   // Extract llms.txt results
   const llmsTxtData = llmsTxtResult.status === 'fulfilled'
@@ -703,7 +885,7 @@ export async function performEphemeralTechAudit(
 
   // Extract security and meta data from HTML
   const httpsEnabled = normalizedUrl.startsWith('https://');
-  const mobileFriendly = htmlData?.meta.viewport ?? false;
+  const mobileFriendly = htmlData?.meta?.viewport ?? false;
 
   // Extract schema data
   const schema = htmlData?.schema || {
@@ -729,12 +911,12 @@ export async function performEphemeralTechAudit(
   console.log(`[EphemeralAudit]   hasBreadcrumbList: ${schema.hasBreadcrumbList}`);
 
   // Extract meta data
-  const title = htmlData?.meta.title || '';
-  const description = htmlData?.meta.description || '';
-  const h1 = htmlData?.meta.h1 || null;
-  const canonical = htmlData?.meta.canonical || null;
-  const robots = htmlData?.meta.robots || null;
-  const lang = htmlData?.meta.lang || null;
+  const title = htmlData?.meta?.title || '';
+  const description = htmlData?.meta?.description || '';
+  const h1 = htmlData?.meta?.h1 || null;
+  const canonical = htmlData?.meta?.canonical || null;
+  const robots = htmlData?.meta?.robots || null;
+  const lang = htmlData?.meta?.lang || null;
 
   // Extract images data
   const images = htmlData?.images || {
@@ -742,13 +924,16 @@ export async function performEphemeralTechAudit(
     missingAlt: 0,
   };
 
-  // Extract external links data
-  const externalLinks = htmlData?.externalLinks || {
+  // External links - simplified (not parsed from HTML in this version)
+  const externalLinks = {
     total: 0,
     broken: 0,
-    list: [],
+    dofollow: 0,
+    nofollow: 0,
+    dofollowPercent: 0,
+    list: [] as Array<{ url: string; status: number; isTrusted: boolean; isNofollow: boolean }>,
   };
-  const trustedLinks = externalLinks.list.filter((link) => link.isTrusted).length;
+  const trustedLinks = 0;
 
   // Extract duplicate check results
   const duplicates = duplicatesResult.status === 'fulfilled'
@@ -774,6 +959,7 @@ export async function performEphemeralTechAudit(
     files: {
       robots: robotsPresent,
       sitemap: sitemapPresent,
+      robotsTxt: robotsTxtAnalysis,
       llmsTxt: {
         present: llmsTxtData.present,
         score: llmsTxtData.score,
@@ -792,14 +978,18 @@ export async function performEphemeralTechAudit(
     },
     meta: {
       title,
-      titleLength: htmlData?.meta.titleLength ?? null,
+      titleLength: htmlData?.meta?.titleLength ?? null,
+      titleAnalysis: analyzeTitle(title),
       description,
-      descriptionLength: htmlData?.meta.descriptionLength ?? null,
+      descriptionLength: htmlData?.meta?.descriptionLength ?? null,
+      descriptionAnalysis: analyzeDescription(description, title),
       h1,
       canonical,
+      canonicalAnalysis: analyzeCanonical(canonical, normalizedUrl),
       robots,
       lang,
-      hreflangs: htmlData?.meta.hreflangs ?? [],
+      hreflangs: htmlData?.meta?.hreflangs ?? [],
+      hasNoindex: robots?.toLowerCase().includes('noindex') ?? false,
     },
     images: {
       total: images.total,
@@ -809,7 +999,15 @@ export async function performEphemeralTechAudit(
       total: externalLinks.total,
       broken: externalLinks.broken,
       trusted: trustedLinks,
-      list: externalLinks.list,
+      dofollow: externalLinks.dofollow,
+      nofollow: externalLinks.nofollow,
+      dofollowPercent: externalLinks.dofollowPercent,
+      list: externalLinks.list.map((link) => ({
+        url: link.url,
+        status: link.status,
+        isTrusted: link.isTrusted,
+        isNofollow: link.isNofollow,
+      })),
     },
     duplicates,
   };
@@ -829,21 +1027,42 @@ export async function performEphemeralTechAudit(
     console.warn('[EphemeralAudit] No OpenAI key available. Skipping AI analysis.');
   }
 
-  return auditResult;
-
-  // Perform AI analysis if OpenAI key is available
-  if (finalOpenaiKey) {
-    try {
-      console.log('[EphemeralAudit] Starting AI analysis of technical audit...');
-      const aiAnalysis = await analyzeTechAudit(auditResult, finalOpenaiKey);
-      auditResult.aiAnalysis = aiAnalysis;
-      console.log(`[EphemeralAudit] AI analysis completed. Overall score: ${aiAnalysis.overallScore}/100`);
-    } catch (error) {
-      console.error('[EphemeralAudit] Error performing AI analysis:', error);
-      // Continue without AI analysis - it's optional
+  // Ensure all data is serializable before returning
+  // This helps catch serialization issues early
+  try {
+    // Test serialization to catch any issues early
+    const testSerialization = JSON.stringify(auditResult);
+    if (!testSerialization) {
+      throw new Error('Serialization returned empty string');
     }
-  } else {
-    console.warn('[EphemeralAudit] No OpenAI key available. Skipping AI analysis.');
+  } catch (serializationError) {
+    console.error('[EphemeralAudit] Serialization error detected:', serializationError);
+    console.error('[EphemeralAudit] Attempting to clean data...');
+    
+    // Create a cleaned version with only serializable data
+    const cleanedResult: EphemeralAuditResult = {
+      ...auditResult,
+      files: {
+        ...auditResult.files,
+        robotsTxt: {
+          ...auditResult.files.robotsTxt,
+          rules: auditResult.files.robotsTxt.rules.map(rule => ({
+            userAgent: String(rule.userAgent || ''),
+            disallow: Array.isArray(rule.disallow) ? rule.disallow.map(String) : [],
+            allow: Array.isArray(rule.allow) ? rule.allow.map(String) : [],
+          })),
+        },
+      },
+    };
+    
+    // Test cleaned result
+    try {
+      JSON.stringify(cleanedResult);
+      return cleanedResult;
+    } catch (cleanError) {
+      console.error('[EphemeralAudit] Even cleaned result failed serialization:', cleanError);
+      throw new Error('Failed to serialize audit result. Data may contain non-serializable values.');
+    }
   }
 
   return auditResult;

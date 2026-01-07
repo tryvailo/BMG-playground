@@ -1,25 +1,23 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Loader2, MapPin } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
-import { PageBody } from '@kit/ui/page';
 import { Button } from '@kit/ui/button';
 import { Card, CardContent } from '@kit/ui/card';
 import { If } from '@kit/ui/if';
 
 import { LocalIndicatorsSection } from '~/components/features/playground/LocalIndicatorsSection';
+import { LocalIndicatorsColdState } from '~/components/dashboard/audit/LocalIndicatorsColdState';
 import { performLocalIndicatorsAudit, getLatestLocalIndicatorsAudit } from '~/lib/actions/local-indicators-audit';
+import { getProjectSettings, type ProjectSettings } from '~/lib/actions/project';
 import type { LocalIndicatorsAuditResult } from '~/lib/server/services/local/types';
 
 /**
- * LocalStorage Keys - Using global configuration keys
+ * LocalStorage Keys - For API keys only (not stored in DB)
  */
 const STORAGE_KEYS = {
-  DOMAIN: 'configuration_domain',
-  CITY: 'configuration_city',
-  CLINIC_NAME: 'configuration_clinic_name',
   GOOGLE_PLACES_API_KEY: 'configuration_api_key_google_places',
   FIRECRAWL_API_KEY: 'configuration_api_key_firecrawl',
   GOOGLE_CUSTOM_SEARCH_API_KEY: 'configuration_api_key_google_custom_search',
@@ -47,18 +45,33 @@ export default function LocalIndicatorsPage() {
   const [isPending, setIsPending] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
+  const [projectSettings, setProjectSettings] = useState<ProjectSettings | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
   const isLoadingRef = useRef(false); // Prevent multiple simultaneous loads
 
-  // Function to load audit data
-  const loadAuditData = React.useCallback(async (skipLoadingState = false, forceReload = false) => {
+  // Load project settings from database
+  const loadProjectSettings = useCallback(async () => {
+    try {
+      const result = await getProjectSettings({});
+      if (result.success && result.data) {
+        setProjectSettings(result.data);
+        return result.data;
+      }
+    } catch (error) {
+      console.error('[Local Indicators] Error loading project settings:', error);
+    }
+    return null;
+  }, []);
+
+  // Function to load audit data - no dependencies to avoid infinite loops
+  const loadAuditData = useCallback(async (skipLoadingState = false, forceReload = false, settings?: ProjectSettings | null) => {
     // Prevent multiple simultaneous loads
     if (isLoadingRef.current && !forceReload) {
       console.log('[Local Indicators] Load already in progress, skipping');
       return;
     }
 
-    const domain = getStoredValue(STORAGE_KEYS.DOMAIN);
+    const domain = settings?.domain;
     if (!domain) {
       if (!skipLoadingState) {
         setIsLoading(false);
@@ -93,25 +106,11 @@ export default function LocalIndicatorsPage() {
         setAuditDate(latestAudit.createdAt);
       } else {
         console.log('[Local Indicators] No audit found in database');
-        // Only clear state if we don't have existing data (to prevent clearing after successful load)
-        // This prevents data from disappearing after initial load
-        setResult((prevResult) => {
-          if (prevResult === null) {
-            return null; // Already null, no change needed
-          }
-          // Keep existing data if we have it, don't clear
-          console.log('[Local Indicators] Keeping existing data, not clearing');
-          return prevResult;
-        });
-        // Only clear auditDate if we're clearing result
-        setAuditDate((prevDate) => {
-          // Keep existing date if we have previous result
-          return prevDate;
-        });
+        setResult((prevResult) => prevResult);
+        setAuditDate((prevDate) => prevDate);
       }
     } catch (error) {
       console.error('[Local Indicators] Error fetching audit data:', error);
-      // Don't clear existing data on error
     } finally {
       isLoadingRef.current = false;
       if (!skipLoadingState) {
@@ -120,11 +119,26 @@ export default function LocalIndicatorsPage() {
     }
   }, []);
 
-  // Initial fetch on mount
+  // Initial fetch on mount - only runs once
   useEffect(() => {
     setIsMounted(true);
-    loadAuditData();
-  }, [loadAuditData]);
+    let mounted = true;
+    
+    const init = async () => {
+      const settings = await loadProjectSettings();
+      if (mounted && settings) {
+        await loadAuditData(false, false, settings);
+      } else if (mounted) {
+        setIsLoading(false);
+      }
+    };
+    init();
+    
+    return () => {
+      mounted = false;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Reload data when page becomes visible (user returns to tab)
   // Only reload if we don't have data or if it's been a while since last load
@@ -195,10 +209,12 @@ export default function LocalIndicatorsPage() {
     setIsPending(true);
     // Don't clear current result - keep it visible while new audit is running
 
-    // Get configuration values
-    const domain = getStoredValue(STORAGE_KEYS.DOMAIN);
-    const city = getStoredValue(STORAGE_KEYS.CITY);
-    const clinicName = getStoredValue(STORAGE_KEYS.CLINIC_NAME);
+    // Get project settings from state (loaded from DB)
+    const domain = projectSettings?.domain;
+    const city = projectSettings?.city;
+    const clinicName = projectSettings?.clinicName;
+
+    // Get API keys from localStorage (not stored in DB for security)
     const googlePlacesApiKeyRaw = getStoredValue(STORAGE_KEYS.GOOGLE_PLACES_API_KEY);
     const firecrawlApiKeyRaw = getStoredValue(STORAGE_KEYS.FIRECRAWL_API_KEY);
     const googleCustomSearchApiKeyRaw = getStoredValue(STORAGE_KEYS.GOOGLE_CUSTOM_SEARCH_API_KEY);
@@ -277,72 +293,105 @@ export default function LocalIndicatorsPage() {
   };
 
   return (
-    <PageBody>
-      <div className="flex-1 flex flex-col space-y-8 p-4 lg:p-8 min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold" style={{ color: '#1B2559' }}>
-              Локальні показники
-            </h1>
-            <p className="text-sm mt-1" style={{ color: '#A3AED0' }}>
-              Відстежуйте та аналізуйте свої локальні показники в пошуку
-            </p>
-          </div>
+    <div className="flex-1 flex flex-col p-4 lg:p-8">
+      <LocalIndicatorsHorizon
+        result={result}
+        auditDate={auditDate}
+        isLoading={isLoading}
+        isPending={isPending}
+        isMounted={isMounted}
+        projectSettings={projectSettings}
+        onRunAudit={handleRunAudit}
+        resultsRef={resultsRef}
+      />
+    </div>
+  );
+}
+
+const HORIZON = {
+  primary: '#4318FF',
+  primaryLight: '#4318FF15',
+  secondary: '#A3AED0',
+  textPrimary: '#1B2559',
+  textSecondary: '#A3AED0',
+  background: '#F4F7FE',
+  shadow: '0 18px 40px rgba(112, 144, 176, 0.12)',
+  shadowSm: '0 4px 12px rgba(112, 144, 176, 0.1)',
+};
+
+interface LocalIndicatorsHorizonProps {
+  result: LocalIndicatorsAuditResult | null;
+  auditDate: string | null;
+  isLoading: boolean;
+  isPending: boolean;
+  isMounted: boolean;
+  projectSettings: ProjectSettings | null;
+  onRunAudit: () => void;
+  resultsRef: React.RefObject<HTMLDivElement | null>;
+}
+
+function LocalIndicatorsHorizon({
+  result,
+  auditDate,
+  isLoading: _isLoading,
+  isPending,
+  isMounted,
+  projectSettings,
+  onRunAudit,
+  resultsRef,
+}: LocalIndicatorsHorizonProps) {
+  return (
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold" style={{ color: HORIZON.textPrimary }}>
+            Локальні показники
+          </h1>
+          <p className="text-sm mt-1" style={{ color: HORIZON.textSecondary }}>
+            Відстежуйте та аналізуйте свої локальні показники в пошуку
+          </p>
         </div>
-
-        <Card className="border-none bg-white rounded-[20px] overflow-hidden transition-all duration-300 shadow-[0_18px_40px_rgba(112,144,176,0.12)]">
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="flex flex-col">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center bg-[#4318FF15]">
-                    <MapPin className="h-5 w-5 text-[#4318FF]" />
-                  </div>
-                  <h2 className="text-xl font-bold text-[#1B2559]">Local SEO Analysis</h2>
-                </div>
-                <p className="text-sm text-[#A3AED0] max-w-md">Запустіть глибокий аудит вашого Google Business Profile та локальної видимості.</p>
-              </div>
-              <div className="flex flex-col items-center md:items-end gap-3">
-                {auditDate && (
-                  <p className="text-xs font-medium text-[#A3AED0]">
-                    Останній аудит: {new Date(auditDate).toLocaleString('uk-UA')}
-                  </p>
-                )}
-                <Button
-                  onClick={handleRunAudit}
-                  disabled={isPending || !isMounted || !getStoredValue(STORAGE_KEYS.DOMAIN)}
-                  className="w-full lg:w-auto bg-[#4318FF] hover:bg-[#4318FF]/90 text-white rounded-xl px-8 h-12 font-bold transition-all duration-200 shadow-[0_4px_12px_rgba(67,24,255,0.2)]"
-                >
-                  <If condition={isPending}>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  </If>
-                  {isPending ? 'Запуск аудиту...' : 'Запустити аналіз'}
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div ref={resultsRef} className="space-y-6 min-h-[400px]">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12 text-muted-foreground">
-              <div className="text-center">
-                <Loader2 className="h-12 w-12 mx-auto mb-4 animate-spin opacity-50" />
-                <p className="text-sm">Loading audit results...</p>
-              </div>
-            </div>
-          ) : result ? (
-            <LocalIndicatorsSection result={result} />
-          ) : (
-            <div className="flex items-center justify-center py-12 text-muted-foreground">
-              <div className="text-center">
-                <MapPin className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="text-sm">Run a local indicators audit to see results here</p>
-              </div>
-            </div>
+        <div className="flex items-center gap-3">
+          {auditDate && (
+            <p className="text-xs font-medium" style={{ color: HORIZON.textSecondary }}>
+              Останній аудит: {new Date(auditDate).toLocaleString('uk-UA')}
+            </p>
           )}
+          <Button
+            onClick={onRunAudit}
+            disabled={isPending || !isMounted || !projectSettings?.domain}
+            className="bg-[#4318FF] hover:bg-[#4318FF]/90 text-white rounded-xl px-6 h-10 font-bold transition-all duration-200"
+            style={{ boxShadow: '0 4px 12px rgba(67,24,255,0.2)' }}
+          >
+            <If condition={isPending}>
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            </If>
+            {isPending ? 'Запуск аудиту...' : 'Запустити аналіз'}
+          </Button>
         </div>
       </div>
-    </PageBody>
+
+      {/* Results Section */}
+      <div ref={resultsRef} className="space-y-6">
+        {result ? (
+          <LocalIndicatorsSection result={result} />
+        ) : (
+          <Card
+            className="border-none bg-white rounded-[20px] overflow-hidden"
+            style={{ boxShadow: HORIZON.shadow }}
+          >
+            <CardContent className="p-6">
+              <LocalIndicatorsColdState
+                isRunning={isPending}
+                progress={isPending ? 30 : 0}
+                currentStep={isPending ? 'Аналізуємо локальну присутність та оптимізацію...' : undefined}
+                onRunAudit={onRunAudit}
+              />
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
   );
 }

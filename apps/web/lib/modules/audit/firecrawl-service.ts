@@ -1,6 +1,6 @@
 'use server';
 
-import type { FirecrawlDocument, CrawlStatusResponse } from './types';
+import type { FirecrawlDocument, CrawlStatusResponse, BatchScrapeStatusResponse } from './types';
 
 /*
  * -------------------------------------------------------
@@ -159,6 +159,40 @@ async function checkCrawlStatus(jobId: string, apiKey?: string): Promise<CrawlSt
   }, apiKey);
 }
 
+/**
+ * Start a batch scrape job for specific URLs
+ */
+async function startBatchScrape(urls: string[], apiKey?: string): Promise<string> {
+  const body = {
+    urls,
+    formats: ['markdown'],
+  };
+
+  const response = await firecrawlRequest<{ success: boolean; id?: string; error?: string }>(
+    '/batch/scrape',
+    {
+      method: 'POST',
+      body: JSON.stringify(body),
+    },
+    apiKey,
+  );
+
+  if (!response.success || !response.id) {
+    throw new Error(response.error || 'Failed to start batch scrape job');
+  }
+
+  return response.id;
+}
+
+/**
+ * Check batch scrape status
+ */
+async function checkBatchScrapeStatus(jobId: string, apiKey?: string): Promise<BatchScrapeStatusResponse> {
+  return firecrawlRequest<BatchScrapeStatusResponse>(`/batch/scrape/${jobId}`, {
+    method: 'GET',
+  }, apiKey);
+}
+
 /*
  * -------------------------------------------------------
  * Main Function
@@ -282,6 +316,109 @@ export async function crawlSiteContent(
       
       console.warn(`[Firecrawl] Error checking status (attempt ${pollCount}):`, error);
       // Wait a bit longer before retrying on error
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+    }
+  }
+}
+
+/**
+ * Batch scrape specific URLs using Firecrawl API
+ * 
+ * This function scrapes a list of specific URLs (e.g., from sitemap)
+ * instead of crawling and discovering pages.
+ * 
+ * @param urls - Array of URLs to scrape
+ * @param apiKey - Optional API key (uses env var if not provided)
+ * @returns Array of FirecrawlDocument with content and metadata
+ */
+export async function batchScrapeUrls(
+  urls: string[],
+  apiKey?: string,
+): Promise<FirecrawlDocument[]> {
+  if (urls.length === 0) {
+    return [];
+  }
+
+  // Validate all URLs
+  for (const url of urls) {
+    try {
+      new URL(url);
+    } catch {
+      throw new Error(`Invalid URL in batch: ${url}`);
+    }
+  }
+
+  // Firecrawl batch scrape limit is 1000 URLs per request
+  if (urls.length > 1000) {
+    throw new Error('Batch scrape limit is 1000 URLs per request');
+  }
+
+  console.log(`[Firecrawl] Starting batch scrape for ${urls.length} URLs`);
+
+  // Step 1: Start batch scrape job
+  let jobId: string;
+  try {
+    jobId = await startBatchScrape(urls, apiKey);
+    console.log(`[Firecrawl] Batch scrape job started with ID: ${jobId}`);
+  } catch (error) {
+    console.error('[Firecrawl] Failed to start batch scrape:', error);
+    throw error instanceof Error ? error : new Error('Failed to start batch scrape job');
+  }
+
+  // Step 2: Poll for completion
+  const startTime = Date.now();
+  const timeoutMs = 180 * 1000; // 180 seconds (3 minutes) for batch
+  let pollCount = 0;
+
+  while (true) {
+    // Check timeout
+    const elapsed = Date.now() - startTime;
+    if (elapsed > timeoutMs) {
+      throw new Error(`Batch scrape timeout after ${timeoutMs / 1000} seconds. Job ID: ${jobId}`);
+    }
+
+    // Wait 2 seconds before next poll (except first iteration)
+    if (pollCount > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+
+    pollCount++;
+
+    try {
+      const statusResponse = await checkBatchScrapeStatus(jobId, apiKey);
+      
+      console.log(`[Firecrawl] Batch poll #${pollCount}: Status = ${statusResponse.status}, Completed = ${statusResponse.completed}/${statusResponse.total}`);
+
+      if (statusResponse.status === 'completed') {
+        if (!statusResponse.data || statusResponse.data.length === 0) {
+          console.warn('[Firecrawl] Batch scrape completed but no data returned');
+          return [];
+        }
+        
+        console.log(`[Firecrawl] Batch scrape completed successfully. Got ${statusResponse.data.length} pages`);
+        return statusResponse.data;
+      }
+
+      if (statusResponse.status === 'failed') {
+        const errorMessage = statusResponse.error || statusResponse.message || 'Batch scrape failed';
+        throw new Error(`Firecrawl batch scrape failed: ${errorMessage}`);
+      }
+
+      // Status is 'scraping' - continue polling
+      
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Firecrawl batch scrape failed')) {
+        throw error;
+      }
+      
+      if (pollCount > 15) {
+        console.error('[Firecrawl] Too many batch polling errors, giving up');
+        throw error instanceof Error 
+          ? error 
+          : new Error('Failed to check batch scrape status after multiple attempts');
+      }
+      
+      console.warn(`[Firecrawl] Error checking batch status (attempt ${pollCount}):`, error);
       await new Promise((resolve) => setTimeout(resolve, 3000));
     }
   }

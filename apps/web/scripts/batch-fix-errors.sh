@@ -62,3 +62,7 @@ echo "   3. Если все ок - коммитить: git add -A && git commit 
 
 
 
+
+
+
+

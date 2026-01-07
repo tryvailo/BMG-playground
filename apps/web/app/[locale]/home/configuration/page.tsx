@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Cog, Save } from 'lucide-react';
+import { Cog, Save, Loader2 } from 'lucide-react';
 
 import { PageBody } from '@kit/ui/page';
 import { Button } from '@kit/ui/button';
@@ -20,6 +20,37 @@ import {
   FormMessage,
 } from '@kit/ui/form';
 import { Input } from '@kit/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@kit/ui/select';
+
+import { getProjectSettings, updateProjectSettings } from '~/lib/actions/project';
+import { getCitiesByCountryCode } from '~/lib/data/cities';
+
+/**
+ * Region/Country options
+ */
+const REGION_OPTIONS = [
+  { value: 'US', label: 'United States', language: 'en' },
+  { value: 'UK', label: 'United Kingdom', language: 'en' },
+  { value: 'DE', label: 'Germany', language: 'de' },
+  { value: 'FR', label: 'France', language: 'fr' },
+  { value: 'UA', label: 'Ukraine', language: 'uk' },
+];
+
+/**
+ * Language options
+ */
+const LANGUAGE_OPTIONS = [
+  { value: 'en', label: 'English' },
+  { value: 'uk', label: 'Українська' },
+  { value: 'de', label: 'Deutsch' },
+  { value: 'fr', label: 'Français' },
+];
 
 /**
  * Form Schema for Configuration
@@ -35,12 +66,14 @@ const ConfigurationFormSchema = z.object({
   domain: z.string().optional(),
   city: z.string().optional(),
   clinicName: z.string().optional(),
+  region: z.string().optional(),
+  language: z.string().optional(),
 });
 
 type ConfigurationFormValues = z.infer<typeof ConfigurationFormSchema>;
 
 /**
- * LocalStorage Keys - Using global configuration keys
+ * LocalStorage Keys - Using global configuration keys (for API keys only)
  */
 const STORAGE_KEYS = {
   API_KEY_OPENAI: 'configuration_api_key_openai',
@@ -50,9 +83,12 @@ const STORAGE_KEYS = {
   API_KEY_FIRECRAWL: 'configuration_api_key_firecrawl',
   API_KEY_GOOGLE_CUSTOM_SEARCH: 'configuration_api_key_google_custom_search',
   GOOGLE_CUSTOM_SEARCH_ENGINE_ID: 'configuration_google_custom_search_engine_id',
+  // Keep these for fallback/cache
   DOMAIN: 'configuration_domain',
   CITY: 'configuration_city',
   CLINIC_NAME: 'configuration_clinic_name',
+  REGION: 'configuration_region',
+  LANGUAGE: 'configuration_language',
 } as const;
 
 /**
@@ -80,8 +116,11 @@ const setStoredValue = (key: string, value: string): void => {
  * Configuration Page
  */
 export default function ConfigurationPage() {
-  const [isMounted, setIsMounted] = useState(false);
+  const [_isMounted, setIsMounted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedRegion, setSelectedRegion] = useState('US');
+  const [availableCities, setAvailableCities] = useState<Array<{ name: string }>>([]);
 
   const form = useForm<ConfigurationFormValues>({
     resolver: zodResolver(ConfigurationFormSchema),
@@ -96,103 +135,155 @@ export default function ConfigurationPage() {
       domain: '',
       city: '',
       clinicName: '',
+      region: 'US',
+      language: 'en',
     },
   });
 
-  // Load saved values from localStorage on mount
+  // Update available cities when region changes
   useEffect(() => {
-    setIsMounted(true);
-    if (typeof window === 'undefined') return;
+    const cities = getCitiesByCountryCode(selectedRegion);
+    setAvailableCities(cities);
+  }, [selectedRegion]);
 
-    const savedOpenAI = getStoredValue(STORAGE_KEYS.API_KEY_OPENAI);
-    const savedPerplexity = getStoredValue(STORAGE_KEYS.API_KEY_PERPLEXITY);
-    const savedGooglePageSpeed = getStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_PAGESPEED);
-    const savedGooglePlaces = getStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_PLACES);
-    const savedFirecrawl = getStoredValue(STORAGE_KEYS.API_KEY_FIRECRAWL);
-    const savedGoogleCustomSearch = getStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_CUSTOM_SEARCH);
-    const savedGoogleCustomSearchEngineId = getStoredValue(STORAGE_KEYS.GOOGLE_CUSTOM_SEARCH_ENGINE_ID);
-    const savedDomain = getStoredValue(STORAGE_KEYS.DOMAIN);
-    const savedCity = getStoredValue(STORAGE_KEYS.CITY);
-    const savedClinicName = getStoredValue(STORAGE_KEYS.CLINIC_NAME);
+  // Load saved values from database and localStorage on mount
+  const loadSettings = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      // Load API keys from localStorage
+      const savedApiKeys = {
+        apiKeyOpenAI: getStoredValue(STORAGE_KEYS.API_KEY_OPENAI),
+        apiKeyPerplexity: getStoredValue(STORAGE_KEYS.API_KEY_PERPLEXITY),
+        apiKeyGooglePageSpeed: getStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_PAGESPEED),
+        apiKeyGooglePlaces: getStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_PLACES),
+        apiKeyFirecrawl: getStoredValue(STORAGE_KEYS.API_KEY_FIRECRAWL),
+        apiKeyGoogleCustomSearch: getStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_CUSTOM_SEARCH),
+        googleCustomSearchEngineId: getStoredValue(STORAGE_KEYS.GOOGLE_CUSTOM_SEARCH_ENGINE_ID),
+      };
 
-    if (
-      savedOpenAI ||
-      savedPerplexity ||
-      savedGooglePageSpeed ||
-      savedGooglePlaces ||
-      savedFirecrawl ||
-      savedGoogleCustomSearch ||
-      savedGoogleCustomSearchEngineId ||
-      savedDomain ||
-      savedCity ||
-      savedClinicName
-    ) {
-      form.reset({
-        apiKeyOpenAI: savedOpenAI || '',
-        apiKeyPerplexity: savedPerplexity || '',
-        apiKeyGooglePageSpeed: savedGooglePageSpeed || '',
-        apiKeyGooglePlaces: savedGooglePlaces || '',
-        apiKeyFirecrawl: savedFirecrawl || '',
-        apiKeyGoogleCustomSearch: savedGoogleCustomSearch || '',
-        googleCustomSearchEngineId: savedGoogleCustomSearchEngineId || '',
-        domain: savedDomain || '',
-        city: savedCity || '',
-        clinicName: savedClinicName || '',
-      });
+      // Load project settings from database
+      const result = await getProjectSettings({});
+
+      if (result.success && result.data) {
+        const projectData = result.data;
+        
+        // Also cache in localStorage for offline access
+        setStoredValue(STORAGE_KEYS.DOMAIN, projectData.domain || '');
+        setStoredValue(STORAGE_KEYS.CITY, projectData.city || '');
+        setStoredValue(STORAGE_KEYS.CLINIC_NAME, projectData.clinicName || '');
+        setStoredValue(STORAGE_KEYS.REGION, projectData.region || 'US');
+        setStoredValue(STORAGE_KEYS.LANGUAGE, projectData.language || 'en');
+
+        setSelectedRegion(projectData.region || 'US');
+
+        form.reset({
+          ...savedApiKeys,
+          domain: projectData.domain || '',
+          city: projectData.city || '',
+          clinicName: projectData.clinicName || '',
+          region: projectData.region || 'US',
+          language: projectData.language || 'en',
+        });
+      } else {
+        // Fallback to localStorage if no project data
+        const fallbackData = {
+          domain: getStoredValue(STORAGE_KEYS.DOMAIN),
+          city: getStoredValue(STORAGE_KEYS.CITY),
+          clinicName: getStoredValue(STORAGE_KEYS.CLINIC_NAME),
+          region: getStoredValue(STORAGE_KEYS.REGION) || 'US',
+          language: getStoredValue(STORAGE_KEYS.LANGUAGE) || 'en',
+        };
+
+        setSelectedRegion(fallbackData.region);
+
+        form.reset({
+          ...savedApiKeys,
+          ...fallbackData,
+        });
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error);
+      toast.error('Failed to load settings');
+    } finally {
+      setIsLoading(false);
     }
   }, [form]);
 
-  // Save values to localStorage when they change (debounced)
   useEffect(() => {
-    if (!isMounted) return;
+    setIsMounted(true);
+    if (typeof window !== 'undefined') {
+      loadSettings();
+    }
+  }, [loadSettings]);
 
-    let timeoutId: NodeJS.Timeout | null = null;
-
-    const subscription = form.watch((values) => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
+  // Watch for region changes to update available cities
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === 'region' && value.region) {
+        setSelectedRegion(value.region);
+        // Reset city when region changes
+        form.setValue('city', '');
+        // Auto-set language based on region
+        const regionOption = REGION_OPTIONS.find(r => r.value === value.region);
+        if (regionOption) {
+          form.setValue('language', regionOption.language);
+        }
       }
-
-      timeoutId = setTimeout(() => {
-        setStoredValue(STORAGE_KEYS.API_KEY_OPENAI, values.apiKeyOpenAI || '');
-        setStoredValue(STORAGE_KEYS.API_KEY_PERPLEXITY, values.apiKeyPerplexity || '');
-        setStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_PAGESPEED, values.apiKeyGooglePageSpeed || '');
-        setStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_PLACES, values.apiKeyGooglePlaces || '');
-        setStoredValue(STORAGE_KEYS.API_KEY_FIRECRAWL, values.apiKeyFirecrawl || '');
-        setStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_CUSTOM_SEARCH, values.apiKeyGoogleCustomSearch || '');
-        setStoredValue(STORAGE_KEYS.GOOGLE_CUSTOM_SEARCH_ENGINE_ID, values.googleCustomSearchEngineId || '');
-        setStoredValue(STORAGE_KEYS.DOMAIN, values.domain || '');
-        setStoredValue(STORAGE_KEYS.CITY, values.city || '');
-        setStoredValue(STORAGE_KEYS.CLINIC_NAME, values.clinicName || '');
-      }, 500);
     });
-
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-      subscription.unsubscribe();
-    };
-  }, [form, isMounted]);
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   const onSubmit = async (values: ConfigurationFormValues) => {
     setIsSaving(true);
 
-    // Save values to localStorage
-    setStoredValue(STORAGE_KEYS.API_KEY_OPENAI, values.apiKeyOpenAI || '');
-    setStoredValue(STORAGE_KEYS.API_KEY_PERPLEXITY, values.apiKeyPerplexity || '');
-    setStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_PAGESPEED, values.apiKeyGooglePageSpeed || '');
-    setStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_PLACES, values.apiKeyGooglePlaces || '');
-    setStoredValue(STORAGE_KEYS.API_KEY_FIRECRAWL, values.apiKeyFirecrawl || '');
-    setStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_CUSTOM_SEARCH, values.apiKeyGoogleCustomSearch || '');
-    setStoredValue(STORAGE_KEYS.GOOGLE_CUSTOM_SEARCH_ENGINE_ID, values.googleCustomSearchEngineId || '');
-    setStoredValue(STORAGE_KEYS.DOMAIN, values.domain || '');
-    setStoredValue(STORAGE_KEYS.CITY, values.city || '');
-    setStoredValue(STORAGE_KEYS.CLINIC_NAME, values.clinicName || '');
+    try {
+      // Save API keys to localStorage
+      setStoredValue(STORAGE_KEYS.API_KEY_OPENAI, values.apiKeyOpenAI || '');
+      setStoredValue(STORAGE_KEYS.API_KEY_PERPLEXITY, values.apiKeyPerplexity || '');
+      setStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_PAGESPEED, values.apiKeyGooglePageSpeed || '');
+      setStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_PLACES, values.apiKeyGooglePlaces || '');
+      setStoredValue(STORAGE_KEYS.API_KEY_FIRECRAWL, values.apiKeyFirecrawl || '');
+      setStoredValue(STORAGE_KEYS.API_KEY_GOOGLE_CUSTOM_SEARCH, values.apiKeyGoogleCustomSearch || '');
+      setStoredValue(STORAGE_KEYS.GOOGLE_CUSTOM_SEARCH_ENGINE_ID, values.googleCustomSearchEngineId || '');
 
-    toast.success('Configuration saved successfully!');
-    setIsSaving(false);
+      // Save project settings to database
+      const result = await updateProjectSettings({
+        domain: values.domain,
+        clinicName: values.clinicName,
+        region: values.region,
+        city: values.city,
+        language: values.language,
+      });
+
+      if (result.success) {
+        // Also cache in localStorage
+        setStoredValue(STORAGE_KEYS.DOMAIN, values.domain || '');
+        setStoredValue(STORAGE_KEYS.CITY, values.city || '');
+        setStoredValue(STORAGE_KEYS.CLINIC_NAME, values.clinicName || '');
+        setStoredValue(STORAGE_KEYS.REGION, values.region || 'US');
+        setStoredValue(STORAGE_KEYS.LANGUAGE, values.language || 'en');
+
+        toast.success('Configuration saved successfully!');
+      } else {
+        toast.error(result.error || 'Failed to save settings');
+      }
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      toast.error('Failed to save settings');
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <PageBody>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 h-full min-h-full flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </PageBody>
+    );
+  }
 
   return (
     <PageBody>
@@ -436,6 +527,39 @@ export default function ConfigurationPage() {
                         )}
                       />
 
+                      {/* Region */}
+                      <FormField
+                        control={form.control}
+                        name="region"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Region / Country</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                              disabled={isSaving}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select region" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {REGION_OPTIONS.map((region) => (
+                                  <SelectItem key={region.value} value={region.value}>
+                                    {region.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormDescription>
+                              Your clinic&apos;s country/region
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
                       {/* City */}
                       <FormField
                         control={form.control}
@@ -443,15 +567,59 @@ export default function ConfigurationPage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>City</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="New York"
-                                {...field}
-                                disabled={isSaving}
-                              />
-                            </FormControl>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                              disabled={isSaving || availableCities.length === 0}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select city" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {availableCities.map((city) => (
+                                  <SelectItem key={city.name} value={city.name}>
+                                    {city.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                             <FormDescription>
                               Primary location city
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* Language */}
+                      <FormField
+                        control={form.control}
+                        name="language"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Language</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                              disabled={isSaving}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select language" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {LANGUAGE_OPTIONS.map((lang) => (
+                                  <SelectItem key={lang.value} value={lang.value}>
+                                    {lang.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormDescription>
+                              Primary content language
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
@@ -484,4 +652,3 @@ export default function ConfigurationPage() {
     </PageBody>
   );
 }
-

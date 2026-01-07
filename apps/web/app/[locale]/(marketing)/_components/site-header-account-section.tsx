@@ -84,9 +84,16 @@ function AuthButtons() {
         </Button>
       </div>
 
-      <Button asChild className="group" variant={'default'}>
-        <Link href={pathsConfig.auth.signUp}>
-          <Trans i18nKey={'auth:signUp'} />
+      <Button 
+        asChild 
+        className="group font-semibold shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5" 
+        style={{ 
+          backgroundColor: '#4318FF',
+          boxShadow: '0 8px 20px rgba(67, 24, 255, 0.3)'
+        }}
+      >
+        <Link href="/onboarding">
+          Start Free Trial
         </Link>
       </Button>
     </div>

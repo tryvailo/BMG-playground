@@ -16,6 +16,14 @@ import { Input } from '@kit/ui/input';
 import { Badge } from '@kit/ui/badge';
 import { EmptyState, EmptyStateHeading, EmptyStateText, EmptyStateButton } from '@kit/ui/empty-state';
 import { Label } from '@kit/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@kit/ui/select';
+import { getCitiesByCountryCode, type CityData } from '~/lib/data/cities';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -75,6 +83,7 @@ interface ServicesTableProps {
   apiKeyPerplexity: string;
   onCalculationsComplete?: (results: ServiceCalculationResult[]) => void;
   storageKey?: string; // Optional storage key for persisting services
+  onDeleteService?: (id: string) => Promise<void>; // Optional callback for DB deletion
 }
 
 const DEFAULT_SERVICES: PlaygroundService[] = [
@@ -211,6 +220,7 @@ export function ServicesTable({
   apiKeyPerplexity,
   onCalculationsComplete,
   storageKey = 'playground_services',
+  onDeleteService,
 }: ServicesTableProps) {
   const [services, setServices] = useState<PlaygroundService[]>([]);
   const [isAdding, setIsAdding] = useState(false);
@@ -219,6 +229,14 @@ export function ServicesTable({
   const [calculationResults, setCalculationResults] = useState<Map<string, ServiceCalculationResult>>(new Map());
   const [isInitialized, setIsInitialized] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
+  const [cities, setCities] = useState<CityData[]>([]);
+  
+  // Load cities for Ukraine (default country)
+  useEffect(() => {
+    const uaCities = getCitiesByCountryCode('UA');
+    setCities(uaCities);
+  }, []);
+
   // Load services from localStorage on mount
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -329,12 +347,35 @@ export function ServicesTable({
     toast.success('Service updated successfully');
   };
 
-  const handleDeleteService = (id: string) => {
-    const updatedServices = services.filter((s) => s.id !== id);
-    setServices(updatedServices);
-    calculationResults.delete(id);
-    setCalculationResults(new Map(calculationResults));
-    toast.success('Service deleted');
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteService = async (id: string) => {
+    if (!confirm('Ви впевнені, що хочете видалити цю послугу?')) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      if (onDeleteService) {
+        await onDeleteService(id);
+      }
+
+      const updatedServices = services.filter((s) => s.id !== id);
+      setServices(updatedServices);
+      calculationResults.delete(id);
+      setCalculationResults(new Map(calculationResults));
+
+      if (selectedServiceId === id) {
+        setSelectedServiceId(null);
+      }
+
+      toast.success('Послугу видалено');
+    } catch (error) {
+      console.error('[ServicesTable] Error deleting service:', error);
+      toast.error('Не вдалося видалити послугу');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleResetToDefaults = () => {
@@ -378,18 +419,23 @@ export function ServicesTable({
       const result = await runLiveDashboardTest(input);
       const { serviceAnalysis } = result;
 
-      const aivScoreResult = calculateServiceAivScore({
-        isVisible: serviceAnalysis.foundUrl !== null,
-        position: serviceAnalysis.position,
-        totalResults: serviceAnalysis.totalResults,
-        competitorsAvgScore: 70,
-      });
+      // When no results found, AIV = 1 (no competitors)
+      let aivScore = 1;
+      if (!serviceAnalysis.noResults && serviceAnalysis.totalResults > 0) {
+        const aivScoreResult = calculateServiceAivScore({
+          isVisible: serviceAnalysis.foundUrl !== null,
+          position: serviceAnalysis.position,
+          totalResults: serviceAnalysis.totalResults,
+          competitorsAvgScore: 70,
+        });
+        aivScore = aivScoreResult.finalScore;
+      }
 
       const calculationResult: ServiceCalculationResult = {
         serviceId: service.id,
         serviceName: service.name,
         analysis: serviceAnalysis,
-        aivScore: aivScoreResult.finalScore,
+        aivScore,
       };
 
       setCalculationResults(prev => {
@@ -495,19 +541,23 @@ export function ServicesTable({
 
           const { serviceAnalysis } = result;
 
-          // Calculate AIV Score
-          const aivScoreResult = calculateServiceAivScore({
-            isVisible: serviceAnalysis.foundUrl !== null,
-            position: serviceAnalysis.position,
-            totalResults: serviceAnalysis.totalResults,
-            competitorsAvgScore: 70, // Default for playground
-          });
+          // When no results found, AIV = 1 (no competitors)
+          let aivScore = 1;
+          if (!serviceAnalysis.noResults && serviceAnalysis.totalResults > 0) {
+            const aivScoreResult = calculateServiceAivScore({
+              isVisible: serviceAnalysis.foundUrl !== null,
+              position: serviceAnalysis.position,
+              totalResults: serviceAnalysis.totalResults,
+              competitorsAvgScore: 70, // Default for playground
+            });
+            aivScore = aivScoreResult.finalScore;
+          }
 
           const calculationResult: ServiceCalculationResult = {
             serviceId: service.id,
             serviceName: service.name,
             analysis: serviceAnalysis,
-            aivScore: aivScoreResult.finalScore,
+            aivScore,
           };
 
           results.push(calculationResult);
@@ -683,12 +733,21 @@ export function ServicesTable({
                 <Label htmlFor="location-city" className="mb-1">
                   Location City *
                 </Label>
-                <Input
-                  id="location-city"
-                  placeholder="e.g., Kyiv"
+                <Select
                   value={newService.location_city}
-                  onChange={(e) => setNewService({ ...newService, location_city: e.target.value })}
-                />
+                  onValueChange={(value) => setNewService({ ...newService, location_city: value })}
+                >
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="Оберіть місто" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    {cities.map((city, idx) => (
+                      <SelectItem key={`${city.name}-${idx}`} value={city.name}>
+                        {city.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="path" className="mb-1">
@@ -779,13 +838,23 @@ export function ServicesTable({
                           />
                         </TableCell>
                         <TableCell>
-                          <Input
+                          <Select
                             value={editService.location_city}
-                            onChange={(e) =>
-                              setEditService({ ...editService, location_city: e.target.value })
+                            onValueChange={(value) =>
+                              setEditService({ ...editService, location_city: value })
                             }
-                            className="w-full"
-                          />
+                          >
+                            <SelectTrigger className="w-full h-10">
+                              <SelectValue placeholder="Оберіть місто" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-[300px]">
+                              {cities.map((city, idx) => (
+                                <SelectItem key={`edit-${city.name}-${idx}`} value={city.name}>
+                                  {city.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </TableCell>
                         <TableCell>
                           {result ? (
@@ -962,11 +1031,13 @@ export function ServicesTable({
                               e.stopPropagation();
                               handleDeleteService(service.id);
                             }}
+                            disabled={isDeleting}
                             size="sm"
                             variant="ghost"
                             className="h-8 w-8 p-0 text-destructive hover:text-destructive/80"
+                            title="Видалити послугу"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                           </Button>
                         </div>
                       </TableCell>

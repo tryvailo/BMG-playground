@@ -440,6 +440,60 @@ async function parseHomepage(url: string): Promise<{
  * @param projectId - UUID of the project to audit
  * @returns The created TechAudit record ID
  */
+/**
+ * Get the latest tech audit for a project
+ */
+export async function getTechAuditByProjectId(projectId: string): Promise<TechAudit | null> {
+  const supabase = getSupabaseServerClient();
+
+  try {
+    const { data, error } = await (supabase as unknown as { 
+      from: (table: string) => { 
+        select: (cols: string) => { 
+          eq: (col: string, val: string) => { 
+            order: (col: string, opts: { ascending: boolean }) => {
+              limit: (n: number) => {
+                single: () => Promise<{ data: TechAudit | null; error: { message: string; code?: string } | null }>
+              }
+            }
+          } 
+        } 
+      } 
+    })
+      .from('tech_audits')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null; // No rows found
+      }
+      console.error('[TechAudit] Error fetching tech audit:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('[TechAudit] Exception in getTechAuditByProjectId:', error);
+    return null;
+  }
+}
+
+/**
+ * Run a full technical audit for a project
+ * 
+ * This function:
+ * 1. Creates a new tech_audits record with status 'running'
+ * 2. Performs various checks (llms.txt, robots.txt, HTTPS, PageSpeed)
+ * 3. Crawls and audits the homepage
+ * 4. Updates the audit record with results and status 'completed'
+ * 
+ * @param projectId - UUID of the project to audit
+ * @returns The created TechAudit record ID
+ */
 export async function runFullTechAudit(projectId: string): Promise<string> {
   const supabase = getSupabaseServerClient();
   let auditId: string | null = null;

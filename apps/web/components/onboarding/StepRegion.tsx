@@ -25,7 +25,7 @@ interface StepRegionProps {
 }
 
 export function StepRegion({ onContinue }: StepRegionProps) {
-    const [region, setRegion] = React.useState('US');
+    const [region, setRegion] = React.useState('UA');
     const [language, setLanguage] = React.useState('en');
 
     return (

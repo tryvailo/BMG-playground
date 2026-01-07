@@ -28,33 +28,73 @@ export function StepDomain({ onContinue, region, city }: StepDomainProps) {
     const [domain, setDomain] = useState('');
     const [isSearching, setIsSearching] = useState(false);
 
+    console.log('[StepDomain] Render:', JSON.stringify({ domain, isSearching, region, city, canSubmit: !!domain.trim() && !isSearching }));
+
     const handleSubmit = async (e?: React.FormEvent) => {
-        e?.preventDefault();
-        const trimmedDomain = domain.trim();
-        if (!trimmedDomain) {
+        console.log('[StepDomain] handleSubmit called, event:', e?.type);
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        // Clean domain: remove protocol, www, trailing slashes, and convert to lowercase
+        let cleanedDomain = domain.trim();
+        cleanedDomain = cleanedDomain.replace(/^https?:\/\//, ''); // Remove http:// or https://
+        cleanedDomain = cleanedDomain.replace(/^www\./, ''); // Remove www.
+        cleanedDomain = cleanedDomain.split('/')[0] ?? ''; // Take only domain part (remove path)
+        cleanedDomain = cleanedDomain.toLowerCase();
+        cleanedDomain = cleanedDomain.trim();
+        
+        console.log('[StepDomain] Original domain:', domain);
+        console.log('[StepDomain] Cleaned domain:', cleanedDomain);
+        
+        if (!cleanedDomain) {
+            console.log('[StepDomain] Empty domain after cleaning, returning');
             return;
         }
+
+        console.log('[StepDomain] Submitting domain:', { domain: cleanedDomain, region, city });
 
         // If region is Ukraine, try to find clinic name and competitors in database
         if (region === 'UA' && city) {
             setIsSearching(true);
             try {
-                const clinicName = await findClinicByUrl(trimmedDomain);
-                // Find competitors from the same city
-                const competitors = await findCompetitors(city, trimmedDomain);
-                const competitorsData = competitors.map(c => ({ name: c.name, url: c.url }));
+                console.log('[StepDomain] Searching for clinic:', cleanedDomain);
+                
+                // Add timeout to prevent hanging (10 seconds)
+                const timeoutPromise = new Promise<never>((_, reject) => 
+                    setTimeout(() => reject(new Error('Timeout: Clinic search took too long')), 10000)
+                );
+
+                const clinicNamePromise = findClinicByUrl(cleanedDomain);
+                const competitorsPromise = findCompetitors(city, cleanedDomain);
+
+                // Race against timeout - if timeout wins, we'll catch the error
+                const results = await Promise.race([
+                    Promise.all([clinicNamePromise, competitorsPromise]),
+                    timeoutPromise,
+                ]);
+
+                const [clinicName, competitors] = results as [string | null, Array<{ name: string; url: string }>];
+
+                console.log('[StepDomain] Found clinic:', { clinicName, competitorsCount: competitors?.length || 0 });
+                
+                const competitorsData = (competitors || []).map(c => ({ name: c.name, url: c.url }));
                 // If found, use it; otherwise pass undefined to use domain extraction
-                onContinue(trimmedDomain, clinicName || undefined, competitorsData);
+                console.log('[StepDomain] Calling onContinue with:', { domain: cleanedDomain, clinicName, competitorsCount: competitorsData.length });
+                onContinue(cleanedDomain, clinicName || undefined, competitorsData);
             } catch (error) {
-                console.error('Error finding clinic or competitors:', error);
-                // On error, continue without clinic name and competitors (will use domain extraction)
-                onContinue(trimmedDomain);
+                console.error('[StepDomain] Error finding clinic or competitors:', error);
+                // On error or timeout, continue without clinic name and competitors (will use domain extraction)
+                console.log('[StepDomain] Continuing without clinic data due to error');
+                onContinue(cleanedDomain);
             } finally {
                 setIsSearching(false);
             }
         } else {
             // For non-UA regions, don't pass clinic name or competitors (will use domain extraction)
-            onContinue(trimmedDomain);
+            console.log('[StepDomain] Non-UA region, continuing without clinic search');
+            onContinue(cleanedDomain);
         }
     };
 
@@ -92,6 +132,13 @@ export function StepDomain({ onContinue, region, city }: StepDomainProps) {
                 <Button
                     disabled={!domain.trim() || isSearching}
                     type="submit"
+                    onClick={(e) => {
+                        console.log('[StepDomain] Button clicked, domain:', domain, 'isSearching:', isSearching, 'disabled:', !domain.trim() || isSearching);
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('[StepDomain] Calling handleSubmit directly');
+                        handleSubmit();
+                    }}
                     className={cn(
                         "w-full lg:w-fit px-12 py-6 text-lg rounded-xl transition-all flex items-center gap-3 font-semibold",
                         domain.trim() && !isSearching

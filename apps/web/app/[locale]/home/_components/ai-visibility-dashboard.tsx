@@ -1,8 +1,11 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { DashboardView, type DashboardData } from '~/components/dashboard/DashboardView';
 import { useDashboardData } from './hooks/use-dashboard-data';
+import { Button } from '@kit/ui/button';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 
 interface AIVisibilityDashboardProps {
   projectId?: string;
@@ -23,11 +26,19 @@ interface AIVisibilityDashboardProps {
  * - Competitor analysis (scatter plot)
  */
 export function AIVisibilityDashboard({ projectId, filters }: AIVisibilityDashboardProps = {}) {
+  const router = useRouter();
+  
   // Automatically load data from database using React Query
-  const { data: dashboardData, isLoading, error } = useDashboardData({
+  const { data: dashboardData, isLoading, error, refetch } = useDashboardData({
     projectId,
     filters,
   });
+
+  // Check if error is authentication related
+  const isAuthError = error instanceof Error && 
+    (error.message.includes('Authentication') || 
+     error.message.includes('NEXT_REDIRECT') ||
+     error.message.includes('unauthorized'));
 
   // Debug logging
   React.useEffect(() => {
@@ -98,14 +109,7 @@ export function AIVisibilityDashboard({ projectId, filters }: AIVisibilityDashbo
     : null;
 
   return (
-    <div className="space-y-6 h-full min-h-full flex flex-col">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Overview of your AI visibility metrics and performance over time. Data is automatically loaded from your project scans and audits.
-        </p>
-      </div>
-
+    <div className="h-full min-h-full flex flex-col">
       {/* Dashboard View */}
       {isLoading ? (
         <DashboardView
@@ -125,12 +129,38 @@ export function AIVisibilityDashboard({ projectId, filters }: AIVisibilityDashbo
           loading={true}
         />
       ) : error ? (
-        <div className="flex items-center justify-center py-12 text-destructive">
-          <div className="text-center">
-            <p className="text-sm font-medium">Failed to load dashboard data</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {error instanceof Error ? error.message : 'Unknown error occurred'}
+        <div className="flex items-center justify-center py-16">
+          <div className="text-center max-w-md">
+            <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-6 h-6 text-destructive" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-2">
+              {isAuthError ? 'Сесія закінчилась' : 'Не вдалося завантажити дані'}
+            </h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              {isAuthError 
+                ? 'Будь ласка, увійдіть знову для доступу до дашборду.'
+                : error instanceof Error ? error.message : 'Невідома помилка'}
             </p>
+            <div className="flex gap-3 justify-center">
+              {isAuthError ? (
+                <Button 
+                  onClick={() => router.push('/auth/sign-in')}
+                  variant="default"
+                >
+                  Увійти
+                </Button>
+              ) : (
+                <Button 
+                  onClick={() => refetch()}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Спробувати знову
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       ) : transformedData ? (

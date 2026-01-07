@@ -18,7 +18,8 @@
     "./require-user": "./src/require-user.ts",
     "./hooks/*": "./src/hooks/*.ts",
     "./database": "./src/database.types.ts",
-    "./auth": "./src/auth.ts"
+    "./auth": "./src/auth.ts",
+    "./get-supabase-client-keys": "./src/get-supabase-client-keys.ts"
   },
   "devDependencies": {
     "@kit/eslint-config": "workspace:*",

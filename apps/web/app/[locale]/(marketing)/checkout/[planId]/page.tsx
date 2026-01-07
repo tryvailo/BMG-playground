@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useRouter } from '~/lib/navigation';
 import { ArrowLeft, Lock, CreditCard, CheckCircle2 } from 'lucide-react';
+import { useUser } from '@kit/supabase/hooks/use-user';
+import { useSupabase } from '@kit/supabase/hooks/use-supabase';
 
 const plans = {
   starter: {
@@ -31,8 +33,15 @@ export default function CheckoutPage() {
   const router = useRouter();
   const planId = params.planId as string;
   const plan = plans[planId as keyof typeof plans];
+  const locale = params.locale as string;
+  const { data: user } = useUser();
+  const client = useSupabase();
+
+  // Determine if user is from Ukraine (UA market)
+  const isUkraine = locale === 'ukr' || locale === 'uk';
 
   const [formData, setFormData] = useState({
+    // Stripe form data
     cardNumber: '',
     expiryDate: '',
     cvv: '',
@@ -43,6 +52,56 @@ export default function CheckoutPage() {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isCreatingSubscription, setIsCreatingSubscription] = useState(false);
+
+  // For UA: automatically create subscription and redirect to admin
+  useEffect(() => {
+    if (isUkraine && user?.id && !isCreatingSubscription && !isSuccess) {
+      createSubscriptionAndRedirect();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isUkraine, user?.id]);
+
+  const createSubscriptionAndRedirect = async () => {
+    if (!user?.id || !plan) return;
+
+    setIsCreatingSubscription(true);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (client as any)
+        .from('subscriptions')
+        .insert({
+          account_id: user.id,
+          plan_id: plan.id,
+          plan_name: plan.name,
+          price: plan.price,
+          currency: 'USD',
+          billing_interval: plan.period,
+          payment_method: 'manual',
+          payment_status: 'pending',
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating subscription:', error);
+        // Still redirect - subscription might already exist
+      }
+
+      // Redirect to home/admin area
+      setTimeout(() => {
+        router.push('/home');
+      }, 1000);
+    } catch (error) {
+      console.error('Error:', error);
+      // Still redirect
+      setTimeout(() => {
+        router.push('/home');
+      }, 1000);
+    } finally {
+      setIsCreatingSubscription(false);
+    }
+  };
 
   if (!plan) {
     return (
@@ -93,14 +152,47 @@ export default function CheckoutPage() {
     e.preventDefault();
     setIsProcessing(true);
     
-    // Simulate payment processing
+    // Stripe payment flow for EU (placeholder for now)
+    // TODO: Implement Stripe integration
     setTimeout(() => {
       setIsProcessing(false);
       setIsSuccess(true);
     }, 2000);
   };
 
+  // For UA: show loading/redirect message
+  if (isUkraine) {
+    if (isCreatingSubscription || !user?.id) {
+      return (
+        <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center px-4">
+          <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
+            <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
+              <CheckCircle2 size={32} className="text-indigo-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900 mb-4">Setting up your account...</h2>
+            <p className="text-slate-600 mb-6">
+              We&apos;re preparing your {plan.name} plan. You&apos;ll have access to the admin area shortly.
+            </p>
+            <div className="bg-slate-50 rounded-xl p-4 mb-6">
+              <p className="text-sm text-slate-500 mb-1">Plan</p>
+              <p className="font-semibold text-slate-900">{plan.name}</p>
+              <p className="text-sm text-slate-500 mt-2 mb-1">Amount</p>
+              <p className="font-semibold text-slate-900">${plan.price}/{plan.period}</p>
+            </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 text-left">
+              <p className="text-sm text-blue-800">
+                <strong>Note:</strong> After payment confirmation, you&apos;ll get full access to all features. 
+                Our sales team will send you an invoice shortly.
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+  }
+
   if (isSuccess) {
+    // Success page for Stripe payment (EU)
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center px-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
@@ -155,154 +247,159 @@ export default function CheckoutPage() {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Email */}
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    required
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
-                    placeholder="your@email.com"
-                  />
-                </div>
+                {/* Stripe Payment Form for EU */}
+                {!isUkraine && (
+                  <>
+                    {/* Email */}
+                    <div>
+                      <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        required
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                        placeholder="your@email.com"
+                      />
+                    </div>
 
-                {/* Card Number */}
-                <div>
-                  <label
-                    htmlFor="cardNumber"
-                    className="block text-sm font-medium text-slate-700 mb-2"
-                  >
-                    Card Number
-                  </label>
-                  <div className="relative">
-                    <CreditCard
-                      size={20}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                    />
-                    <input
-                      type="text"
-                      id="cardNumber"
-                      name="cardNumber"
-                      required
-                      value={formData.cardNumber}
-                      onChange={handleInputChange}
-                      className="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
-                      placeholder="1234 5678 9012 3456"
-                      maxLength={19}
-                    />
-                  </div>
-                </div>
+                    {/* Card Number */}
+                    <div>
+                      <label
+                        htmlFor="cardNumber"
+                        className="block text-sm font-medium text-slate-700 mb-2"
+                      >
+                        Card Number
+                      </label>
+                      <div className="relative">
+                        <CreditCard
+                          size={20}
+                          className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                        />
+                        <input
+                          type="text"
+                          id="cardNumber"
+                          name="cardNumber"
+                          required
+                          value={formData.cardNumber}
+                          onChange={handleInputChange}
+                          className="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                          placeholder="1234 5678 9012 3456"
+                          maxLength={19}
+                        />
+                      </div>
+                    </div>
 
-                {/* Cardholder Name */}
-                <div>
-                  <label
-                    htmlFor="cardholderName"
-                    className="block text-sm font-medium text-slate-700 mb-2"
-                  >
-                    Cardholder Name
-                  </label>
-                  <input
-                    type="text"
-                    id="cardholderName"
-                    name="cardholderName"
-                    required
-                    value={formData.cardholderName}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
-                    placeholder="John Doe"
-                  />
-                </div>
+                    {/* Cardholder Name */}
+                    <div>
+                      <label
+                        htmlFor="cardholderName"
+                        className="block text-sm font-medium text-slate-700 mb-2"
+                      >
+                        Cardholder Name
+                      </label>
+                      <input
+                        type="text"
+                        id="cardholderName"
+                        name="cardholderName"
+                        required
+                        value={formData.cardholderName}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                        placeholder="John Doe"
+                      />
+                    </div>
 
-                {/* Expiry and CVV */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label
-                      htmlFor="expiryDate"
-                      className="block text-sm font-medium text-slate-700 mb-2"
+                    {/* Expiry and CVV */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label
+                          htmlFor="expiryDate"
+                          className="block text-sm font-medium text-slate-700 mb-2"
+                        >
+                          Expiry Date
+                        </label>
+                        <input
+                          type="text"
+                          id="expiryDate"
+                          name="expiryDate"
+                          required
+                          value={formData.expiryDate}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                          placeholder="MM/YY"
+                          maxLength={5}
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="cvv" className="block text-sm font-medium text-slate-700 mb-2">
+                          CVV
+                        </label>
+                        <input
+                          type="text"
+                          id="cvv"
+                          name="cvv"
+                          required
+                          value={formData.cvv}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                          placeholder="123"
+                          maxLength={3}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Country */}
+                    <div>
+                      <label
+                        htmlFor="country"
+                        className="block text-sm font-medium text-slate-700 mb-2"
+                      >
+                        Country
+                      </label>
+                      <select
+                        id="country"
+                        name="country"
+                        required
+                        value={formData.country}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                      >
+                        <option value="US">United States</option>
+                        <option value="CA">Canada</option>
+                        <option value="GB">United Kingdom</option>
+                        <option value="DE">Germany</option>
+                        <option value="FR">France</option>
+                      </select>
+                    </div>
+
+                    {/* Stripe Badge */}
+                    <div className="flex items-center justify-center gap-2 pt-4 border-t border-slate-200">
+                      <Lock size={16} className="text-slate-400" />
+                      <span className="text-sm text-slate-500">
+                        Secured by{' '}
+                        <span className="font-semibold text-slate-700">Stripe</span>
+                      </span>
+                    </div>
+
+                    {/* Submit Button */}
+                    <button
+                      type="submit"
+                      disabled={isProcessing}
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white py-4 px-6 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl disabled:cursor-not-allowed"
                     >
-                      Expiry Date
-                    </label>
-                    <input
-                      type="text"
-                      id="expiryDate"
-                      name="expiryDate"
-                      required
-                      value={formData.expiryDate}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
-                      placeholder="MM/YY"
-                      maxLength={5}
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="cvv" className="block text-sm font-medium text-slate-700 mb-2">
-                      CVV
-                    </label>
-                    <input
-                      type="text"
-                      id="cvv"
-                      name="cvv"
-                      required
-                      value={formData.cvv}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
-                      placeholder="123"
-                      maxLength={3}
-                    />
-                  </div>
-                </div>
+                      {isProcessing ? 'Processing...' : `Pay $${plan.price}/${plan.period}`}
+                    </button>
 
-                {/* Country */}
-                <div>
-                  <label
-                    htmlFor="country"
-                    className="block text-sm font-medium text-slate-700 mb-2"
-                  >
-                    Country
-                  </label>
-                  <select
-                    id="country"
-                    name="country"
-                    required
-                    value={formData.country}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
-                  >
-                    <option value="US">United States</option>
-                    <option value="CA">Canada</option>
-                    <option value="GB">United Kingdom</option>
-                    <option value="DE">Germany</option>
-                    <option value="FR">France</option>
-                  </select>
-                </div>
-
-                {/* Stripe Badge */}
-                <div className="flex items-center justify-center gap-2 pt-4 border-t border-slate-200">
-                  <Lock size={16} className="text-slate-400" />
-                  <span className="text-sm text-slate-500">
-                    Secured by{' '}
-                    <span className="font-semibold text-slate-700">Stripe</span>
-                  </span>
-                </div>
-
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={isProcessing}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white py-4 px-6 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl disabled:cursor-not-allowed"
-                >
-                  {isProcessing ? 'Processing...' : `Pay $${plan.price}/${plan.period}`}
-                </button>
-
-                <p className="text-xs text-center text-slate-500">
-                  This is a test payment interface. No actual charge will be made.
-                </p>
+                    <p className="text-xs text-center text-slate-500">
+                      This is a test payment interface. No actual charge will be made.
+                    </p>
+                  </>
+                )}
               </form>
             </div>
           </div>

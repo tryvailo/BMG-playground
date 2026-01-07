@@ -32,3 +32,17 @@ export interface CrawlStatusResponse {
   message?: string;
 }
 
+/**
+ * Firecrawl Batch Scrape Status Response
+ */
+export interface BatchScrapeStatusResponse {
+  success: boolean;
+  status: 'scraping' | 'completed' | 'failed';
+  id?: string;
+  completed: number;
+  total: number;
+  data?: FirecrawlDocument[];
+  error?: string;
+  message?: string;
+}
+

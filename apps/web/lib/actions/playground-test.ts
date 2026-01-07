@@ -1099,6 +1099,7 @@ export interface ServiceAnalysisData {
   }>;
   recommendationText: string; // Generated advice based on the comparison
   llmLogs: LLMRequestLog[]; // Logs of all LLM requests and responses
+  noResults?: boolean; // True when AI engine returned no recommendations
 }
 
 /**
@@ -1262,6 +1263,30 @@ export const runLiveDashboardTest = enhanceAction(
         competitorDetails.length,
         competitorDetails,
       );
+
+      // Handle case when no results found - return early with error state
+      if (competitorDetails.length === 0) {
+        const noResultsAnalysis: ServiceAnalysisData = {
+          query: input.query,
+          location: input.city,
+          foundUrl: null,
+          position: null,
+          totalResults: 0,
+          aiEngine: aiEngineName,
+          competitors: [],
+          recommendationText: 'No results found for this query. The AI engine did not return any recommendations. Try a different search query or check if the service is available in this location.',
+          llmLogs: visibilityResult.llmLogs || [],
+          noResults: true,
+        };
+
+        const noResultsData: DashboardData & { serviceAnalysis: ServiceAnalysisData; techAudit: null } = {
+          ...dashboardData,
+          serviceAnalysis: noResultsAnalysis,
+          techAudit: null,
+        };
+
+        return noResultsData;
+      }
 
       // Create ServiceAnalysisData
       const serviceAnalysis: ServiceAnalysisData = {

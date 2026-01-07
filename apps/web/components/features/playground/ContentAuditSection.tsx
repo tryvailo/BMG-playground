@@ -19,6 +19,9 @@ import {
   BookOpen,
   Hash,
   Droplets,
+  TrendingUp,
+  TrendingDown,
+  Layers,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -198,10 +201,10 @@ function MinimalMetricCard({
   };
 
   return (
-    <HorizonCard className="border-none shadow-sm">
+    <HorizonCard className="border-none">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
-          <div className="cursor-pointer hover:opacity-80 transition-opacity p-4">
+          <div className="cursor-pointer hover:opacity-80 transition-opacity">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-xl bg-[#F4F7FE] border border-[#E2E8F0]">
@@ -233,7 +236,7 @@ function MinimalMetricCard({
                   </div>
                 ) : null}
                 {value && (
-                  <span className="text-base font-bold" style={{ color: HORIZON.textPrimary }}>
+                  <span className="text-sm font-bold" style={{ color: HORIZON.textPrimary }}>
                     {value}
                   </span>
                 )}
@@ -244,17 +247,17 @@ function MinimalMetricCard({
               </div>
             </div>
             {calculatedScore !== null && calculatedScore !== undefined ? (
-              <div className="mt-3">
+              <div className="mt-4">
                 <ProgressBar value={calculatedScore} size="sm" showValue={false} />
               </div>
             ) : (
-              <div className="mt-3 h-1.5 w-full bg-[#F4F7FE] rounded-full" />
+              <div className="mt-4 h-1.5 w-full bg-[#F4F7FE] rounded-full" />
             )}
           </div>
         </CollapsibleTrigger>
         {children && (
           <CollapsibleContent>
-            <div className="px-4 pb-4 pt-2 border-t border-[#F4F7FE]">
+            <div className="mt-6 pt-6 border-t" style={{ borderColor: HORIZON.background }}>
               {children}
             </div>
           </CollapsibleContent>
@@ -265,33 +268,57 @@ function MinimalMetricCard({
 }
 
 /**
- * Calculate Overall Score
+ * KPI Card Component (same style as CompetitorsHorizon)
  */
-function calculateOverallScore(data: ContentAuditResult): number {
-  const scores: number[] = [];
+interface KpiCardProps {
+  label: string;
+  value: string;
+  benchmark?: string;
+  trend?: string;
+  icon: React.ElementType;
+  iconBg: string;
+  iconColor: string;
+}
 
-  // Text Quality scores (inverted for wateriness - lower is better)
-  scores.push(100 - data.text_quality.wateriness_score); // Invert: 0% wateriness = 100 score
-  scores.push(data.text_quality.uniqueness_score);
+function KpiCard({ label, value, benchmark, trend, icon: Icon, iconBg, iconColor }: KpiCardProps) {
+  const isPositive = trend?.startsWith('+') ?? true;
 
-  // Structure score
-  scores.push(data.structure.architecture_score);
-
-  // Authority scores (boolean to score)
-  if (data.authority.has_valid_phone) scores.push(100);
-  if (data.authority.has_valid_address) scores.push(100);
-  if (data.authority.authority_links_count > 0) scores.push(Math.min(100, data.authority.authority_links_count * 20)); // 1 link = 20, 5+ = 100
-  if (data.authority.faq_count >= 3) scores.push(100);
-  else if (data.authority.faq_count > 0) scores.push(50);
-
-  // Structure pages (boolean to score)
-  if (data.structure.has_doctor_pages) scores.push(100);
-  if (data.structure.has_service_pages) scores.push(100);
-  if (data.structure.has_department_pages) scores.push(100);
-  if (data.structure.has_blog) scores.push(100);
-
-  if (scores.length === 0) return 0;
-  return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+  return (
+    <HorizonCard 
+      className="group hover:-translate-y-1 transition-all duration-300"
+      style={{ boxShadow: HORIZON.shadowSm }}
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div
+          className="w-12 h-12 rounded-full flex items-center justify-center"
+          style={{ backgroundColor: iconBg }}
+        >
+          <Icon className="w-6 h-6" style={{ color: iconColor }} />
+        </div>
+        {trend && (
+          <div className={cn(
+            "flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold",
+            isPositive ? "bg-[#01B57415] text-[#01B574]" : "bg-[#EE5D5015] text-[#EE5D50]"
+          )}>
+            {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+            {trend}
+          </div>
+        )}
+      </div>
+      <div className="text-sm font-medium mb-1" style={{ color: HORIZON.textSecondary }}>
+        {label}
+      </div>
+      <div className="text-lg font-bold" style={{ color: HORIZON.textPrimary }}>
+        <span>{value}</span>
+        {benchmark && (
+          <>
+            <span className="text-sm font-medium mx-1" style={{ color: HORIZON.textSecondary }}>vs</span>
+            <span style={{ color: HORIZON.textSecondary }}>{benchmark}</span>
+          </>
+        )}
+      </div>
+    </HorizonCard>
+  );
 }
 
 export function ContentAuditSection({ result, className }: ContentAuditSectionProps) {
@@ -300,20 +327,6 @@ export function ContentAuditSection({ result, className }: ContentAuditSectionPr
   if (!result) {
     return null;
   }
-
-  const overallScore = calculateOverallScore(result);
-
-  const getScoreColor = (score: number) => {
-    if (score >= 90) return HORIZON.success;
-    if (score >= 50) return HORIZON.warning;
-    return HORIZON.error;
-  };
-
-  const getScoreBgColor = (score: number) => {
-    if (score >= 90) return 'rgba(1, 181, 116, 0.05)';
-    if (score >= 50) return 'rgba(255, 181, 71, 0.05)';
-    return 'rgba(238, 93, 80, 0.05)';
-  };
 
   // Calculate category scores
   const categoryScores = {
@@ -335,61 +348,45 @@ export function ContentAuditSection({ result, className }: ContentAuditSectionPr
   const a = result.authority;
 
   return (
-    <div className={cn('space-y-6', className)}>
-      {/* Results Header */}
-      <HorizonCard className="relative overflow-hidden" style={{ border: `1px solid ${getScoreColor(overallScore)}20`, backgroundColor: getScoreBgColor(overallScore) }}>
-        <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
-          <FileText className="w-24 h-24" />
+    <div className={cn('space-y-6 pb-20 animate-in fade-in duration-700', className)}>
+      {/* KPI Summary Cards */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-2 mb-2 ml-1">
+          <Layers className="w-5 h-5" style={{ color: HORIZON.primary }} />
+          <h3 className="text-sm font-bold uppercase tracking-widest" style={{ color: HORIZON.textPrimary }}>
+            Аналіз контенту
+          </h3>
         </div>
-        <div>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-sm font-bold uppercase tracking-widest mb-1" style={{ color: HORIZON.textSecondary }}>
-                Overall Score
-              </h3>
-              <p className="text-2xl font-bold" style={{ color: HORIZON.textPrimary }}>
-                {t('title')}
-              </p>
-              <p className="text-sm font-medium mt-1" style={{ color: HORIZON.textSecondary }}>
-                {t('description')}
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="text-5xl font-bold tracking-tighter mb-1" style={{ color: getScoreColor(overallScore) }}>
-                {overallScore}
-              </div>
-              <div className="text-xs font-bold uppercase tracking-widest" style={{ color: HORIZON.textSecondary }}>
-                / 100
-              </div>
-            </div>
-          </div>
-
-          {/* Category Progress Bars */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold uppercase tracking-widest" style={{ color: HORIZON.textSecondary }}>Structure</span>
-                <span className="text-xs font-bold" style={{ color: HORIZON.textPrimary }}>{categoryScores.structure}%</span>
-              </div>
-              <ProgressBar value={categoryScores.structure} size="sm" showValue={false} />
-            </div>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold uppercase tracking-widest" style={{ color: HORIZON.textSecondary }}>Text Quality</span>
-                <span className="text-xs font-bold" style={{ color: HORIZON.textPrimary }}>{Math.round(categoryScores.textQuality)}%</span>
-              </div>
-              <ProgressBar value={categoryScores.textQuality} size="sm" showValue={false} />
-            </div>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold uppercase tracking-widest" style={{ color: HORIZON.textSecondary }}>Authority</span>
-                <span className="text-xs font-bold" style={{ color: HORIZON.textPrimary }}>{categoryScores.authority}%</span>
-              </div>
-              <ProgressBar value={categoryScores.authority} size="sm" showValue={false} />
-            </div>
-          </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4">
+          <KpiCard
+            label="Структура сайту"
+            value={`${categoryScores.structure}%`}
+            benchmark="80%"
+            trend={categoryScores.structure >= 80 ? '+' + (categoryScores.structure - 80) + '%' : '-' + (80 - categoryScores.structure) + '%'}
+            icon={Layout}
+            iconBg={HORIZON.primaryLight}
+            iconColor={HORIZON.primary}
+          />
+          <KpiCard
+            label="Якість тексту"
+            value={`${Math.round(categoryScores.textQuality)}%`}
+            benchmark="75%"
+            trend={Math.round(categoryScores.textQuality) >= 75 ? '+' + (Math.round(categoryScores.textQuality) - 75) + '%' : '-' + (75 - Math.round(categoryScores.textQuality)) + '%'}
+            icon={FileText}
+            iconBg={HORIZON.successLight}
+            iconColor={HORIZON.success}
+          />
+          <KpiCard
+            label="Авторитетність"
+            value={`${categoryScores.authority}%`}
+            benchmark="70%"
+            trend={categoryScores.authority >= 70 ? '+' + (categoryScores.authority - 70) + '%' : '-' + (70 - categoryScores.authority) + '%'}
+            icon={Shield}
+            iconBg={HORIZON.warningLight}
+            iconColor={HORIZON.warning}
+          />
         </div>
-      </HorizonCard>
+      </section>
 
       {/* Audit Items List */}
       <div className="space-y-3">

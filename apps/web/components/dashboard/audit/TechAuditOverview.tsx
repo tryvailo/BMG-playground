@@ -9,11 +9,9 @@ import {
   Smartphone,
   Globe,
   AlertCircle,
-  Play,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@kit/ui/card';
 import { Badge } from '@kit/ui/badge';
-import { Button } from '@kit/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -148,27 +146,16 @@ function CircleGauge({ score, label, size = 'md', onClick }: CircleGaugeProps) {
 }
 
 /**
- * Empty State Component
+ * Empty State Component - Now using TechAuditColdState
  */
+import { TechAuditColdState } from './TechAuditColdState';
+
 function EmptyState({ onRunAudit }: { onRunAudit?: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-      <div className="rounded-full bg-muted p-6 mb-4">
-        <FileText className="h-12 w-12 text-muted-foreground" />
-      </div>
-      <h3 className="text-lg font-semibold text-foreground mb-2">
-        No Technical Audit Yet
-      </h3>
-      <p className="text-sm text-muted-foreground mb-6 max-w-md">
-        Run a technical audit to analyze your site&apos;s performance, security, and optimization.
-      </p>
-      {onRunAudit && (
-        <Button onClick={onRunAudit} size="lg">
-          <Play className="h-4 w-4 mr-2" />
-          Run Audit
-        </Button>
-      )}
-    </div>
+    <TechAuditColdState
+      isRunning={false}
+      onRunAudit={onRunAudit}
+    />
   );
 }
 

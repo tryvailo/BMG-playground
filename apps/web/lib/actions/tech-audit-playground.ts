@@ -7,6 +7,7 @@ import { performEphemeralTechAudit, type EphemeralAuditResult } from '~/lib/modu
 import { analyzeTechAudit } from '~/lib/modules/audit/utils/tech-audit-analyzer';
 import type { TechAuditAnalysis } from '~/lib/modules/audit/utils/tech-audit-analyzer';
 import type { DuplicateAnalysisResult } from '~/lib/utils/duplicate-analyzer';
+import type { NoindexAnalysisResult } from '~/lib/modules/audit/utils/noindex-crawler';
 
 /**
  * Playground Tech Audit Input Schema
@@ -36,10 +37,11 @@ export const runPlaygroundTechAudit = enhanceAction(
     console.log('[PlaygroundTechAudit] PageSpeed key provided:', !!apiKeyGooglePageSpeed);
     console.log('[PlaygroundTechAudit] OpenAI key provided:', !!apiKeyOpenAI);
 
-    // Normalize domain URL
-    const normalizedDomain = domain.startsWith('http://') || domain.startsWith('https://')
-      ? domain
-      : `https://${domain}`;
+    // Normalize domain URL (trim and ensure https prefix)
+    const trimmedDomain = domain.trim();
+    const normalizedDomain = trimmedDomain.startsWith('http://') || trimmedDomain.startsWith('https://')
+      ? trimmedDomain
+      : `https://${trimmedDomain}`;
 
     // Use OpenAI key from input, or fallback to environment variable
     const openaiKeyForAudit = (apiKeyOpenAI?.trim() || process.env.OPENAI_API_KEY?.trim() || '').trim();
@@ -49,15 +51,22 @@ export const runPlaygroundTechAudit = enhanceAction(
     }
 
     // Perform ephemeral tech audit
-    const auditResult = await performEphemeralTechAudit(
-      normalizedDomain,
-      openaiKeyForAudit,
-      apiKeyGooglePageSpeed?.trim() || undefined,
-    );
+    let auditResult: EphemeralAuditResult;
+    try {
+      auditResult = await performEphemeralTechAudit(
+        normalizedDomain,
+        openaiKeyForAudit,
+        apiKeyGooglePageSpeed?.trim() || undefined,
+      );
 
-    console.log('[PlaygroundTechAudit] Audit completed. Results:');
-    console.log('[PlaygroundTechAudit] Desktop Speed:', auditResult.speed.desktop);
-    console.log('[PlaygroundTechAudit] Mobile Speed:', auditResult.speed.mobile);
+      console.log('[PlaygroundTechAudit] Audit completed. Results:');
+      console.log('[PlaygroundTechAudit] Desktop Speed:', auditResult.speed.desktop);
+      console.log('[PlaygroundTechAudit] Mobile Speed:', auditResult.speed.mobile);
+    } catch (error) {
+      console.error('[PlaygroundTechAudit] Error performing audit:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      throw new Error(`Tech audit failed: ${errorMessage}`);
+    }
 
     // Save audit result to database
     try {
@@ -66,7 +75,7 @@ export const runPlaygroundTechAudit = enhanceAction(
       const insertData = {
         url: normalizedDomain,
         audit_result: auditResult,
-        domain: domain.trim(),
+        domain: trimmedDomain,
       };
       
       console.log('[PlaygroundTechAudit] Inserting audit data:', {
@@ -152,13 +161,24 @@ export const runAIAnalysis = enhanceAction(
 );
 
 /**
+ * Extended audit result including all analysis data
+ */
+export interface ExtendedAuditResult {
+  result: EphemeralAuditResult;
+  createdAt: string;
+  duplicateResult?: DuplicateAnalysisResult | null;
+  noindexResult?: NoindexAnalysisResult | null;
+  aiAnalysis?: TechAuditAnalysis | null;
+}
+
+/**
  * Get the most recent Technical Audit for a URL
  * 
  * @param url - URL to get the latest audit for
  * @returns The latest audit with result and metadata, or null if none exists
  */
 export const getLatestPlaygroundTechAudit = enhanceAction(
-  async (params: { url: string }): Promise<{ result: EphemeralAuditResult; createdAt: string } | null> => {
+  async (params: { url: string }): Promise<ExtendedAuditResult | null> => {
     const { url } = params;
     
     // Normalize URL (ensure it has protocol)
@@ -176,7 +196,7 @@ export const getLatestPlaygroundTechAudit = enhanceAction(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let { data, error } = await (supabase as any)
         .from('playground_tech_audits')
-        .select('audit_result, created_at, id, url')
+        .select('audit_result, created_at, id, url, duplicate_result, noindex_result, ai_analysis')
         .eq('url', normalizedUrl)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -188,7 +208,7 @@ export const getLatestPlaygroundTechAudit = enhanceAction(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: dataAlt, error: errorAlt } = await (supabase as any)
           .from('playground_tech_audits')
-          .select('audit_result, created_at, id, url')
+          .select('audit_result, created_at, id, url, duplicate_result, noindex_result, ai_analysis')
           .or(`url.eq.${normalizedUrl},url.ilike.%${urlWithoutProtocol}%`)
           .order('created_at', { ascending: false })
           .limit(1)
@@ -221,12 +241,36 @@ export const getLatestPlaygroundTechAudit = enhanceAction(
         id: data.id,
         url: data.url,
         createdAt: data.created_at,
+        hasDuplicate: !!data.duplicate_result,
+        hasNoindex: !!data.noindex_result,
+        hasAiAnalysis: !!data.ai_analysis,
       });
 
-      return {
+      // Ensure all data is serializable
+      const result: ExtendedAuditResult = {
         result: data.audit_result as EphemeralAuditResult,
         createdAt: data.created_at,
+        duplicateResult: data.duplicate_result as DuplicateAnalysisResult | null,
+        noindexResult: data.noindex_result as NoindexAnalysisResult | null,
+        aiAnalysis: data.ai_analysis as TechAuditAnalysis | null,
       };
+
+      // Test serialization to catch any issues
+      try {
+        JSON.stringify(result);
+      } catch (serializationError) {
+        console.error('[PlaygroundTechAudit] Serialization error:', serializationError);
+        // Return a cleaned version
+        return {
+          result: data.audit_result as EphemeralAuditResult,
+          createdAt: data.created_at,
+          duplicateResult: null, // Remove potentially problematic data
+          noindexResult: null,
+          aiAnalysis: null,
+        };
+      }
+
+      return result;
     } catch (error) {
       console.error('[PlaygroundTechAudit] Error fetching latest audit:', error);
       return null;
@@ -234,6 +278,70 @@ export const getLatestPlaygroundTechAudit = enhanceAction(
   },
   {
     auth: false, // Playground actions don't require authentication
+  },
+);
+
+/**
+ * Save extended audit results to database
+ */
+export const saveExtendedAuditResults = enhanceAction(
+  async (params: {
+    url: string;
+    duplicateResult?: DuplicateAnalysisResult | null;
+    noindexResult?: NoindexAnalysisResult | null;
+    aiAnalysis?: TechAuditAnalysis | null;
+  }): Promise<boolean> => {
+    const { url, duplicateResult, noindexResult, aiAnalysis } = params;
+    
+    let normalizedUrl = url.trim();
+    if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
+      normalizedUrl = `https://${normalizedUrl}`;
+    }
+
+    try {
+      const supabase = getSupabaseServerAdminClient();
+      
+      // Find the latest audit for this URL
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: existingAudit, error: fetchError } = await (supabase as any)
+        .from('playground_tech_audits')
+        .select('id')
+        .eq('url', normalizedUrl)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (fetchError || !existingAudit) {
+        console.error('[PlaygroundTechAudit] No existing audit found to update');
+        return false;
+      }
+      
+      // Update with extended results
+      const updateData: Record<string, unknown> = {};
+      if (duplicateResult !== undefined) updateData.duplicate_result = duplicateResult;
+      if (noindexResult !== undefined) updateData.noindex_result = noindexResult;
+      if (aiAnalysis !== undefined) updateData.ai_analysis = aiAnalysis;
+      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: updateError } = await (supabase as any)
+        .from('playground_tech_audits')
+        .update(updateData)
+        .eq('id', existingAudit.id);
+      
+      if (updateError) {
+        console.error('[PlaygroundTechAudit] Failed to update audit:', updateError);
+        return false;
+      }
+      
+      console.log('[PlaygroundTechAudit] Extended results saved successfully');
+      return true;
+    } catch (error) {
+      console.error('[PlaygroundTechAudit] Error saving extended results:', error);
+      return false;
+    }
+  },
+  {
+    auth: false,
   },
 );
 

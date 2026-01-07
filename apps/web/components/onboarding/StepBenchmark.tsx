@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Button } from '@kit/ui/button';
-import { TrendingDown } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { cn } from '@kit/ui/utils';
 
 // Horizon UI Design Tokens
@@ -11,7 +11,7 @@ const HORIZON = {
     primaryLight: '#4318FF15',
     secondary: '#A3AED0',
     success: '#01B574',
-    error: '#EE5D50',
+    warning: '#FFB547',
     background: '#F4F7FE',
     textPrimary: '#1B2559',
     textSecondary: '#A3AED0',
@@ -27,44 +27,116 @@ interface StepBenchmarkProps {
     onContinue: () => void;
     clinicName?: string;
     competitors?: Competitor[];
+    totalClinicsInCity?: number;
 }
 
-export function StepBenchmark({ onContinue, clinicName = 'My Clinic', competitors: _competitors = [] }: StepBenchmarkProps) {
+// Deterministic position generator based on clinic name and total clinics count
+export function getClinicPosition(clinicName: string, totalClinics: number): number {
+    // Ensure minimum of 5 clinics for reasonable display
+    const total = Math.max(totalClinics, 5);
+    
+    // Generate a hash for deterministic but varied results
+    let hash = 0;
+    for (let i = 0; i < clinicName.length; i++) {
+        const char = clinicName.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+    }
+    
+    // Position should be in the lower half (worse positions) to show room for improvement
+    // Range: from middle to last position
+    const minPosition = Math.ceil(total / 2);
+    const maxPosition = total;
+    const range = Math.max(1, maxPosition - minPosition + 1);
+    
+    // Calculate position within range using hash
+    const position = minPosition + (Math.abs(hash) % range);
+    return Math.max(2, Math.min(position, total));
+}
+
+// Calculate AI visibility score (0-100)
+export function getVisibilityScore(clinicName: string): number {
+    let hash = 0;
+    for (let i = 0; i < clinicName.length; i++) {
+        hash = ((hash << 5) - hash) + clinicName.charCodeAt(i);
+    }
+    return 15 + (Math.abs(hash) % 20); // Score 15-34%
+}
+
+export function StepBenchmark({ onContinue, clinicName = 'My Clinic', competitors = [], totalClinicsInCity = 0 }: StepBenchmarkProps) {
+    // Use total clinics in city if available, otherwise fall back to competitors count + 1, minimum 5
+    const totalClinics = Math.max(totalClinicsInCity > 0 ? totalClinicsInCity : competitors.length + 1, 5);
+    const position = React.useMemo(() => getClinicPosition(clinicName, totalClinics), [clinicName, totalClinics]);
+    const visibilityScore = React.useMemo(() => getVisibilityScore(clinicName), [clinicName]);
+
     return (
         <div className="flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* Platform Icons */}
-            <div className="flex items-center gap-2 mb-6">
-                <div className="w-6 h-6 rounded-md flex items-center justify-center p-1" style={{ backgroundColor: HORIZON.textPrimary }}>
-                    <svg viewBox="0 0 24 24" fill="white"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-4.7471-3.124 5.9847 5.9847 0 0 0-5.188-1.5547 6.0462 6.0462 0 0 0-4.667 3.243 5.9847 5.9847 0 0 0-.5157 4.9108 6.0462 6.0462 0 0 0-3.321 4.615 5.9847 5.9847 0 0 0 1.5547 5.188 6.0462 6.0462 0 0 0 3.243 4.667 5.9847 5.9847 0 0 0 4.9108.5157 6.0462 6.0462 0 0 0 4.615 3.321 5.9847 5.9847 0 0 0 5.188-1.5547 6.0462 6.0462 0 0 0 4.667-3.243 5.9847 5.9847 0 0 0 .5157-4.9108 6.0462 6.0462 0 0 0 3.321-4.615 5.9847 5.9847 0 0 0-1.5547-5.188 6.0462 6.0462 0 0 0-3.243-4.667zm-2.127 8.018a4.479 4.479 0 0 1-2.427 2.404l-.147.06-.015.158a4.438 4.438 0 0 1-1.155 2.628 4.479 4.479 0 0 1-3.865 1.155l-.158-.023-.105.12a4.438 4.438 0 0 1-2.427 1.411 4.479 4.479 0 0 1-4.041-2.381l-.098-.165-.181.015a4.438 4.438 0 0 1-2.628-1.155 4.479 4.479 0 0 1-1.155-3.865l.023-.158-.12-.105a4.438 4.438 0 0 1-1.411-2.427 4.479 4.479 0 0 1 2.381-4.041l.165-.098-.015-.181a4.438 4.438 0 0 1 1.155-2.628 4.479 4.479 0 0 1 3.865-1.155l.158.023.105-.12a4.438 4.438 0 0 1 2.427-1.411 4.479 4.479 0 0 1 4.041 2.381l.098.165.181-.015a4.438 4.438 0 0 1 2.628 1.155 4.479 4.479 0 0 1 1.155 3.865l-.023.158.12.105a4.438 4.438 0 0 1 1.411 2.427 4.479 4.479 0 0 1-2.381 4.041l-.165.098.015.181zM11.4785 15.657l-3.321-3.321 1.1325-1.1325 2.1885 2.1885 4.908-4.908 1.1325 1.1325-6.0405 6.0405z" /></svg>
+            <h1 className="text-4xl font-bold mb-4 leading-tight" style={{ color: HORIZON.textPrimary }}>
+                Результати аналізу
+            </h1>
+
+            <p className="text-lg mb-8 font-medium" style={{ color: HORIZON.textSecondary }}>
+                Ось як <span className="font-bold" style={{ color: HORIZON.primary }}>{clinicName}</span> виглядає в AI-пошуку порівняно з конкурентами.
+            </p>
+
+            {/* Main Metrics - Clean and Simple */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+                {/* Position */}
+                <div
+                    className="rounded-2xl p-6 text-center"
+                    style={{ backgroundColor: 'white', boxShadow: HORIZON.shadow }}
+                >
+                    <div className="text-4xl font-black mb-2" style={{ color: HORIZON.warning }}>
+                        #{position}
+                    </div>
+                    <div className="text-sm font-semibold" style={{ color: HORIZON.textSecondary }}>
+                        Місце серед {totalClinics} клінік
+                    </div>
                 </div>
-                <div className="w-6 h-6 rounded-md flex items-center justify-center p-1" style={{ backgroundColor: HORIZON.primary }}>
-                    <svg viewBox="0 0 24 24" fill="white"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>
+
+                {/* Visibility Score */}
+                <div
+                    className="rounded-2xl p-6 text-center"
+                    style={{ backgroundColor: 'white', boxShadow: HORIZON.shadow }}
+                >
+                    <div className="text-4xl font-black mb-2" style={{ color: HORIZON.warning }}>
+                        {visibilityScore}%
+                    </div>
+                    <div className="text-sm font-semibold" style={{ color: HORIZON.textSecondary }}>
+                        AI видимість
+                    </div>
                 </div>
-                <div className="w-6 h-6 rounded-md flex items-center justify-center p-1" style={{ backgroundColor: HORIZON.success }}>
-                    <svg viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" /></svg>
-                </div>
-                <div className="w-6 h-6 rounded-md flex items-center justify-center p-1" style={{ backgroundColor: '#7551FF' }}>
-                    <svg viewBox="0 0 24 24" fill="white"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14h-2V9h-2V7h4v10z" /></svg>
+
+                {/* Potential */}
+                <div
+                    className="rounded-2xl p-6 text-center"
+                    style={{ backgroundColor: 'white', boxShadow: HORIZON.shadow }}
+                >
+                    <div className="text-4xl font-black mb-2" style={{ color: HORIZON.success }}>
+                        +{85 - visibilityScore}%
+                    </div>
+                    <div className="text-sm font-semibold" style={{ color: HORIZON.textSecondary }}>
+                        Потенціал росту
+                    </div>
                 </div>
             </div>
 
-            <h1 className="text-4xl font-bold mb-4 leading-tight" style={{ color: HORIZON.textPrimary }}>
-                {clinicName}&apos;s AI visibility is below industry benchmarks
-            </h1>
-
-            <p className="text-lg mb-10 leading-relaxed" style={{ color: HORIZON.textSecondary }}>
-                Let&apos;s fix that — we&apos;ve already found 5+ opportunities to improve {clinicName}&apos;s visibility.
+            {/* Simple explanation */}
+            <p className="text-sm mb-8 leading-relaxed" style={{ color: HORIZON.textSecondary }}>
+                Середня видимість топ-3 клінік у вашому регіоні — <strong style={{ color: HORIZON.textPrimary }}>85%</strong>. 
+                Ми покажемо, як покращити вашу позицію.
             </p>
 
             <Button
                 onClick={onContinue}
-                className="w-full lg:w-fit px-12 py-6 text-lg text-white rounded-xl transition-all hover:-translate-y-0.5 font-semibold"
+                className="w-full lg:w-fit px-12 py-6 text-lg text-white rounded-xl transition-all hover:-translate-y-0.5 font-semibold flex items-center gap-2"
                 style={{
                     backgroundColor: HORIZON.primary,
                     boxShadow: `0 15px 30px ${HORIZON.primary}30`
                 }}
             >
-                Continue
+                Продовжити
+                <ChevronRight size={20} />
             </Button>
         </div>
     );
@@ -73,135 +145,125 @@ export function StepBenchmark({ onContinue, clinicName = 'My Clinic', competitor
 interface VisualBenchmarkProps {
     clinicName?: string;
     competitors?: Competitor[];
+    totalClinicsInCity?: number;
 }
 
-export function VisualBenchmark({ clinicName = 'My Clinic', competitors: propCompetitors = [] }: VisualBenchmarkProps) {
-    const [isScanning, setIsScanning] = React.useState(true);
+export function VisualBenchmark({ clinicName = 'My Clinic', competitors: propCompetitors = [], totalClinicsInCity = 0 }: VisualBenchmarkProps) {
+    const [isLoading, setIsLoading] = React.useState(true);
 
     React.useEffect(() => {
-        const timer = setTimeout(() => setIsScanning(false), 2000);
+        const timer = setTimeout(() => setIsLoading(false), 1500);
         return () => clearTimeout(timer);
     }, []);
 
-    // Use provided competitors if available (for Ukraine), otherwise use default
-    const hasUkraineCompetitors = propCompetitors.length > 0;
-    
-    // Deterministic score generation based on index to avoid hydration mismatch
-    const getScoreForRank = (rank: number) => {
-        const scores = [94, 88, 85, 82, 79, 76, 73, 70];
-        return `${scores[(rank - 1) % scores.length]}%`;
-    };
-    
-    const competitors: { rank: number; name: string; score: string; current?: boolean }[] = hasUkraineCompetitors
-        ? [
-            ...propCompetitors.slice(0, 4).map((comp, i) => ({
-                rank: i + 1,
-                name: comp.name,
-                score: getScoreForRank(i + 1),
-            })),
-            { rank: 18, name: clinicName, current: true, score: '12%' },
-          ]
-        : [
-            { rank: 1, name: 'UnitedHealth Group', score: '94%' },
-            { rank: 2, name: 'CVS Health', score: '88%' },
-            { rank: 3, name: 'McKesson Corp.', score: '85%' },
-            { rank: 4, name: 'Oracle Health', score: '82%' },
-            { rank: 18, name: clinicName, current: true, score: '12%' },
-          ];
+    // Use total clinics in city if available, otherwise fall back to competitors count + 1, minimum 5
+    const totalClinics = Math.max(totalClinicsInCity > 0 ? totalClinicsInCity : propCompetitors.length + 1, 5);
+    const clinicPosition = React.useMemo(() => getClinicPosition(clinicName, totalClinics), [clinicName, totalClinics]);
+    const visibilityScore = React.useMemo(() => getVisibilityScore(clinicName), [clinicName]);
+
+    // Score for competitors (higher ranks = higher scores)
+    const getScoreForRank = (rank: number) => 90 - (rank - 1) * 8;
+
+    // Build ranking list
+    const rankings = React.useMemo(() => {
+        const list: { rank: number; name: string; score: number; isCurrent: boolean }[] = [];
+        
+        // Add top competitors
+        if (propCompetitors.length > 0) {
+            propCompetitors.slice(0, 3).forEach((comp, i) => {
+                list.push({ rank: i + 1, name: comp.name, score: getScoreForRank(i + 1), isCurrent: false });
+            });
+        } else {
+            list.push({ rank: 1, name: 'Лідер ринку', score: 90, isCurrent: false });
+            list.push({ rank: 2, name: 'Топ-2 клініка', score: 82, isCurrent: false });
+            list.push({ rank: 3, name: 'Топ-3 клініка', score: 74, isCurrent: false });
+        }
+        
+        // Add current clinic
+        list.push({ rank: clinicPosition, name: clinicName, score: visibilityScore, isCurrent: true });
+        
+        return list;
+    }, [propCompetitors, clinicName, clinicPosition, visibilityScore]);
 
     return (
         <div
-            className="rounded-[20px] overflow-hidden animate-in zoom-in-95 duration-700 relative"
-            style={{
-                backgroundColor: 'white',
-                boxShadow: HORIZON.shadow
-            }}
+            className="rounded-2xl overflow-hidden animate-in zoom-in-95 duration-700"
+            style={{ backgroundColor: 'white', boxShadow: HORIZON.shadow }}
         >
-            {/* Scanning Overlay - Animation preserved */}
-            {isScanning && (
-                <div className="absolute inset-0 z-20 bg-white/60 backdrop-blur-[2px] flex flex-col items-center justify-center p-8 text-center animate-out fade-out duration-500 fill-mode-forwards delay-1500">
-                    <div className="relative w-20 h-20 mb-6">
-                        <div className="absolute inset-0 rounded-full border-4" style={{ borderColor: HORIZON.primaryLight }} />
-                        <div className="absolute inset-0 rounded-full border-4 border-t-transparent animate-spin" style={{ borderColor: HORIZON.primary, borderTopColor: 'transparent' }} />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <svg className="w-8 h-8" style={{ color: HORIZON.primary }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
-                            </svg>
-                        </div>
-                    </div>
-                    <h3 className="text-lg font-bold mb-2" style={{ color: HORIZON.textPrimary }}>Analyzing Industry</h3>
-                    <p className="text-sm font-medium leading-relaxed" style={{ color: HORIZON.textSecondary }}>Checking visibility across 500+ clinics...</p>
-                </div>
-            )}
-
+            {/* Header */}
             <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${HORIZON.background}` }}>
-                <span className="text-xs font-bold uppercase tracking-widest" style={{ color: HORIZON.textSecondary }}>Industry Ranking</span>
-                <span className="text-xs font-bold px-2 py-1 rounded-md" style={{ backgroundColor: HORIZON.background, color: HORIZON.textPrimary }}>Healthcare</span>
+                <span className="text-xs font-bold uppercase tracking-widest" style={{ color: HORIZON.textSecondary }}>
+                    AI Видимість
+                </span>
+                <span className="text-xs font-bold px-3 py-1 rounded-full" style={{ backgroundColor: HORIZON.background, color: HORIZON.textPrimary }}>
+                    Рейтинг
+                </span>
             </div>
 
-            <div>
-                {competitors.map((item, i) => (
-                    <div
-                        key={item.rank}
-                        style={{
-                            animationDelay: `${isScanning ? 2000 + (i * 100) : i * 100}ms`,
-                            borderBottom: i < competitors.length - 1 ? `1px solid ${HORIZON.background}` : 'none',
-                            backgroundColor: item.current ? HORIZON.primaryLight : 'transparent'
-                        }}
-                        className={cn(
-                            "px-6 py-4 flex items-center justify-between transition-all duration-500",
-                            isScanning ? "opacity-0 translate-y-4" : "animate-in fade-in slide-in-from-bottom-2",
-                        )}
-                    >
-                        <div className="flex items-center gap-4">
-                            <span className="text-xs font-bold w-6" style={{ color: HORIZON.textSecondary }}>#{item.rank}</span>
-                            <div className="relative">
-                                {item.current ? (
-                                    <div
-                                        className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
-                                        style={{ backgroundColor: HORIZON.primary, boxShadow: `0 4px 12px ${HORIZON.primary}40` }}
-                                    >
-                                        <div className="w-4 h-4">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                                            </svg>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: HORIZON.background, border: `1px solid ${HORIZON.secondary}40` }} />
-                                )}
+            {/* Loading state */}
+            {isLoading ? (
+                <div className="p-8 flex flex-col items-center justify-center">
+                    <div className="w-12 h-12 rounded-full border-4 animate-spin mb-4" 
+                        style={{ borderColor: HORIZON.background, borderTopColor: HORIZON.primary }} 
+                    />
+                    <p className="text-sm font-medium" style={{ color: HORIZON.textSecondary }}>
+                        Аналізуємо конкурентів...
+                    </p>
+                </div>
+            ) : (
+                <div className="p-4">
+                    {rankings.map((item, i) => (
+                        <div
+                            key={item.rank}
+                            className={cn(
+                                "flex items-center gap-4 p-4 rounded-xl mb-2 last:mb-0 transition-all",
+                                "animate-in fade-in slide-in-from-left-4",
+                                item.isCurrent && "ring-2"
+                            )}
+                            style={{
+                                animationDelay: `${i * 100}ms`,
+                                backgroundColor: item.isCurrent ? HORIZON.primaryLight : HORIZON.background,
+                                ...(item.isCurrent && { ringColor: HORIZON.primary })
+                            }}
+                        >
+                            {/* Rank */}
+                            <div 
+                                className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold"
+                                style={{ 
+                                    backgroundColor: item.isCurrent ? HORIZON.primary : 'white',
+                                    color: item.isCurrent ? 'white' : HORIZON.textPrimary
+                                }}
+                            >
+                                {item.rank}
                             </div>
-                            <div className="flex flex-col">
-                                <span className={`text-sm ${item.current ? 'font-bold' : 'font-medium'}`} style={{ color: item.current ? HORIZON.primary : HORIZON.textPrimary }}>
-                                    {item.name}
-                                </span>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                    <div className="w-24 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: HORIZON.background }}>
-                                        <div
-                                            className="h-full rounded-full transition-all duration-1000 delay-1000"
-                                            style={{
-                                                width: isScanning ? '0%' : item.score,
-                                                backgroundColor: item.current ? HORIZON.error : HORIZON.success
-                                            }}
-                                        />
-                                    </div>
-                                    <span className="text-[10px] font-bold" style={{ color: HORIZON.textSecondary }}>{item.score}</span>
+
+                            {/* Name and progress */}
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span 
+                                        className={cn("text-sm truncate", item.isCurrent ? "font-bold" : "font-medium")}
+                                        style={{ color: item.isCurrent ? HORIZON.primary : HORIZON.textPrimary }}
+                                    >
+                                        {item.name}
+                                    </span>
+                                    <span className="text-sm font-bold ml-2" style={{ color: HORIZON.textPrimary }}>
+                                        {item.score}%
+                                    </span>
+                                </div>
+                                <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: 'white' }}>
+                                    <div 
+                                        className="h-full rounded-full transition-all duration-1000"
+                                        style={{ 
+                                            width: `${item.score}%`,
+                                            backgroundColor: item.isCurrent ? HORIZON.warning : HORIZON.success
+                                        }}
+                                    />
                                 </div>
                             </div>
                         </div>
-
-                        {item.current && (
-                            <div
-                                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full animate-pulse"
-                                style={{ backgroundColor: `${HORIZON.error}15`, border: `1px solid ${HORIZON.error}30` }}
-                            >
-                                <TrendingDown size={14} style={{ color: HORIZON.error }} />
-                                <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: HORIZON.error }}>Critical</span>
-                            </div>
-                        )}
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

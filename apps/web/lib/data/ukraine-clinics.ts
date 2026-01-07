@@ -39,16 +39,27 @@ async function loadUkraineClinics(): Promise<UkraineClinic[]> {
     // Fetch TSV file from public directory or use static data
     // For now, we'll use a static import approach
     // In production, you might want to fetch from /api/clinics or similar
-    const response = await fetch('/api/ukraine-clinics');
+    console.log('[UkraineClinics] Loading clinics data...');
+    
+    // Add timeout to prevent hanging
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    
+    const response = await fetch('/api/ukraine-clinics', {
+      signal: controller.signal,
+    });
+    
+    clearTimeout(timeoutId);
     
     if (!response.ok) {
-      throw new Error('Failed to load clinics data');
+      throw new Error(`Failed to load clinics data: ${response.status} ${response.statusText}`);
     }
     
     const text = await response.text();
     const lines = text.split('\n').filter(line => line.trim());
     
     if (lines.length === 0) {
+      console.warn('[UkraineClinics] No data lines found');
       return [];
     }
 
@@ -77,10 +88,15 @@ async function loadUkraineClinics(): Promise<UkraineClinic[]> {
       }
     }
 
+    console.log('[UkraineClinics] Loaded', clinics.length, 'clinics');
     clinicsCache = clinics;
     return clinics;
   } catch (error) {
-    console.error('Error loading Ukraine clinics:', error);
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.warn('[UkraineClinics] Request timeout, returning empty array');
+    } else {
+      console.error('[UkraineClinics] Error loading Ukraine clinics:', error);
+    }
     return [];
   }
 }
@@ -129,6 +145,19 @@ export async function findClinicByUrl(url: string): Promise<string | null> {
 }
 
 /**
+ * Count total clinics in a city
+ * Returns total count of all clinics in the specified city
+ */
+export async function countClinicsInCity(city: string): Promise<number> {
+  if (!city) {
+    return 0;
+  }
+  
+  const clinics = await loadUkraineClinics();
+  return clinics.filter(clinic => clinic.city === city).length;
+}
+
+/**
  * Find competitors for a clinic in Ukraine
  * Returns up to 4 competitors from the same city:
  * - First priority: "Великі" size clinics
@@ -168,8 +197,9 @@ export async function findCompetitors(
   // Separate by size
   const largeClinics = cityClinics.filter((c) => c.size === 'Великі');
   const mediumClinics = cityClinics.filter((c) => c.size === 'Середні');
+  const smallClinics = cityClinics.filter((c) => c.size !== 'Великі' && c.size !== 'Середні');
 
-  // Build result: first "Великі", then "Середні" if needed
+  // Build result: first "Великі", then "Середні", then all others if needed
   const competitors: UkraineClinic[] = [];
 
   // Add "Великі" clinics first (up to 4)
@@ -181,6 +211,13 @@ export async function findCompetitors(
     const needed = 4 - competitors.length;
     const mediumToAdd = Math.min(needed, mediumClinics.length);
     competitors.push(...mediumClinics.slice(0, mediumToAdd));
+  }
+
+  // If still not enough, add small/other clinics from the city
+  if (competitors.length < 4) {
+    const needed = 4 - competitors.length;
+    const smallToAdd = Math.min(needed, smallClinics.length);
+    competitors.push(...smallClinics.slice(0, smallToAdd));
   }
 
   return competitors.slice(0, 4);
