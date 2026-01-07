@@ -30,6 +30,10 @@ const config = {
     },
   },
   serverExternalPackages: [],
+  // Increase body size limit for Server Actions (tech audit can return large HTML)
+  serverActions: {
+    bodySizeLimit: '5mb',
+  },
   // needed for supporting dynamic imports for local content
   outputFileTracingIncludes: {
     '/*': ['./content/**/*'],
