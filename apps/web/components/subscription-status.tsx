@@ -25,10 +25,15 @@ export function SubscriptionStatus() {
   const client = useSupabase();
   const { data: user } = useUser();
 
-  const { data: subscription, isLoading } = useQuery({
+  const { data: subscription, isLoading, error: queryError } = useQuery({
     queryKey: ['subscription', user?.id],
     queryFn: async () => {
-      if (!user?.id) return null;
+      if (!user?.id) {
+        console.log('[SubscriptionStatus] No user ID, skipping fetch');
+        return null;
+      }
+
+      console.log('[SubscriptionStatus] Fetching subscription for user:', user.id);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (client as any)
@@ -40,6 +45,7 @@ export function SubscriptionStatus() {
         .maybeSingle();
 
       if (error) {
+        console.error('[SubscriptionStatus] Error fetching subscription:', error);
         // No subscription found is not an error
         if (error.code === 'PGRST116') {
           return null;
@@ -47,11 +53,21 @@ export function SubscriptionStatus() {
         throw error;
       }
 
+      console.log('[SubscriptionStatus] Subscription data:', data);
       return data as Subscription | null;
     },
     enabled: !!user?.id,
-    refetchOnWindowFocus: true, // Refetch when window gains focus to show updated status
-    refetchInterval: 30000, // Refetch every 30 seconds to check for status updates
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000,
+  });
+
+  // Debug logging
+  console.log('[SubscriptionStatus] Render state:', { 
+    userId: user?.id, 
+    isLoading, 
+    hasSubscription: !!subscription,
+    paymentStatus: subscription?.payment_status,
+    queryError: queryError?.message 
   });
 
   if (isLoading) {
