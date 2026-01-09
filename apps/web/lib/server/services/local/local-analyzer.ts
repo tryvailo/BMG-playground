@@ -214,7 +214,9 @@ async function analyzeGoogleBusinessProfile(
   clinicName?: string,
   city?: string,
 ): Promise<GoogleBusinessProfile> {
-  const defaultResult: GoogleBusinessProfile = {
+  const createDefaultResult = (dataAvailable: boolean, reason?: string): GoogleBusinessProfile => ({
+    data_available: dataAvailable,
+    data_unavailable_reason: reason,
     completeness_percent: 0,
     filled_fields_count: 0,
     total_fields_count: 20,
@@ -234,7 +236,7 @@ async function analyzeGoogleBusinessProfile(
     posts_count: 0,
     posts_per_month: 0,
     last_post_date: undefined,
-  };
+  });
 
   console.log('[LocalAnalyzer] analyzeGoogleBusinessProfile called:', {
     hasPlaceId: !!placeId,
@@ -258,7 +260,16 @@ async function analyzeGoogleBusinessProfile(
   }
 
   if (!finalPlaceId || !apiKey) {
-    const reason = !finalPlaceId ? 'Place ID missing' : 'API key missing';
+    let reason: string;
+    if (!apiKey) {
+      reason = 'Google API key не налаштований. Додайте GOOGLE_PLACES_API_KEY до налаштувань.';
+    } else if (!placeId && !clinicName) {
+      reason = 'Не вказано Place ID або назву клініки для пошуку Google Business Profile.';
+    } else if (!finalPlaceId) {
+      reason = `Не вдалося знайти Google Business Profile для "${clinicName || 'клініки'}"${city ? ` у місті ${city}` : ''}. Перевірте правильність назви або вкажіть Place ID вручну.`;
+    } else {
+      reason = 'Place ID не знайдено.';
+    }
     console.warn('[LocalAnalyzer] Cannot analyze Google Business Profile:', {
       reason,
       attemptedAutoSearch: !placeId && !!apiKey && !!clinicName,
@@ -266,17 +277,17 @@ async function analyzeGoogleBusinessProfile(
       hasClinicName: !!clinicName,
       hasCity: !!city,
     });
-    return defaultResult;
+    return createDefaultResult(false, reason);
   }
 
   try {
     if (!finalPlaceId || typeof finalPlaceId !== 'string') {
-      return defaultResult;
+      return createDefaultResult(false, 'Place ID не валідний.');
     }
     const placeData = await fetchPlaceDetails(finalPlaceId, apiKey);
 
     if (!placeData) {
-      return defaultResult;
+      return createDefaultResult(false, 'Не вдалося отримати дані з Google Places API. Перевірте Place ID та API key.');
     }
 
     // Calculate completeness
@@ -307,31 +318,31 @@ async function analyzeGoogleBusinessProfile(
     // For now, we'll set them to false/0
 
     return {
+      data_available: true,
       completeness_percent: completeness.completeness_percent,
       filled_fields_count: completeness.filled_fields_count,
       total_fields_count: completeness.total_fields_count,
       photos_count: photosCount,
       high_quality_photos_count: highQualityPhotosCount,
-      // Note: Places API doesn't provide photo types (exterior/interior/team/equipment)
-      // These would require Google My Business API
-      has_exterior_photos: photosCount > 0, // Assume some photos might be exterior
-      has_interior_photos: photosCount > 5, // Assume multiple photos might include interior
-      has_team_photos: false, // Cannot determine from Places API
-      has_equipment_photos: false, // Cannot determine from Places API
+      has_exterior_photos: photosCount > 0,
+      has_interior_photos: photosCount > 5,
+      has_team_photos: false,
+      has_equipment_photos: false,
       services_count: services.length,
       categories_count: categoriesCount,
       has_description: hasDescription,
       has_business_hours: hasBusinessHours,
       has_all_days_hours: allDaysHaveHours,
       attributes_count: attributesCount,
-      has_qa: false, // Q&A not available through Places API
-      posts_count: 0, // Posts not available through Places API
-      posts_per_month: 0, // Posts not available through Places API
+      has_qa: false,
+      posts_count: 0,
+      posts_per_month: 0,
       last_post_date: undefined,
     };
   } catch (error) {
     console.warn('[LocalAnalyzer] Failed to analyze Google Business Profile:', error);
-    return defaultResult;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return createDefaultResult(false, `Помилка при отриманні даних: ${errorMessage}`);
   }
 }
 
@@ -362,7 +373,9 @@ async function analyzeReviewResponse(
   city?: string,
   firecrawlApiKey?: string,
 ): Promise<ReviewResponse> {
-  const defaultResult: ReviewResponse = {
+  const createDefaultResult = (dataAvailable: boolean, reason?: string): ReviewResponse => ({
+    data_available: dataAvailable,
+    data_unavailable_reason: reason,
     total_reviews: 0,
     responded_reviews: 0,
     response_rate_percent: 0,
@@ -373,7 +386,7 @@ async function analyzeReviewResponse(
     negative_reviews_responded: 0,
     negative_response_rate_percent: 0,
     platforms: [],
-  };
+  });
 
   console.log('[LocalAnalyzer] analyzeReviewResponse called:', {
     hasPlaceId: !!placeId,
@@ -398,7 +411,16 @@ async function analyzeReviewResponse(
   }
 
   if (!finalPlaceId || !apiKey) {
-    const reason = !finalPlaceId ? 'Place ID missing' : 'API key missing';
+    let reason: string;
+    if (!apiKey) {
+      reason = 'Google API key не налаштований. Додайте GOOGLE_PLACES_API_KEY до налаштувань.';
+    } else if (!placeId && !clinicName) {
+      reason = 'Не вказано Place ID або назву клініки для пошуку відгуків.';
+    } else if (!finalPlaceId) {
+      reason = `Не вдалося знайти Google Business Profile для "${clinicName || 'клініки'}"${city ? ` у місті ${city}` : ''}. Перевірте правильність назви.`;
+    } else {
+      reason = 'Place ID не знайдено.';
+    }
     console.warn('[LocalAnalyzer] Cannot analyze review response:', {
       reason,
       attemptedAutoSearch: !placeId && !!apiKey && !!clinicName,
@@ -406,14 +428,14 @@ async function analyzeReviewResponse(
       hasClinicName: !!clinicName,
       hasCity: !!city,
     });
-    return defaultResult;
+    return createDefaultResult(false, reason);
   }
 
   try {
     const placeData = await fetchPlaceDetails(finalPlaceId, apiKey);
 
     if (!placeData) {
-      return defaultResult;
+      return createDefaultResult(false, 'Не вдалося отримати дані з Google Places API. Перевірте Place ID та API key.');
     }
 
     // Get reviews from Places API
@@ -559,6 +581,7 @@ async function analyzeReviewResponse(
       : 0;
     
     return {
+      data_available: true,
       total_reviews: allTotalReviews,
       responded_reviews: allRespondedReviews,
       response_rate_percent: overallResponseRate,
@@ -572,7 +595,8 @@ async function analyzeReviewResponse(
     };
   } catch (error) {
     console.warn('[LocalAnalyzer] Failed to analyze review response:', error);
-    return defaultResult;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return createDefaultResult(false, `Помилка при отриманні відгуків: ${errorMessage}`);
   }
 }
 
@@ -598,7 +622,9 @@ async function analyzeGBPEngagement(
   placeId?: string,
   apiKey?: string,
 ): Promise<GBPEngagement> {
-  const defaultResult: GBPEngagement = {
+  const createDefaultResult = (dataAvailable: boolean, reason?: string): GBPEngagement => ({
+    data_available: dataAvailable,
+    data_unavailable_reason: reason,
     impressions_per_month: 0,
     website_clicks_per_month: 0,
     calls_per_month: 0,
@@ -609,17 +635,25 @@ async function analyzeGBPEngagement(
     ctr_percent: 0,
     search_impressions: 0,
     maps_impressions: 0,
-  };
+  });
 
   if (!placeId || !apiKey || typeof placeId !== 'string') {
-    return defaultResult;
+    let reason: string;
+    if (!apiKey) {
+      reason = 'Google API key не налаштований. Додайте GOOGLE_PLACES_API_KEY до налаштувань.';
+    } else if (!placeId) {
+      reason = 'Не вказано Place ID для отримання метрик залученості.';
+    } else {
+      reason = 'Place ID не валідний.';
+    }
+    return createDefaultResult(false, reason);
   }
 
   try {
     const placeData = await fetchPlaceDetails(placeId, apiKey);
 
     if (!placeData) {
-      return defaultResult;
+      return createDefaultResult(false, 'Не вдалося отримати дані з Google Places API. Перевірте Place ID та API key.');
     }
 
     // Note: Engagement metrics (impressions, clicks, CTR) are NOT available
@@ -637,10 +671,10 @@ async function analyzeGBPEngagement(
     
     // Very rough estimation based on review count and rating
     // This is NOT accurate - real data requires My Business API
-    const estimatedImpressions = Math.round(reviewCount * 50); // Rough estimate
-    const estimatedClicks = Math.round(estimatedImpressions * 0.05); // 5% CTR estimate
-    const estimatedCalls = Math.round(estimatedClicks * 0.3); // 30% of clicks
-    const estimatedDirections = Math.round(estimatedClicks * 0.4); // 40% of clicks
+    const estimatedImpressions = Math.round(reviewCount * 50);
+    const estimatedClicks = Math.round(estimatedImpressions * 0.05);
+    const estimatedCalls = Math.round(estimatedClicks * 0.3);
+    const estimatedDirections = Math.round(estimatedClicks * 0.4);
     
     // Split impressions between Search and Maps (rough estimate: 60/40)
     const searchImpressions = Math.round(estimatedImpressions * 0.6);
@@ -652,12 +686,14 @@ async function analyzeGBPEngagement(
       : 0;
 
     return {
+      data_available: true,
+      data_unavailable_reason: 'Дані є приблизними оцінками. Для точних даних потрібен Google My Business API з OAuth авторизацією.',
       impressions_per_month: estimatedImpressions,
       website_clicks_per_month: estimatedClicks,
       calls_per_month: estimatedCalls,
       direction_requests_per_month: estimatedDirections,
-      photo_views_per_month: undefined, // Not available
-      bookings_per_month: undefined, // Not available
+      photo_views_per_month: undefined,
+      bookings_per_month: undefined,
       total_actions_per_month: totalActions,
       ctr_percent: Math.min(100, ctrPercent),
       search_impressions: searchImpressions,
@@ -665,7 +701,8 @@ async function analyzeGBPEngagement(
     };
   } catch (error) {
     console.warn('[LocalAnalyzer] Failed to analyze GBP engagement:', error);
-    return defaultResult;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return createDefaultResult(false, `Помилка при отриманні метрик залученості: ${errorMessage}`);
   }
 }
 
@@ -734,7 +771,9 @@ async function analyzeLocalBacklinks(
   googleCustomSearchEngineId?: string,
   firecrawlApiKey?: string,
 ): Promise<LocalBacklinks> {
-  const defaultResult: LocalBacklinks = {
+  const createDefaultResult = (dataAvailable: boolean, reason?: string): LocalBacklinks => ({
+    data_available: dataAvailable,
+    data_unavailable_reason: reason,
     total_local_backlinks: 0,
     unique_local_domains: 0,
     city: city,
@@ -747,11 +786,16 @@ async function analyzeLocalBacklinks(
       local_bloggers: 0,
     },
     backlinks: [],
-  };
+  });
 
   if (!city || !clinicName || !clinicUrl) {
+    const missingParams: string[] = [];
+    if (!city) missingParams.push('місто');
+    if (!clinicName) missingParams.push('назва клініки');
+    if (!clinicUrl) missingParams.push('URL клініки');
+    const reason = `Не вказано: ${missingParams.join(', ')}. Ці параметри потрібні для пошуку локальних посилань.`;
     console.warn('[LocalAnalyzer] Missing required parameters for backlink analysis');
-    return defaultResult;
+    return createDefaultResult(false, reason);
   }
 
   try {
@@ -1006,6 +1050,7 @@ async function analyzeLocalBacklinks(
     const uniqueLocalDomains = new Set(localBacklinks.map((b) => b.domain)).size;
 
     return {
+      data_available: true,
       total_local_backlinks: localBacklinks.length,
       unique_local_domains: uniqueLocalDomains,
       city: city,
@@ -1020,7 +1065,8 @@ async function analyzeLocalBacklinks(
     };
   } catch (error) {
     console.warn('[LocalAnalyzer] Failed to analyze local backlinks:', error);
-    return defaultResult;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return createDefaultResult(false, `Помилка при пошуку локальних посилань: ${errorMessage}`);
   }
 }
 
@@ -1438,6 +1484,17 @@ export async function analyzeLocalIndicators(
   // Use extracted businessName or provided clinicName
   const finalClinicName = clinicName || businessName;
 
+  // Find Place ID once and reuse for all analyses
+  let finalPlaceId = placeId;
+  if (!finalPlaceId && googleApiKey && finalClinicName) {
+    const searchQuery = city ? `${finalClinicName}, ${city}` : finalClinicName;
+    console.log('[LocalAnalyzer] Pre-fetching Place ID for:', searchQuery);
+    finalPlaceId = await findPlaceIdByText(searchQuery, googleApiKey) || undefined;
+    if (finalPlaceId) {
+      console.log('[LocalAnalyzer] Found Place ID:', finalPlaceId);
+    }
+  }
+
   // Run all analyses in parallel where possible
   const [
     googleBusinessProfile,
@@ -1446,9 +1503,9 @@ export async function analyzeLocalIndicators(
     localBacklinks,
     localBusinessSchema,
   ] = await Promise.all([
-    analyzeGoogleBusinessProfile(placeId, googleApiKey, finalClinicName, city),
-    analyzeReviewResponse(placeId, googleApiKey, finalClinicName, city, firecrawlApiKey),
-    analyzeGBPEngagement(placeId, googleApiKey),
+    analyzeGoogleBusinessProfile(finalPlaceId, googleApiKey, finalClinicName, city),
+    analyzeReviewResponse(finalPlaceId, googleApiKey, finalClinicName, city, firecrawlApiKey),
+    analyzeGBPEngagement(finalPlaceId, googleApiKey),
     analyzeLocalBacklinks(
       getDomain(url) || '',
       city,

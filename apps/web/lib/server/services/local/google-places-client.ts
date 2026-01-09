@@ -85,7 +85,9 @@ export async function fetchPlaceDetails(
   apiKey: string,
 ): Promise<PlaceDetailsResponse['result'] | null> {
   try {
-    // Request all available fields for comprehensive data
+    // Request available fields for Place Details API
+    // Note: Some fields like 'description', 'secondary_opening_hours' may not be available
+    // Using only confirmed fields from: https://developers.google.com/maps/documentation/places/web-service/details
     const fields = [
       'name',
       'formatted_address',
@@ -98,13 +100,9 @@ export async function fetchPlaceDetails(
       'price_level',
       'types',
       'opening_hours',
-      'current_opening_hours',
-      'secondary_opening_hours',
       'photos',
       'reviews',
       'editorial_summary',
-      'description',
-      'plus_code',
       'geometry',
     ].join(',');
 
@@ -131,7 +129,7 @@ export async function fetchPlaceDetails(
     if (data.status === 'REQUEST_DENIED' && data.error_message) {
       console.warn('[GooglePlacesClient] API request denied:', data.error_message);
     } else if (data.status !== 'OK') {
-      console.warn('[GooglePlacesClient] API returned status:', data.status);
+      console.warn('[GooglePlacesClient] API returned status:', data.status, data.error_message || '');
     }
 
     return null;

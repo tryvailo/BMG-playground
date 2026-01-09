@@ -283,6 +283,54 @@ function ChecklistItem({ label, checked }: ChecklistItemProps) {
 }
 
 /**
+ * Data Unavailable Warning Component
+ */
+interface DataUnavailableWarningProps {
+  title: string;
+  reason?: string;
+  suggestions?: string[];
+}
+
+function DataUnavailableWarning({ title, reason, suggestions }: DataUnavailableWarningProps) {
+  return (
+    <div className="space-y-4">
+      <div className="p-4 bg-amber-50/50 rounded-xl border border-amber-200">
+        <div className="flex items-start gap-3">
+          <div className="p-1.5 rounded-lg bg-white border border-amber-200">
+            <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+          </div>
+          <div className="space-y-2">
+            <div className="text-sm font-bold text-amber-800">
+              {title}
+            </div>
+            {reason && (
+              <p className="text-sm text-amber-700">
+                {reason}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+      {suggestions && suggestions.length > 0 && (
+        <div className="p-4 bg-slate-50/50 rounded-xl border border-slate-200">
+          <h4 className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-3">
+            Як вирішити
+          </h4>
+          <ul className="space-y-2 text-sm text-slate-600">
+            {suggestions.map((suggestion, index) => (
+              <li key={index} className="flex items-start gap-2">
+                <span className="text-slate-400 mt-0.5">{index + 1}.</span>
+                <span dangerouslySetInnerHTML={{ __html: suggestion }} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
  * KPI Card Component (same style as CompetitorsHorizon)
  */
 interface KpiCardProps {
@@ -439,78 +487,97 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
         title="Google Business Profile (Completeness)"
         icon={<MapPin className="h-5 w-5" />}
         status={
-          result.google_business_profile.completeness_percent >= 80
-            ? 'good'
-            : result.google_business_profile.completeness_percent >= 50
-              ? 'warning'
-              : 'bad'
+          result.google_business_profile.data_available === false
+            ? 'neutral'
+            : result.google_business_profile.completeness_percent >= 80
+              ? 'good'
+              : result.google_business_profile.completeness_percent >= 50
+                ? 'warning'
+                : 'bad'
         }
-        score={result.google_business_profile.completeness_percent}
-        value={`${result.google_business_profile.completeness_percent}% complete`}
+        score={result.google_business_profile.data_available === false ? null : result.google_business_profile.completeness_percent}
+        value={
+          result.google_business_profile.data_available === false
+            ? 'Дані недоступні'
+            : `${result.google_business_profile.completeness_percent}% complete`
+        }
       >
         <div className="space-y-4">
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-              The degree to which all available fields in the Google Business Profile are filled: categories, business hours, attributes, description, photos, services, Q&A, posts.
-            </p>
+          {/* Show warning if data is not available */}
+          {result.google_business_profile.data_available === false ? (
+            <DataUnavailableWarning
+              title="Не вдалося отримати дані Google Business Profile"
+              reason={result.google_business_profile.data_unavailable_reason}
+              suggestions={[
+                'Вкажіть <strong>назву клініки</strong> та <strong>місто</strong> для автоматичного пошуку',
+                'Або вкажіть <strong>Google Place ID</strong> напряму',
+                'Переконайтесь, що <strong>Google API key</strong> налаштований у системі',
+              ]}
+            />
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                The degree to which all available fields in the Google Business Profile are filled: categories, business hours, attributes, description, photos, services, Q&A, posts.
+              </p>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-white/50 rounded-xl border border-slate-100 shadow-sm">
-                <div className="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">Fields Filled</div>
-                <div className="text-xl font-black italic tracking-tighter text-slate-900">
-                  {result.google_business_profile.filled_fields_count} / {result.google_business_profile.total_fields_count}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-white/50 rounded-xl border border-slate-100 shadow-sm">
+                  <div className="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">Fields Filled</div>
+                  <div className="text-xl font-black italic tracking-tighter text-slate-900">
+                    {result.google_business_profile.filled_fields_count} / {result.google_business_profile.total_fields_count}
+                  </div>
+                </div>
+                <div className="p-4 bg-white/50 rounded-xl border border-slate-100 shadow-sm">
+                  <div className="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">Photos</div>
+                  <div className="text-xl font-black italic tracking-tighter text-slate-900">
+                    {result.google_business_profile.photos_count} total
+                  </div>
+                  <div className="text-xs font-bold text-slate-600 mt-1">
+                    {result.google_business_profile.high_quality_photos_count} high-quality
+                  </div>
+                </div>
+                <div className="p-4 bg-white/50 rounded-xl border border-slate-100 shadow-sm">
+                  <div className="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">Services</div>
+                  <div className="text-xl font-black italic tracking-tighter text-slate-900">
+                    {result.google_business_profile.services_count}
+                  </div>
+                </div>
+                <div className="p-4 bg-white/50 rounded-xl border border-slate-100 shadow-sm">
+                  <div className="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">Posts/Month</div>
+                  <div className="text-xl font-black italic tracking-tighter text-slate-900">
+                    {result.google_business_profile.posts_per_month.toFixed(1)}
+                  </div>
                 </div>
               </div>
-              <div className="p-4 bg-white/50 rounded-xl border border-slate-100 shadow-sm">
-                <div className="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">Photos</div>
-                <div className="text-xl font-black italic tracking-tighter text-slate-900">
-                  {result.google_business_profile.photos_count} total
-                </div>
-                <div className="text-xs font-bold text-slate-600 mt-1">
-                  {result.google_business_profile.high_quality_photos_count} high-quality
-                </div>
-              </div>
-              <div className="p-4 bg-white/50 rounded-xl border border-slate-100 shadow-sm">
-                <div className="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">Services</div>
-                <div className="text-xl font-black italic tracking-tighter text-slate-900">
-                  {result.google_business_profile.services_count}
-                </div>
-              </div>
-              <div className="p-4 bg-white/50 rounded-xl border border-slate-100 shadow-sm">
-                <div className="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">Posts/Month</div>
-                <div className="text-xl font-black italic tracking-tighter text-slate-900">
-                  {result.google_business_profile.posts_per_month.toFixed(1)}
-                </div>
+
+              <div className="space-y-2">
+                <ChecklistItem
+                  label="Description present"
+                  checked={result.google_business_profile.has_description}
+                />
+                <ChecklistItem
+                  label="Business hours set"
+                  checked={result.google_business_profile.has_business_hours}
+                />
+                <ChecklistItem
+                  label="All days have hours"
+                  checked={result.google_business_profile.has_all_days_hours}
+                />
+                <ChecklistItem
+                  label="Q&A section exists"
+                  checked={result.google_business_profile.has_qa}
+                />
+                <ChecklistItem
+                  label={`High-quality photos (${result.google_business_profile.high_quality_photos_count} / 10+ recommended)`}
+                  checked={result.google_business_profile.high_quality_photos_count >= 10}
+                />
+                <ChecklistItem
+                  label={`Attributes (${result.google_business_profile.attributes_count} / 15+ recommended)`}
+                  checked={result.google_business_profile.attributes_count >= 15}
+                />
               </div>
             </div>
-
-            <div className="space-y-2">
-              <ChecklistItem
-                label="Description present"
-                checked={result.google_business_profile.has_description}
-              />
-              <ChecklistItem
-                label="Business hours set"
-                checked={result.google_business_profile.has_business_hours}
-              />
-              <ChecklistItem
-                label="All days have hours"
-                checked={result.google_business_profile.has_all_days_hours}
-              />
-              <ChecklistItem
-                label="Q&A section exists"
-                checked={result.google_business_profile.has_qa}
-              />
-              <ChecklistItem
-                label={`High-quality photos (${result.google_business_profile.high_quality_photos_count} / 10+ recommended)`}
-                checked={result.google_business_profile.high_quality_photos_count >= 10}
-              />
-              <ChecklistItem
-                label={`Attributes (${result.google_business_profile.attributes_count} / 15+ recommended)`}
-                checked={result.google_business_profile.attributes_count >= 15}
-              />
-            </div>
-          </div>
+          )}
 
           {/* Good/Bad Examples */}
           <div className="pt-4 border-t border-border">
@@ -561,16 +628,33 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
         title="Review Response Rate & Quality"
         icon={<MessageSquare className="h-5 w-5" />}
         status={
-          result.review_response.response_rate_24h_percent >= 90
-            ? 'good'
-            : result.review_response.response_rate_24h_percent >= 50
-              ? 'warning'
-              : 'bad'
+          result.review_response.data_available === false
+            ? 'neutral'
+            : result.review_response.response_rate_24h_percent >= 90
+              ? 'good'
+              : result.review_response.response_rate_24h_percent >= 50
+                ? 'warning'
+                : 'bad'
         }
-        score={result.review_response.response_rate_24h_percent}
-        value={`${result.review_response.response_rate_24h_percent}% within 24h`}
+        score={result.review_response.data_available === false ? null : result.review_response.response_rate_24h_percent}
+        value={
+          result.review_response.data_available === false
+            ? 'Дані недоступні'
+            : `${result.review_response.response_rate_24h_percent}% within 24h`
+        }
       >
         <div className="space-y-4">
+          {result.review_response.data_available === false ? (
+            <DataUnavailableWarning
+              title="Не вдалося отримати дані про відгуки"
+              reason={result.review_response.data_unavailable_reason}
+              suggestions={[
+                'Вкажіть <strong>назву клініки</strong> та <strong>місто</strong> для пошуку',
+                'Або вкажіть <strong>Google Place ID</strong> напряму',
+                'Переконайтесь, що <strong>Google API key</strong> налаштований',
+              ]}
+            />
+          ) : (
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
               The speed and quality of the clinic&apos;s responses to new reviews on Google, DOC.ua, and Helsi.
@@ -638,6 +722,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
               </div>
             )}
           </div>
+          )}
 
           {/* Good/Bad Examples */}
           <div className="pt-4 border-t border-border">
@@ -685,17 +770,41 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
         title="Google Business Profile Engagement"
         icon={<TrendingUp className="h-5 w-5" />}
         status={
-          result.gbp_engagement.ctr_percent >= 5
-            ? 'good'
-            : result.gbp_engagement.ctr_percent >= 1
-              ? 'warning'
-              : 'bad'
+          result.gbp_engagement.data_available === false
+            ? 'neutral'
+            : result.gbp_engagement.ctr_percent >= 5
+              ? 'good'
+              : result.gbp_engagement.ctr_percent >= 1
+                ? 'warning'
+                : 'bad'
         }
-        score={result.gbp_engagement.ctr_percent}
-        value={`${result.gbp_engagement.ctr_percent}% CTR`}
+        score={result.gbp_engagement.data_available === false ? null : result.gbp_engagement.ctr_percent}
+        value={
+          result.gbp_engagement.data_available === false
+            ? 'Дані недоступні'
+            : `${result.gbp_engagement.ctr_percent}% CTR`
+        }
       >
         <div className="space-y-4">
+          {result.gbp_engagement.data_available === false ? (
+            <DataUnavailableWarning
+              title="Не вдалося отримати метрики залученості"
+              reason={result.gbp_engagement.data_unavailable_reason}
+              suggestions={[
+                'Вкажіть <strong>Google Place ID</strong> для отримання даних',
+                'Переконайтесь, що <strong>Google API key</strong> налаштований',
+                'Для точних даних потрібен <strong>Google My Business API</strong> з OAuth авторизацією',
+              ]}
+            />
+          ) : (
           <div className="space-y-3">
+            {result.gbp_engagement.data_unavailable_reason && (
+              <div className="p-3 bg-amber-50/50 rounded-lg border border-amber-200 mb-4">
+                <p className="text-xs text-amber-700">
+                  ⚠️ {result.gbp_engagement.data_unavailable_reason}
+                </p>
+              </div>
+            )}
             <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
               The number of times the clinic&apos;s profile appeared in search or on the map (Impressions), and the actions users took: website clicks, direction requests, calls, photo views, bookings.
             </p>
@@ -744,6 +853,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
               </div>
             </div>
           </div>
+          )}
 
           {/* Good/Bad Examples */}
           <div className="pt-4 border-t border-border">
@@ -793,16 +903,39 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
         title="Local Backlinks"
         icon={<Link2 className="h-5 w-5" />}
         status={
-          result.local_backlinks.unique_local_domains >= 5
-            ? 'good'
-            : result.local_backlinks.unique_local_domains > 0
-              ? 'warning'
-              : 'bad'
+          result.local_backlinks.data_available === false
+            ? 'neutral'
+            : result.local_backlinks.unique_local_domains >= 5
+              ? 'good'
+              : result.local_backlinks.unique_local_domains > 0
+                ? 'warning'
+                : 'bad'
         }
-        score={result.local_backlinks.unique_local_domains >= 5 ? 100 : (result.local_backlinks.unique_local_domains / 5) * 100}
-        value={`${result.local_backlinks.unique_local_domains} local domains`}
+        score={
+          result.local_backlinks.data_available === false
+            ? null
+            : result.local_backlinks.unique_local_domains >= 5 
+              ? 100 
+              : (result.local_backlinks.unique_local_domains / 5) * 100
+        }
+        value={
+          result.local_backlinks.data_available === false
+            ? 'Дані недоступні'
+            : `${result.local_backlinks.unique_local_domains} local domains`
+        }
       >
         <div className="space-y-4">
+          {result.local_backlinks.data_available === false ? (
+            <DataUnavailableWarning
+              title="Не вдалося знайти локальні посилання"
+              reason={result.local_backlinks.data_unavailable_reason}
+              suggestions={[
+                'Вкажіть <strong>назву клініки</strong> та <strong>місто</strong>',
+                'Вкажіть <strong>URL сайту клініки</strong>',
+                'Для кращих результатів налаштуйте <strong>Google Custom Search API</strong>',
+              ]}
+            />
+          ) : (
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
               Links to the clinic&apos;s website from local sources: city portals, news sites, partners, medical associations, charity foundations, and local bloggers.
@@ -899,6 +1032,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
               </div>
             )}
           </div>
+          )}
 
           {/* Good/Bad Examples */}
           <div className="pt-4 border-t border-border">

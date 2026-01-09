@@ -16,6 +16,10 @@ import { z } from 'zod';
  * Measures the degree to which all available fields in the Google Business Profile are filled
  */
 const GoogleBusinessProfileSchema = z.object({
+  /** Whether GBP data is available (has Place ID and API key) */
+  data_available: z.boolean().optional(),
+  /** Reason why data is not available */
+  data_unavailable_reason: z.string().optional(),
   /** Percentage of filled profile fields (mandatory + optional) */
   completeness_percent: z.number().min(0).max(100),
   /** Number of filled fields */
@@ -76,6 +80,10 @@ const ReviewResponsePlatformSchema = z.object({
  * Measures the speed and quality of clinic's responses to reviews
  */
 const ReviewResponseSchema = z.object({
+  /** Whether review data is available */
+  data_available: z.boolean().optional(),
+  /** Reason why data is not available */
+  data_unavailable_reason: z.string().optional(),
   /** Total number of reviews across all platforms */
   total_reviews: z.number().int().nonnegative(),
   /** Number of reviews that received a response */
@@ -103,6 +111,10 @@ const ReviewResponseSchema = z.object({
  * Measures profile visibility and user actions
  */
 const GBPEngagementSchema = z.object({
+  /** Whether engagement data is available */
+  data_available: z.boolean().optional(),
+  /** Reason why data is not available */
+  data_unavailable_reason: z.string().optional(),
   /** Total impressions per month (Search + Maps) */
   impressions_per_month: z.number().int().nonnegative(),
   /** Website clicks per month */
@@ -166,6 +178,10 @@ const LocalBacklinksByTypeSchema = z.object({
  * Measures links from local sources
  */
 const LocalBacklinksSchema = z.object({
+  /** Whether backlinks data is available */
+  data_available: z.boolean().optional(),
+  /** Reason why data is not available */
+  data_unavailable_reason: z.string().optional(),
   /** Total number of local backlinks */
   total_local_backlinks: z.number().int().nonnegative(),
   /** Number of unique local domains linking to the clinic */
