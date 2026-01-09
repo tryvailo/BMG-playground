@@ -1418,24 +1418,45 @@ export async function analyzeLocalIndicators(
   googleCustomSearchApiKey?: string,
   googleCustomSearchEngineId?: string,
 ): Promise<LocalIndicatorsAuditResult> {
+  console.log('[LocalAnalyzer] Starting analysis for URL:', url);
+  
   // Fetch HTML content
   let html: string;
   try {
+    console.log('[LocalAnalyzer] Fetching HTML content...');
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; LocalIndicatorsBot/1.0)',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
       },
-      signal: AbortSignal.timeout(30000), // 30 second timeout
+      signal: AbortSignal.timeout(15000), // 15 second timeout (Vercel limit friendly)
     });
     
+    console.log('[LocalAnalyzer] Fetch response:', response.status, response.statusText);
+    
     if (!response.ok) {
-      throw new Error(`Failed to fetch URL: ${response.status} ${response.statusText}`);
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
     
     html = await response.text();
+    console.log('[LocalAnalyzer] HTML fetched, length:', html.length);
   } catch (error) {
-    console.error('[LocalAnalyzer] Failed to fetch URL:', error);
-    throw new Error(`Failed to fetch URL: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[LocalAnalyzer] Failed to fetch URL:', errorMessage);
+    
+    // Provide more specific error messages
+    if (errorMessage.includes('timeout') || errorMessage.includes('aborted')) {
+      throw new Error(`Таймаут при завантаженні сайту. Сайт ${url} відповідає занадто повільно.`);
+    }
+    if (errorMessage.includes('ENOTFOUND') || errorMessage.includes('getaddrinfo')) {
+      throw new Error(`Не вдалося знайти сайт ${url}. Перевірте правильність URL.`);
+    }
+    if (errorMessage.includes('ECONNREFUSED')) {
+      throw new Error(`Сайт ${url} відмовив у з'єднанні.`);
+    }
+    
+    throw new Error(`Не вдалося завантажити сайт: ${errorMessage}`);
   }
   
   const $ = load(html);

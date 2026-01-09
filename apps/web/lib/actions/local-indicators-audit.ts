@@ -58,7 +58,7 @@ export const performLocalIndicatorsAudit = enhanceAction(
 
     console.log('[LocalIndicators] Starting audit for:', url);
     console.log('[LocalIndicators] Place ID provided:', !!placeId);
-    console.log('[LocalIndicators] Google API key provided:', !!googleApiKey);
+    console.log('[LocalIndicators] Google API key provided (input):', !!googleApiKey);
     console.log('[LocalIndicators] City:', city || 'not specified');
 
     // Get API keys from input or environment
@@ -72,6 +72,16 @@ export const performLocalIndicatorsAudit = enhanceAction(
     const finalFirecrawlApiKey = firecrawlApiKey || process.env.FIRECRAWL_API_KEY;
     const finalGoogleCustomSearchApiKey = googleCustomSearchApiKey || process.env.GOOGLE_CUSTOM_SEARCH_API_KEY;
     const finalGoogleCustomSearchEngineId = googleCustomSearchEngineId || process.env.GOOGLE_CUSTOM_SEARCH_ENGINE_ID;
+
+    // Log environment variables availability (for debugging on Vercel)
+    console.log('[LocalIndicators] Environment check:', {
+      hasGooglePlacesApiKey: !!process.env.GOOGLE_PLACES_API_KEY,
+      hasGoogleMapsApiKey: !!process.env.GOOGLE_MAPS_API_KEY,
+      hasFirecrawlApiKey: !!process.env.FIRECRAWL_API_KEY,
+      hasGoogleCustomSearchApiKey: !!process.env.GOOGLE_CUSTOM_SEARCH_API_KEY,
+      hasGoogleCustomSearchEngineId: !!process.env.GOOGLE_CUSTOM_SEARCH_ENGINE_ID,
+      finalApiKeyAvailable: !!apiKey,
+    });
 
     // Normalize URL (ensure it has protocol)
     let normalizedUrl = url.trim();

@@ -109,7 +109,7 @@ export async function fetchPlaceDetails(
     const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=${fields}&key=${apiKey}`;
 
     const response = await fetch(url, {
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(10000), // 10 second timeout
       headers: {
         'Accept': 'application/json',
       },
