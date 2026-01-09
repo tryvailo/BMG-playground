@@ -640,7 +640,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
         value={
           result.review_response.data_available === false
             ? 'Дані недоступні'
-            : `${result.review_response.response_rate_24h_percent}% within 24h`
+            : `${result.review_response.response_rate_24h_percent.toFixed(1)}% within 24h`
         }
       >
         <div className="space-y-4">
@@ -673,7 +673,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
                   {result.review_response.responded_reviews}
                 </div>
                 <div className="text-xs font-bold text-slate-600 mt-1">
-                  {result.review_response.response_rate_percent}% overall
+                  {result.review_response.response_rate_percent.toFixed(1)}% overall
                 </div>
               </div>
               <div className="p-4 bg-white/50 rounded-xl border border-slate-100 shadow-sm">
@@ -682,7 +682,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
                   {result.review_response.responded_within_24h}
                 </div>
                 <div className="text-xs font-bold text-slate-600 mt-1">
-                  {result.review_response.response_rate_24h_percent}%
+                  {result.review_response.response_rate_24h_percent.toFixed(1)}%
                 </div>
               </div>
               <div className="p-4 bg-white/50 rounded-xl border border-slate-100 shadow-sm">
@@ -691,7 +691,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
                   {result.review_response.negative_reviews_count}
                 </div>
                 <div className="text-xs font-bold text-slate-600 mt-1">
-                  {result.review_response.negative_response_rate_percent}% responded
+                  {result.review_response.negative_response_rate_percent.toFixed(1)}% responded
                 </div>
               </div>
             </div>
@@ -710,7 +710,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
                       </span>
                       <div className="text-right">
                         <div className="text-sm font-black italic tracking-tighter text-slate-900">
-                          {platform.response_rate_percent}%
+                          {platform.response_rate_percent.toFixed(1)}%
                         </div>
                         <div className="text-xs font-bold text-slate-600">
                           {platform.responded_reviews} / {platform.total_reviews}
@@ -782,7 +782,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
         value={
           result.gbp_engagement.data_available === false
             ? 'Дані недоступні'
-            : `${result.gbp_engagement.ctr_percent}% CTR`
+            : `${result.gbp_engagement.ctr_percent.toFixed(1)}% CTR`
         }
       >
         <div className="space-y-4">
