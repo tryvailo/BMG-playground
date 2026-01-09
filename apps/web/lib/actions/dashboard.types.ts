@@ -14,6 +14,7 @@ export const DashboardFiltersSchema = z.object({
     })
     .optional(),
   aiEngine: z.enum(['all', 'openai', 'perplexity', 'claude']).optional(),
+  serviceId: z.string().optional(),
 });
 
 export type DashboardFilters = z.infer<typeof DashboardFiltersSchema>;
@@ -43,10 +44,13 @@ export interface HistoryDataPoint {
 
 export interface CompetitorDataPoint {
   name: string; // Domain name
-  x: number; // Average Position
-  y: number; // ClinicAI Score
+  x: number; // Average Position (for scatter x)
+  y: number; // ClinicAI Score (for scatter y)
   z: number; // Size/Importance (number of appearances)
   isCurrentProject: boolean; // Whether this is the current project's domain
+  visibility: number; // Percentage (0-100)
+  position: number; // Average rank
+  trend: number; // Change % over time
 }
 
 export interface DashboardMetricsResponse {

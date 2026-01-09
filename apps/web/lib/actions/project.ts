@@ -8,6 +8,7 @@ import { getSupabaseServerClient } from '@kit/supabase/server-client';
  * Schema for project settings
  */
 const _ProjectSettingsSchema = z.object({
+  id: z.string().optional(),
   domain: z.string().optional(),
   clinicName: z.string().optional(),
   region: z.string().optional(),
@@ -25,7 +26,7 @@ export const getProjectSettings = enhanceAction(
   async (_params: Record<string, never>) => {
     try {
       const supabase = getSupabaseServerClient();
-      
+
       // Get user manually to avoid redirect on unauthenticated
       let user;
       try {
@@ -63,11 +64,12 @@ export const getProjectSettings = enhanceAction(
       const result = {
         success: true,
         data: {
+          id: project.id,
           domain: project.domain || '',
           clinicName: project.name || '',
-          region: settings.region || 'US',
+          region: settings.region || 'UA',
           city: settings.city || '',
-          language: settings.language || 'en',
+          language: settings.language || 'uk',
         } as ProjectSettings,
       };
 
@@ -110,7 +112,7 @@ export const updateProjectSettings = enhanceAction(
 
       // Get user manually to avoid redirect on unauthenticated
       const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
+
       if (authError || !user) {
         return { success: false, error: 'Not authenticated' };
       }

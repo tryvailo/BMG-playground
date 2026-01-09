@@ -450,7 +450,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
       >
         <div className="space-y-4">
           <div className="space-y-3">
-            <p className="text-sm font-medium text-slate-600 mb-4 leading-relaxed">
+            <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
               The degree to which all available fields in the Google Business Profile are filled: categories, business hours, attributes, description, photos, services, Q&A, posts.
             </p>
 
@@ -513,8 +513,8 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
           </div>
 
           {/* Good/Bad Examples */}
-          <div className="pt-4 border-t border-slate-100">
-            <h4 style={{ color: HORIZON.textSecondary }}>
+          <div className="pt-4 border-t border-border">
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
               Best Practices
             </h4>
             <div className="space-y-3">
@@ -542,11 +542,11 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
           </div>
 
           {/* Calculation */}
-          <div className="pt-4 border-t border-slate-100">
-            <h4 style={{ color: HORIZON.textSecondary }}>
+          <div className="pt-4 border-t border-border">
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
               Calculation
             </h4>
-            <div className="space-y-2 text-sm font-medium text-slate-600">
+            <div className="space-y-2 text-sm text-muted-foreground">
               <p>• % of filled profile fields (mandatory + optional)</p>
               <p>• Number of high-quality photos (minimum 10–15, including exterior, interior, team, equipment)</p>
               <p>• Number of active services/categories listed</p>
@@ -572,7 +572,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
       >
         <div className="space-y-4">
           <div className="space-y-3">
-            <p className="text-sm font-medium text-slate-600 mb-4 leading-relaxed">
+            <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
               The speed and quality of the clinic&apos;s responses to new reviews on Google, DOC.ua, and Helsi.
             </p>
 
@@ -615,7 +615,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
             {/* Platforms breakdown */}
             {result.review_response.platforms.length > 0 && (
               <div className="pt-2">
-                <h4 style={{ color: HORIZON.textSecondary }}>
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                   By Platform
                 </h4>
                 <div className="space-y-2">
@@ -640,8 +640,8 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
           </div>
 
           {/* Good/Bad Examples */}
-          <div className="pt-4 border-t border-slate-100">
-            <h4 style={{ color: HORIZON.textSecondary }}>
+          <div className="pt-4 border-t border-border">
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
               Best Practices
             </h4>
             <div className="space-y-3">
@@ -669,11 +669,11 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
           </div>
 
           {/* Calculation */}
-          <div className="pt-4 border-t border-slate-100">
-            <h4 style={{ color: HORIZON.textSecondary }}>
+          <div className="pt-4 border-t border-border">
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
               Calculation
             </h4>
-            <p className="text-sm font-medium text-slate-600">
+            <p className="text-sm text-muted-foreground">
               % of reviews receiving a response from the clinic within 24 hours of the user posting the review.
             </p>
           </div>
@@ -696,7 +696,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
       >
         <div className="space-y-4">
           <div className="space-y-3">
-            <p className="text-sm font-medium text-slate-600 mb-4 leading-relaxed">
+            <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
               The number of times the clinic&apos;s profile appeared in search or on the map (Impressions), and the actions users took: website clicks, direction requests, calls, photo views, bookings.
             </p>
 
@@ -746,8 +746,8 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
           </div>
 
           {/* Good/Bad Examples */}
-          <div className="pt-4 border-t border-slate-100">
-            <h4 style={{ color: HORIZON.textSecondary }}>
+          <div className="pt-4 border-t border-border">
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
               Best Practices
             </h4>
             <div className="space-y-3">
@@ -775,11 +775,11 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
           </div>
 
           {/* Calculation */}
-          <div className="pt-4 border-t border-slate-100">
-            <h4 style={{ color: HORIZON.textSecondary }}>
+          <div className="pt-4 border-t border-border">
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
               Calculation
             </h4>
-            <div className="space-y-2 text-sm font-medium text-slate-600">
+            <div className="space-y-2 text-sm text-muted-foreground">
               <p>• Number of profile impressions per month (Search + Maps)</p>
               <p>• Number of website clicks, calls, and direction requests per month</p>
               <p>• CTR (Click-Through Rate: the ratio of actions to impressions)</p>
@@ -804,7 +804,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
       >
         <div className="space-y-4">
           <div className="space-y-3">
-            <p className="text-sm font-medium text-slate-600 mb-4 leading-relaxed">
+            <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
               Links to the clinic&apos;s website from local sources: city portals, news sites, partners, medical associations, charity foundations, and local bloggers.
             </p>
 
@@ -828,7 +828,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
 
             {/* Backlinks by type */}
             <div className="pt-2">
-              <h4 style={{ color: HORIZON.textSecondary }}>
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                 By Source Type
               </h4>
               <div className="grid grid-cols-2 gap-3">
@@ -874,7 +874,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
             {/* Backlinks list */}
             {result.local_backlinks.backlinks.length > 0 && (
               <div className="pt-2">
-                <h4 style={{ color: HORIZON.textSecondary }}>
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                   Backlinks List
                 </h4>
                 <div className="space-y-2 max-h-60 overflow-y-auto">
@@ -901,8 +901,8 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
           </div>
 
           {/* Good/Bad Examples */}
-          <div className="pt-4 border-t border-slate-100">
-            <h4 style={{ color: HORIZON.textSecondary }}>
+          <div className="pt-4 border-t border-border">
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
               Best Practices
             </h4>
             <div className="space-y-3">
@@ -930,11 +930,11 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
           </div>
 
           {/* Calculation */}
-          <div className="pt-4 border-t border-slate-100">
-            <h4 style={{ color: HORIZON.textSecondary }}>
+          <div className="pt-4 border-t border-border">
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
               Calculation
             </h4>
-            <p className="text-sm font-medium text-slate-600">
+            <p className="text-sm text-muted-foreground">
               Number of unique local domains linking to the clinic from the same city where the clinic is located. Metric: &lt; 5 is bad; ≥ 5 is good.
             </p>
           </div>
@@ -969,7 +969,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
       >
         <div className="space-y-4">
           <div className="space-y-3">
-            <p className="text-sm font-medium text-slate-600 mb-4 leading-relaxed">
+            <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
               Active clinic profiles on Facebook and Instagram with geotags, mentions of the city/district, posts about participation in local events, and interaction with the local audience.
             </p>
 
@@ -1071,11 +1071,11 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
           </div>
 
           {/* Calculation */}
-          <div className="pt-4 border-t border-slate-100">
-            <h4 style={{ color: HORIZON.textSecondary }}>
+          <div className="pt-4 border-t border-border">
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
               Calculation
             </h4>
-            <p className="text-sm font-medium text-slate-600">
+            <p className="text-sm text-muted-foreground">
               Presence of profiles with correct NAP (Name, Address, Phone) on Facebook and Instagram.
             </p>
           </div>
@@ -1110,7 +1110,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
       >
         <div className="space-y-4">
           <div className="space-y-3">
-            <p className="text-sm font-medium text-slate-600 mb-4 leading-relaxed">
+            <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
               LocalBusiness schema markup is structured data that helps search engines and AI better understand information about a local business, specifically a medical clinic.
             </p>
 
@@ -1134,7 +1134,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
 
             {/* Required fields */}
             <div className="pt-2">
-              <h4 style={{ color: HORIZON.textSecondary }}>
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                 Required Fields
               </h4>
               <div className="space-y-2">
@@ -1160,7 +1160,7 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
             {/* Optional fields */}
             {(result.local_business_schema.has_price_range || result.local_business_schema.has_aggregate_rating) && (
               <div className="pt-2">
-                <h4 style={{ color: HORIZON.textSecondary }}>
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                   Optional Fields
                 </h4>
                 <div className="space-y-2">
@@ -1237,11 +1237,11 @@ export function LocalIndicatorsSection({ result, className }: LocalIndicatorsSec
           </div>
 
           {/* Calculation */}
-          <div className="pt-4 border-t border-slate-100">
-            <h4 style={{ color: HORIZON.textSecondary }}>
+          <div className="pt-4 border-t border-border">
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
               Calculation
             </h4>
-            <div className="space-y-2 text-sm font-medium text-slate-600">
+            <div className="space-y-2 text-sm text-muted-foreground">
               <p>• Check if it is implemented</p>
               <p>• If yes, check if it is functioning correctly</p>
             </div>

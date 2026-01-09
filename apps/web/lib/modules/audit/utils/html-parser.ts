@@ -298,3 +298,4 @@ function calculateStructureScore(issues: string[]): number {
   });
   return Math.max(0, score);
 }
+

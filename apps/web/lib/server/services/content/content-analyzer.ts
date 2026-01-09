@@ -203,14 +203,18 @@ function detectServicePages($: CheerioAPI): boolean {
 
 /**
  * Detect direction pages count
+ * Directions = medical specialties/departments like cardiology, neurology etc.
  */
 function detectDirectionPagesCount($: CheerioAPI): number {
   const uniqueDirectionUrls = new Set<string>();
 
+  // Pattern matches URLs containing direction-related segments
+  // Matches: /directions/, /directions, /napryamki/cardiology, etc.
+  const directionPattern = /[/.](?:napryamki|directions|departments|specialties|specialty|specializations|otdeleniya|viddilennya|відділення|напрямки|категорії)(?:[/.]|$|\?)/i;
+
   $('a[href]').each((_, element) => {
     const href = $(element).attr('href')?.toLowerCase() || '';
-    // Look for direction-like URL patterns
-    if (/[/.](napryamki|directions|specials|otdeleniya|viddilennya)[/.]/i.test(href)) {
+    if (directionPattern.test(href)) {
       uniqueDirectionUrls.add(href);
     }
   });

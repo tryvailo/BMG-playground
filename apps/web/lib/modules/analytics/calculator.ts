@@ -158,80 +158,100 @@ export function aggregateCompetitorStats(
     return [];
   }
 
-  // Aggregate domain statistics
-  const domainStatsMap = new Map<string, DomainStats>();
-
-  for (const scan of scans) {
-    // Extract domains from raw response
-    const domains = extractDomainsFromResponse(scan.raw_response);
-
-    // If no domains found in raw_response but scan is visible,
-    // we might need to infer domain from other sources
-    // For now, we'll skip scans without extractable domains
-    if (domains.length === 0) {
-      continue;
-    }
-
-    // Process each domain found in this scan
-    for (const domain of domains) {
-      if (!domainStatsMap.has(domain)) {
-        domainStatsMap.set(domain, {
-          domain,
-          appearances: 0,
-          positions: [],
-          totalScans: 0,
-        });
-      }
-
-      const stats = domainStatsMap.get(domain)!;
-      stats.appearances += 1;
-      stats.totalScans += 1;
-
-      // Only count position if service is visible and position is available
-      if (scan.visible && scan.position !== null) {
-        stats.positions.push(scan.position);
-      }
-    }
-  }
-
-  // Convert to array and sort by appearance frequency (descending)
-  const domainStatsArray = Array.from(domainStatsMap.values()).sort(
-    (a, b) => b.appearances - a.appearances,
+  // Sort scans by date to split them for trend calculation
+  const sortedScans = [...scans].sort((a, b) =>
+    new Date(a.analyzed_at).getTime() - new Date(b.analyzed_at).getTime()
   );
 
-  // Take top 9 domains
-  const topDomains = domainStatsArray.slice(0, 9);
+  const midpoint = Math.floor(sortedScans.length / 2);
+  const previousScans = sortedScans.slice(0, midpoint);
+  const currentScans = sortedScans.slice(midpoint);
 
-  // Calculate average position and AI score for each domain
-  const competitorPoints: CompetitorPoint[] = topDomains.map((stats) => {
-    // Calculate average position (only for visible scans with positions)
-    const avgPosition =
-      stats.positions.length > 0
-        ? stats.positions.reduce((sum, pos) => sum + pos, 0) /
-          stats.positions.length
-        : null;
+  // Function to calculate stats for a set of scans
+  const getStats = (scanSet: Scan[]) => {
+    const domainStatsMap = new Map<string, DomainStats & { totalScansCount: number }>();
 
-    // Calculate AI score based on visibility rate and position
-    // Higher visibility rate and lower position = higher score
-    const visibilityRate = (stats.positions.length / stats.totalScans) * 100;
-    const positionScore = avgPosition
-      ? Math.max(0, 100 - avgPosition * 10) // Lower position = higher score
-      : 0;
+    for (const scan of scanSet) {
+      const domains = extractDomainsFromResponse(scan.raw_response);
+      if (domains.length === 0 && scan.visible && clientDomain) {
+        // Fallback if client domain is visible but not explicitly in text (unlikely but possible)
+        domains.push(clientDomain);
+      }
+
+      for (const domain of domains) {
+        if (!domainStatsMap.has(domain)) {
+          domainStatsMap.set(domain, {
+            domain,
+            appearances: 0,
+            positions: [],
+            totalScans: 0,
+            totalScansCount: 0
+          });
+        }
+        const stats = domainStatsMap.get(domain)!;
+        stats.appearances += 1;
+        if (scan.visible && scan.position !== null) {
+          stats.positions.push(scan.position);
+        }
+      }
+
+      // Track total scans to calculate visibility rate correctly
+      // This is tricky because we need to know how many scans this domain COULD have appeared in.
+      // For now, we use the total number of scans in the set as the denominator.
+    }
+
+    return domainStatsMap;
+  };
+
+  const currentStatsMap = getStats(currentScans);
+  const previousStatsMap = getStats(previousScans);
+
+  // Combine and calculate final points
+  const denomCurrent = Math.max(1, currentScans.length);
+  const denomPrevious = Math.max(1, previousScans.length);
+
+  const competitorPoints: CompetitorPoint[] = Array.from(currentStatsMap.values()).map((stats) => {
+    const avgPosition = stats.positions.length > 0
+      ? stats.positions.reduce((sum, pos) => sum + pos, 0) / stats.positions.length
+      : null;
+
+    const visibilityRate = (stats.appearances / denomCurrent) * 100;
+    const positionScore = avgPosition ? Math.max(0, 100 - avgPosition * 10) : 0;
     const aiScore = (visibilityRate * 0.6 + positionScore * 0.4);
+
+    // Trend calculation
+    let trend = 0;
+    const prev = previousStatsMap.get(stats.domain);
+    if (prev) {
+      const prevAvgPos = prev.positions.length > 0
+        ? prev.positions.reduce((sum, pos) => sum + pos, 0) / prev.positions.length
+        : null;
+      const prevVisibility = (prev.appearances / denomPrevious) * 100;
+      const prevPosScore = prevAvgPos ? Math.max(0, 100 - prevAvgPos * 10) : 0;
+      const prevAiScore = (prevVisibility * 0.6 + prevPosScore * 0.4);
+
+      if (prevAiScore > 0) {
+        trend = ((aiScore - prevAiScore) / prevAiScore) * 100;
+      } else if (aiScore > 0) {
+        trend = 100; // New competitor appeared
+      }
+    }
 
     return {
       domain: stats.domain,
       avgPosition: avgPosition ? Math.round(avgPosition * 10) / 10 : null,
       aiScore: Math.round(aiScore * 10) / 10,
-      isClient: clientDomain
-        ? stats.domain.toLowerCase() === clientDomain.toLowerCase()
-        : false,
+      isClient: clientDomain ? stats.domain.toLowerCase() === clientDomain.toLowerCase() : false,
       mentions: stats.appearances,
+      visibility: Math.round(visibilityRate * 10) / 10,
+      trend: Math.round(trend * 10) / 10
     };
   });
 
-  // Sort by AI score (descending) for better visualization
-  return competitorPoints.sort((a, b) => b.aiScore - a.aiScore);
+  // Take top 10 domains by AI score or appearances
+  return competitorPoints
+    .sort((a, b) => b.aiScore - a.aiScore)
+    .slice(0, 10);
 }
 
 /*

@@ -22,6 +22,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '@kit/ui/alert';
 import { cn } from '@kit/ui/utils';
 import type { TechAudit } from '~/lib/modules/audit/tech-audit-service';
+import { generateSimulatedHistory } from '~/lib/modules/ai/simulation-adapter';
 
 interface TechAuditOverviewProps {
   auditData: TechAudit | null;
@@ -146,6 +147,42 @@ function CircleGauge({ score, label, size = 'md', onClick }: CircleGaugeProps) {
 }
 
 /**
+ * Simple Sparkline component.
+ * Expects values array (numbers 0-100). Renders a small inline svg sparkline.
+ */
+function Sparkline({ values, width = 120, height = 36 }: { values: number[]; width?: number; height?: number }) {
+  if (!values || values.length === 0) return null;
+
+  const max = 100;
+  const min = 0;
+  const w = width;
+  const h = height;
+
+  const points = values.map((v, i) => {
+    const x = (i / (values.length - 1)) * w;
+    const y = h - ((v - min) / (max - min || 1)) * h;
+    return `${x},${y}`;
+  }).join(' ');
+
+  const first = values[0] ?? 0;
+  const last = values[values.length - 1] ?? 0;
+  const stroke = last >= first ? '#10B981' : '#F97316'; // green up, orange down
+
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="block">
+      <polyline
+        fill="none"
+        stroke={stroke}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        points={points}
+      />
+    </svg>
+  );
+}
+
+/**
  * Empty State Component - Now using TechAuditColdState
  */
 import { TechAuditColdState } from './TechAuditColdState';
@@ -191,6 +228,10 @@ function LlmsTxtDetailsDialog({
   llmsTxtData,
 }: LlmsTxtDetailsDialogProps) {
   const summary = typeof llmsTxtData.summary === 'string' ? llmsTxtData.summary : null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const analysisMethod = typeof (llmsTxtData as any).analysisMethod === 'string' ? (llmsTxtData as any).analysisMethod : null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const fallbackReason = typeof (llmsTxtData as any).fallbackReason === 'string' ? (llmsTxtData as any).fallbackReason : null;
   const missingSections = Array.isArray(llmsTxtData.missing_sections)
     ? llmsTxtData.missing_sections.filter((item): item is string => typeof item === 'string')
     : [];
@@ -215,18 +256,27 @@ function LlmsTxtDetailsDialog({
           {/* Summary */}
           {summary && (
             <div>
-              <h3 className="text-sm font-semibold text-foreground mb-2">
-                Summary
+              <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                <span>Summary</span>
+                {analysisMethod === 'heuristic' && (
+                  <Badge variant="outline" className="text-xs">heuristic</Badge>
+                )}
+                {analysisMethod === 'ai' && fallbackReason && (
+                  <Badge variant="outline" className="text-xs">AI error</Badge>
+                )}
               </h3>
               <p className="text-sm text-muted-foreground">{summary}</p>
+              {fallbackReason && (
+                <p className="text-xs text-muted-foreground mt-1">Причина: {fallbackReason}</p>
+              )}
             </div>
           )}
 
-          {/* Missing Sections */}
+          {/* ПРОБЛЕМИ (Missing Sections) */}
           {missingSections.length > 0 && (
             <div>
               <h3 className="text-sm font-semibold text-foreground mb-3">
-                Missing Sections
+                ПРОБЛЕМИ
               </h3>
               <div className="space-y-2">
                 {missingSections.map((section, index) => (
@@ -240,11 +290,11 @@ function LlmsTxtDetailsDialog({
             </div>
           )}
 
-          {/* Recommendations */}
+          {/* РЕКОМЕНДАЦІЇ (Recommendations) */}
           {recommendations.length > 0 && (
             <div>
               <h3 className="text-sm font-semibold text-foreground mb-3">
-                Recommendations
+                РЕКОМЕНДАЦІЇ
               </h3>
               <ul className="space-y-2">
                 {recommendations.map((recommendation, index) => (
@@ -321,6 +371,17 @@ export function TechAuditOverview({ auditData, onRunAudit }: TechAuditOverviewPr
   // Extract llms.txt score and data
   const llmsTxtData = auditData.llms_txt_data || {};
   const llmsTxtScore = auditData.llms_txt_score ?? (typeof llmsTxtData.score === 'number' ? llmsTxtData.score : null);
+  // Generate simple 6-point trends for sparklines. If the audit provides historical
+  // trend arrays in the future, prefer them. For now we synthesize with helper.
+  const desktopTrend = typeof auditData.desktop_speed_score === 'number'
+    ? generateSimulatedHistory(auditData.desktop_speed_score).map((p) => p.score)
+    : [];
+  const mobileTrend = typeof auditData.mobile_speed_score === 'number'
+    ? generateSimulatedHistory(auditData.mobile_speed_score).map((p) => p.score)
+    : [];
+  const llmsTrend = typeof llmsTxtScore === 'number'
+    ? generateSimulatedHistory(llmsTxtScore).map((p) => p.score)
+    : [];
   
   // Check if we have data to show in dialog
   const hasLlmsData = auditData.llms_txt_present && (
@@ -358,6 +419,9 @@ export function TechAuditOverview({ auditData, onRunAudit }: TechAuditOverviewPr
                 label="Desktop Speed"
                 size="md"
               />
+              <div className="mt-3">
+                <Sparkline values={desktopTrend} width={140} height={36} />
+              </div>
             </CardContent>
           </Card>
 
@@ -368,6 +432,9 @@ export function TechAuditOverview({ auditData, onRunAudit }: TechAuditOverviewPr
                 label="Mobile Speed"
                 size="md"
               />
+              <div className="mt-3">
+                <Sparkline values={mobileTrend} width={140} height={36} />
+              </div>
             </CardContent>
           </Card>
 
@@ -379,6 +446,9 @@ export function TechAuditOverview({ auditData, onRunAudit }: TechAuditOverviewPr
                 size="md"
                 onClick={hasLlmsData ? () => setIsLlmsDialogOpen(true) : undefined}
               />
+              <div className="mt-3">
+                <Sparkline values={llmsTrend} width={140} height={36} />
+              </div>
             </CardContent>
           </Card>
         </div>

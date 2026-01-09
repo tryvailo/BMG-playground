@@ -82,22 +82,46 @@ export interface RecommendationResult {
  * Build the prompt for service recommendations
  */
 function buildServicePrompt(service: ServiceForRecommendation): string {
-  return `You are an SEO and AI visibility expert for medical clinics. Analyze the following service data and provide actionable recommendations.
+  return `You are a professional SEO & GEO specialist analyzing medical service visibility in LLM responses.
 
-SERVICE DATA:
+ANALYZE THIS SERVICE FOR GEO OPTIMIZATION:
 - Service Name: ${service.serviceName}
 - Target Page: ${service.targetPage}
-- Location: ${service.city || 'Unknown'}, ${service.country || 'Unknown'}
-- Visibility Score: ${service.visibility_score ?? 'Not measured'}%
-- Position in AI Results: ${service.position ?? 'Not ranked'}
+- Geographic Focus: ${service.city || 'Unknown'}, ${service.country || 'Unknown'}
+- Current LLM Visibility: ${service.visibility_score ?? 'Unknown'}%
+- AI Ranking Position: ${service.position ?? 'Not visible'}
 - AIV Score: ${service.aiv_score ?? 'Not calculated'}
-- PageSpeed Score: ${service.pagespeed_score ?? 'Not measured'}
-${service.pagespeed_metrics ? `- LCP: ${service.pagespeed_metrics.lcp}ms, FCP: ${service.pagespeed_metrics.fcp}ms, CLS: ${service.pagespeed_metrics.cls}` : ''}
-- Schema Score: ${service.schema_score ?? 'Not measured'}%
-${service.has_schemas ? `- Present Schemas: ${service.has_schemas.join(', ')}` : ''}
-${service.missing_schemas ? `- Missing Schemas: ${service.missing_schemas.join(', ')}` : ''}
+- Page Performance: ${service.pagespeed_score ?? 'Unknown'}/100
+${service.pagespeed_metrics ? `  └─ LCP: ${service.pagespeed_metrics.lcp}ms, FCP: ${service.pagespeed_metrics.fcp}ms, CLS: ${service.pagespeed_metrics.cls}` : ''}
+- Medical Schema Score: ${service.schema_score ?? 'Unknown'}%
+${service.has_schemas ? `- Implemented: ${service.has_schemas.join(', ')}` : '- No medical schema detected'}
+${service.missing_schemas ? `- Missing: ${service.missing_schemas.join(', ')}` : ''}
 
-Generate 3-5 specific recommendations to improve this service's visibility in AI search results.
+GEO OPTIMIZATION PRIORITIES FOR SERVICES:
+1. Medical Procedure Schema: Ensures LLMs understand exactly what procedure is offered
+2. Geographic Targeting: Service area scope must match LLM location queries
+3. EEAT Signals: Doctor credentials, experience, outcomes for authority
+4. Performance: Fast page load = better LLM crawlability
+5. Local Schema: Link service to specific clinic location(s)
+
+RECOMMENDATION REQUIREMENTS:
+- Be specific: Include schema names (MedicalProcedure, LocalBusiness, etc.)
+- Medical context: Reference medical procedures/conditions, not generic services
+- GEO-focused: Emphasize LLM visibility improvement
+- Actionable: Exact steps, not vague advice
+- Prioritized: Most impactful recommendations first
+
+Examples of GOOD recommendations:
+✓ "Implement MedicalProcedure schema for '${service.serviceName}' with conditions treated, expected outcomes, and link to Doctor profiles with credentials"
+✓ "Add geographic service area scope to LocalBusiness schema: expand from '${service.city}' to define 15km service radius for LLM location queries"
+✓ "Create service page with 3+ internal links from clinic's main pages to improve crawl priority for LLM systems"
+
+Generate 3-5 prioritized, GEO-focused recommendations.
+
+Response in JSON format:
+{
+  "summary": "GEO assessment and priority actions",
+  "recommendations": [
 
 Response in JSON format:
 {
@@ -127,26 +151,48 @@ function buildTechAuditPrompt(audit: TechAuditForRecommendation, clinicName?: st
         .join(', ')
     : 'Not analyzed';
 
-  return `You are an SEO and technical optimization expert for medical clinics. Analyze the following technical audit data and provide actionable recommendations.
+  return `You are a professional SEO & GEO (Generative Engine Optimization) specialist for medical organizations. Your task: provide strategic recommendations for ${clinicName || 'Medical Clinic'} to increase visibility in LLM responses (ChatGPT, Perplexity, Claude).
 
 CLINIC: ${clinicName || 'Medical Clinic'}
 
-TECHNICAL AUDIT DATA:
+CURRENT TECHNICAL STATUS:
 - Desktop Speed Score: ${audit.desktop_speed_score ?? 'Not measured'}/100
 - Mobile Speed Score: ${audit.mobile_speed_score ?? 'Not measured'}/100
-- HTTPS Enabled: ${audit.https_enabled ? 'Yes' : 'No'}
-- Mobile Friendly: ${audit.mobile_friendly ? 'Yes' : 'No'}
-- llms.txt Present: ${audit.llms_txt_present ? 'Yes' : 'No'}
-- llms.txt Score: ${audit.llms_txt_score ?? 'N/A'}/100
-- robots.txt Present: ${audit.robots_txt_present ? 'Yes' : 'No'}
-- Sitemap Present: ${audit.sitemap_present ? 'Yes' : 'No'}
-- Schema Status: ${schemaStatus}
+- HTTPS Security: ${audit.https_enabled ? '✅ Enabled' : '❌ Missing'}
+- Mobile Optimization: ${audit.mobile_friendly ? '✅ Responsive' : '❌ Not mobile-friendly'}
+- llms.txt File: ${audit.llms_txt_present ? `✅ Present (Score: ${audit.llms_txt_score ?? 'N/A'}/100)` : '❌ Missing (GEO blocker)'}
+- robots.txt: ${audit.robots_txt_present ? '✅ Configured' : '❌ Missing'}
+- XML Sitemap: ${audit.sitemap_present ? '✅ Present' : '❌ Missing'}
+- Medical Authority Schema: ${schemaStatus}
 
-Generate 3-5 specific technical recommendations to improve this clinic's visibility in AI search results.
+PRIORITY FOR RECOMMENDATIONS:
+1. GEO Visibility (most critical for medical AI visibility)
+2. Medical Authority Signals (EEAT for healthcare)
+3. Technical Performance (affects crawlability)
+4. Local SEO Precision (geographic targeting)
+
+INSTRUCTIONS FOR RECOMMENDATIONS:
+- Be specific: Include field names, schema types, exact metrics
+- Priority-ranked: Address GEO blockers first (e.g., llms.txt missing = prevents LLM indexation)
+- Medical context: Reference medical schema types, not generic recommendations
+- Actionable: Each recommendation must have clear steps or specifications
+- Professional tone: Use SEO/GEO terminology, not generic advice
+
+Example GOOD recommendations:
+✓ "Create llms.txt with MedicalBusiness schema and 'Doctors' section listing 5+ specialists with license numbers and ICD-10 specializations"
+✓ "Implement Hospital schema with 3+ locations, full addresses with postal codes, and operating hours for geographic targeting"
+✓ "Add Doctor profiles with credential schema including degree level, specialization registry, and licensing authority for authority signals"
+
+Example BAD recommendations (avoid):
+✗ "Improve website speed" (vague, no metrics)
+✗ "Add more content" (not specific to medical schema)
+✗ "Optimize for search engines" (generic, not GEO-focused)
+
+Generate 3-5 specific, prioritized technical recommendations.
 
 Response in JSON format:
 {
-  "summary": "Brief overall assessment",
+  "summary": "Professional assessment (2-3 sentences) focused on GEO visibility",
   "recommendations": [
     {
       "id": "rec_1",
@@ -215,14 +261,14 @@ export async function generateServiceRecommendations(
       messages: [
         {
           role: 'system',
-          content: 'You are an expert SEO and AI visibility consultant for medical clinics. Provide actionable, specific recommendations based on the data provided. Always respond in valid JSON format.',
+          content: 'You are a professional SEO & GEO specialist for medical organizations. Provide specific, technical recommendations for LLM visibility. Always respond in valid JSON format.',
         },
         {
           role: 'user',
           content: prompt,
         },
       ],
-      temperature: 0.7,
+      temperature: 0.3,
       response_format: { type: 'json_object' },
     });
 
@@ -267,14 +313,14 @@ export async function generateTechAuditRecommendations(
       messages: [
         {
           role: 'system',
-          content: 'You are an expert SEO and technical optimization consultant for medical clinics. Provide actionable, specific recommendations based on the technical audit data. Always respond in valid JSON format.',
+          content: 'You are a professional SEO & GEO specialist for medical organizations. Provide specific, professional recommendations based on industry best practices. Always respond in valid JSON format with actionable, technical guidance.',
         },
         {
           role: 'user',
           content: prompt,
         },
       ],
-      temperature: 0.7,
+      temperature: 0.3,
       response_format: { type: 'json_object' },
     });
 
@@ -326,47 +372,67 @@ export async function generateComprehensiveRecommendations(
     const avgAIV = servicesData.reduce((sum, s) => sum + s.aiv, 0) / servicesData.length || 0;
     const visibleCount = servicesData.filter((s) => s.visibility > 0).length;
 
-    const prompt = `You are an SEO and AI visibility expert for medical clinics. Analyze the following comprehensive data and provide strategic recommendations.
+    const prompt = `You are a professional SEO & GEO (Generative Engine Optimization) specialist for medical organizations. Your role: provide strategic GEO recommendations for ${clinicName || 'Medical Clinic'} to dominate LLM visibility.
 
-CLINIC: ${clinicName || 'Medical Clinic'}
+CLINIC PERFORMANCE SUMMARY:
+Organization: ${clinicName || 'Medical Clinic'}
 
-SERVICES OVERVIEW:
+SERVICE PORTFOLIO ANALYSIS:
 - Total Services: ${services.length}
-- Visible in AI: ${visibleCount}/${services.length} (${((visibleCount / services.length) * 100).toFixed(1)}%)
-- Average Visibility: ${avgVisibility.toFixed(1)}%
-- Average AIV Score: ${avgAIV.toFixed(1)}
+- AI-Visible Services: ${visibleCount}/${services.length} (${((visibleCount / services.length) * 100).toFixed(1)}% visibility rate)
+- Average LLM Visibility: ${avgVisibility.toFixed(1)}%
+- Average AIV Score: ${avgAIV.toFixed(1)} (lower = more room for improvement)
 
-${techAudit ? `TECHNICAL STATUS:
-- Desktop Speed: ${techAudit.desktop_speed_score ?? 'N/A'}/100
-- Mobile Speed: ${techAudit.mobile_speed_score ?? 'N/A'}/100
-- HTTPS: ${techAudit.https_enabled ? '✅' : '❌'}
-- Mobile Friendly: ${techAudit.mobile_friendly ? '✅' : '❌'}
-- llms.txt: ${techAudit.llms_txt_present ? '✅' : '❌'} (Score: ${techAudit.llms_txt_score ?? 'N/A'})
-- robots.txt: ${techAudit.robots_txt_present ? '✅' : '❌'}
-- Sitemap: ${techAudit.sitemap_present ? '✅' : '❌'}` : ''}
-
-TOP 3 LOWEST VISIBILITY SERVICES:
+⚠️ LOW PERFORMERS (Opportunities):
 ${services
   .sort((a, b) => (a.visibility_score ?? 0) - (b.visibility_score ?? 0))
   .slice(0, 3)
-  .map((s) => `- ${s.serviceName}: ${s.visibility_score ?? 0}%`)
+  .map((s) => `- ${s.serviceName}: ${s.visibility_score ?? 0}% LLM visibility (needs ${100 - (s.visibility_score ?? 0)} point improvement)`)
   .join('\n')}
 
-Generate 5-7 strategic recommendations to improve overall AI visibility for this clinic.
+${techAudit ? `TECHNICAL FOUNDATION ASSESSMENT:
+- Desktop Performance: ${techAudit.desktop_speed_score ?? 'N/A'}/100 (target: 80+)
+- Mobile Performance: ${techAudit.mobile_speed_score ?? 'N/A'}/100 (critical for LLM crawlers)
+- Security (HTTPS): ${techAudit.https_enabled ? '✅ Enabled' : '❌ Missing - blocks LLM crawling'}
+- Mobile Responsive: ${techAudit.mobile_friendly ? '✅ Yes' : '❌ No - major GEO issue'}
+- llms.txt Optimization: ${techAudit.llms_txt_present ? `✅ Present (Score: ${techAudit.llms_txt_score ?? 'N/A'}/100)` : '❌ MISSING - primary GEO blocker'}
+- robots.txt Configuration: ${techAudit.robots_txt_present ? '✅ Configured' : '❌ Missing'}
+- XML Sitemap: ${techAudit.sitemap_present ? '✅ Present' : '❌ Missing - reduces crawl efficiency'}` : ''}
+
+STRATEGIC FOCUS AREAS:
+1. Eliminate GEO Blockers (prevent LLM discovery)
+2. Boost Low-Visibility Services (prioritize top 3 below 30% visibility)
+3. Strengthen Medical Authority Signals (EEAT for healthcare credibility)
+4. Optimize Geographic Targeting (local schema for location-based queries)
+5. Improve Technical Foundation (crawlability and performance)
+
+RECOMMENDATION REQUIREMENTS:
+- Strategic: Not tactical - focus on highest-impact improvements
+- Specific: Include metrics, schema names, exact field requirements
+- Prioritized: Rank by GEO business impact (what drives LLM traffic)
+- Medical context: Reference medical procedures, conditions, credentials
+- Professional: Use industry terminology (GEO, schema markup, EEAT, etc.)
+
+Examples of STRATEGIC recommendations:
+✓ "Revise llms.txt: add 'Doctors' section with 7+ credentials (specialization + license number) - currently unoptimized, blocking authority signals"
+✓ "Implement MultiLocation MedicalBusiness schema for 3 clinics with full local address/phone - low-visibility 'Cardiology' service needs geographic service area scope"
+✓ "Create service hierarchy: procedure schema linking to Doctor profiles with credentials - AI models can't associate procedures with qualified practitioners"
+
+Generate 5-7 strategic GEO recommendations ranked by impact.
 
 Response in JSON format:
 {
-  "summary": "Comprehensive assessment of the clinic's AI visibility status",
+  "summary": "Professional GEO assessment of clinic's AI visibility potential and top 3 priorities",
   "recommendations": [
     {
       "id": "rec_1",
       "category": "visibility|technical|content|schema|local|performance",
       "priority": "high|medium|low",
-      "title": "Short title",
-      "description": "Detailed description",
-      "impact": "Expected impact on visibility metrics",
+      "title": "Strategic action title",
+      "description": "Detailed description with metrics and business context",
+      "impact": "Expected GEO business impact",
       "effort": "low|medium|high",
-      "steps": ["Step 1", "Step 2", "Step 3"]
+      "steps": ["Specific actionable step", "Next step with details"]
     }
   ]
 }`;
@@ -376,14 +442,14 @@ Response in JSON format:
       messages: [
         {
           role: 'system',
-          content: 'You are an expert SEO and AI visibility consultant for medical clinics. Provide strategic, actionable recommendations based on comprehensive analysis. Always respond in valid JSON format.',
+          content: 'You are a professional SEO & GEO specialist for medical organizations. Provide strategic, specific recommendations for LLM visibility improvement. Always respond in valid JSON format with technical precision.',
         },
         {
           role: 'user',
           content: prompt,
         },
       ],
-      temperature: 0.7,
+      temperature: 0.3,
       response_format: { type: 'json_object' },
     });
 

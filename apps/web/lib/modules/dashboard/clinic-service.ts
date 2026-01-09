@@ -44,6 +44,27 @@ export async function getProjectDashboardData(projectId: string) {
 
     if (servicesError) throw servicesError;
 
+    // Fetch latest scans for these services
+    const serviceIds = services.map((s) => s.id);
+    let latestScans: unknown[] = [];
+    if (serviceIds.length > 0) {
+      const { data: scans, error: scansError } = await supabase
+        .from('scans')
+        .select('*')
+        .in('service_id', serviceIds)
+        .order('analyzed_at', { ascending: false });
+
+      if (!scansError && scans) {
+        // Keep only the latest scan per service
+        const seen = new Set();
+        latestScans = scans.filter((s) => {
+          if (seen.has(s.service_id)) return false;
+          seen.add(s.service_id);
+          return true;
+        });
+      }
+    }
+
     // Fetch tech audit data
     const { data: techAudit, error: techError } = await supabase
       .from('tech_audits')
@@ -61,6 +82,7 @@ export async function getProjectDashboardData(projectId: string) {
     return {
       weeklyStats: weeklyStats || [],
       services: services || [],
+      latestScans: latestScans,
       techAudit: techAudit || null,
     };
   } catch (error) {

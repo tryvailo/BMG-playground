@@ -202,7 +202,7 @@ export function calculateAIVScore(input: AIVScoreInput): number {
 
   // Calculate AIV Score
   const aivScore =
-    visibility * (visibility * 100 * 0.3) + positionScore * 0.25 + competitiveScore * 0.2;
+    visibility * (visibility * 100 * 0.3 + positionScore * 100 * 0.25 + competitiveScore * 100 * 0.2);
 
   return Math.round(aivScore * 100) / 100;
 }

@@ -26,6 +26,8 @@ import {
 import { getCitiesByCountryCode, type CityData } from '~/lib/data/cities';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { getServices, createService, deleteService as dbDeleteService, type Service } from '~/lib/actions/services';
+import { saveScanResult } from '~/lib/actions/scans';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -78,12 +80,13 @@ interface ServiceCalculationResult {
 }
 
 interface ServicesTableProps {
+  projectId: string;
   domain: string;
   apiKeyOpenAI: string;
   apiKeyPerplexity: string;
   onCalculationsComplete?: (results: ServiceCalculationResult[]) => void;
-  storageKey?: string; // Optional storage key for persisting services
-  onDeleteService?: (id: string) => Promise<void>; // Optional callback for DB deletion
+  storageKey?: string; // Kept for backward compatibility but using DB principally
+  onDeleteService?: (id: string) => Promise<void>;
 }
 
 const DEFAULT_SERVICES: PlaygroundService[] = [
@@ -215,6 +218,7 @@ const generateMockResults = (domain: string): Map<string, ServiceCalculationResu
 };
 
 export function ServicesTable({
+  projectId,
   domain,
   apiKeyOpenAI,
   apiKeyPerplexity,
@@ -230,48 +234,43 @@ export function ServicesTable({
   const [isInitialized, setIsInitialized] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
   const [cities, setCities] = useState<CityData[]>([]);
-  
+
   // Load cities for Ukraine (default country)
   useEffect(() => {
     const uaCities = getCitiesByCountryCode('UA');
     setCities(uaCities);
   }, []);
 
-  // Load services from localStorage on mount
+  // Load services from database on mount
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (!projectId) return;
 
-    try {
-      const stored = localStorage.getItem(storageKey);
-      const storedResults = localStorage.getItem(`${storageKey}_results`);
-
-      if (stored) {
-        const loadedServices = JSON.parse(stored) as PlaygroundService[];
-        setServices(loadedServices);
-
-        if (storedResults) {
-          try {
-            const parsedResults = JSON.parse(storedResults);
-            // Convert plain object back to Map
-            const resultsMap = new Map<string, ServiceCalculationResult>(Object.entries(parsedResults));
-            setCalculationResults(resultsMap);
-          } catch (e) {
-            console.error('[ServicesTable] Error parsing stored results:', e);
-          }
+    const loadData = async () => {
+      try {
+        const dbServices = await getServices({ projectId });
+        if (dbServices && dbServices.length > 0) {
+          setServices(dbServices.map((s: Service) => ({
+            id: s.id,
+            name: s.name,
+            search_query: s.search_query,
+            location_city: s.location_city || '',
+            path: s.path || '',
+            location_country: s.location_country || 'UA'
+          })));
+        } else {
+          setServices(DEFAULT_SERVICES);
+          const mockResults = generateMockResults(domain || 'yourclinic.com');
+          setCalculationResults(mockResults);
         }
-      } else {
-        // Use default services and generate mock results if nothing in storage
+      } catch (error) {
+        console.error('[ServicesTable] Error loading services:', error);
         setServices(DEFAULT_SERVICES);
-        const mockResults = generateMockResults(domain || 'yourclinic.com');
-        setCalculationResults(mockResults);
       }
-    } catch (error) {
-      console.error('[ServicesTable] Error loading services from storage:', error);
-      setServices(DEFAULT_SERVICES);
-      setCalculationResults(generateMockResults(domain || 'yourclinic.com'));
-    }
-    setIsInitialized(true);
-  }, [storageKey, domain]);
+      setIsInitialized(true);
+    };
+
+    loadData();
+  }, [projectId, domain]);
 
   // Save to localStorage whenever services change (but not on initial load)
   useEffect(() => {
@@ -300,32 +299,45 @@ export function ServicesTable({
   // Form state for editing
   const [editService, setEditService] = useState<PlaygroundService | null>(null);
 
-  const handleAddService = () => {
+  const handleAddService = async () => {
     if (!newService.name || !newService.search_query || !newService.location_city) {
       toast.error('Please fill in all required fields (Name, Search Query, Location City)');
       return;
     }
 
-    const service: PlaygroundService = {
-      id: `service-${Date.now()}`,
-      name: newService.name,
-      search_query: newService.search_query,
-      location_city: newService.location_city,
-      path: newService.path || undefined,
-      location_country: newService.location_country || undefined,
-    };
+    try {
+      const service = await createService({
+        project_id: projectId,
+        name: newService.name,
+        search_query: newService.search_query,
+        location_city: newService.location_city,
+        path: newService.path || undefined,
+        location_country: newService.location_country || 'UA',
+      });
 
-    const updatedServices = [...services, service];
-    setServices(updatedServices);
-    setNewService({
-      name: '',
-      search_query: '',
-      location_city: '',
-      path: '',
-      location_country: '',
-    });
-    setIsAdding(false);
-    toast.success('Service added successfully');
+      const updatedService: PlaygroundService = {
+        id: service.id,
+        name: service.name,
+        search_query: service.search_query,
+        location_city: service.location_city || '',
+        path: service.path || undefined,
+        location_country: service.location_country || undefined,
+      };
+
+      setServices([...services, updatedService]);
+      setNewService({
+        name: '',
+        search_query: '',
+        location_city: '',
+        path: '',
+        location_country: '',
+      });
+      setIsAdding(false);
+      toast.success('Service added successfully');
+    } catch (error) {
+      console.error('[ServicesTable] Error adding service:', error);
+      toast.error('Failed to add service to database');
+    }
   };
 
   const handleEditService = (service: PlaygroundService) => {
@@ -356,6 +368,12 @@ export function ServicesTable({
 
     setIsDeleting(true);
     try {
+      // Delete from DB if it's a UUID
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+      if (isUUID) {
+        await dbDeleteService({ id });
+      }
+
       if (onDeleteService) {
         await onDeleteService(id);
       }
@@ -437,6 +455,20 @@ export function ServicesTable({
         analysis: serviceAnalysis,
         aivScore,
       };
+
+      // Save scan to database
+      try {
+        await saveScanResult({
+          service_id: service.id,
+          ai_engine: serviceAnalysis.aiEngine?.toLowerCase().includes('perplexity') ? 'perplexity' : 'openai',
+          visible: serviceAnalysis.foundUrl !== null,
+          position: serviceAnalysis.position,
+          raw_response: serviceAnalysis.recommendationText,
+          analyzed_at: new Date().toISOString()
+        });
+      } catch (saveError) {
+        console.error('[ServicesTable] Error saving scan to DB:', saveError);
+      }
 
       setCalculationResults(prev => {
         const newMap = new Map(prev);

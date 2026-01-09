@@ -15,7 +15,7 @@
 
 import { load, type CheerioAPI } from 'cheerio';
 
-import { EEATAuditResultSchema, type EEATAuditResult } from './types';
+import { EEATAuditResultSchema, type EEATAuditResult, type EEATRecommendation } from './types';
 import { aggregateMetrics } from './metrics-aggregator';
 import { discoverPages } from './page-discovery';
 import {
@@ -440,150 +440,204 @@ function hasExperienceFigures($: CheerioAPI): boolean {
 /**
  * Generate recommendations based on audit results
  */
-function generateRecommendations(result: EEATAuditResult): string[] {
-  const recommendations: string[] = [];
+function generateRecommendations(result: EEATAuditResult): EEATRecommendation[] {
+  const recommendations: EEATRecommendation[] = [];
 
   // Reputation recommendations
   if (!result.reputation.linked_platforms.includes('Google Maps')) {
-    recommendations.push(
-      'Add link to Google Maps profile for better local visibility and trust signals.',
-    );
+    recommendations.push({
+      message: 'Add link to Google Maps profile for better local visibility and trust signals.',
+      category: 'trust',
+      severity: 'warning',
+    });
   }
 
   if (result.reputation.linked_platforms.length === 0) {
-    recommendations.push(
-      'Add links to external medical platforms (Doc.ua, Likarni, Helsi) to improve reputation signals.',
-    );
+    recommendations.push({
+      message: 'Add links to external medical platforms (Doc.ua, Likarni, Helsi) to improve reputation signals.',
+      category: 'trust',
+      severity: 'info',
+    });
   }
 
   // Social recommendations
   if (result.reputation.social_links.length === 0) {
-    recommendations.push(
-      'Add social media links (Facebook, Instagram, YouTube) to improve online presence and trust.',
-    );
+    recommendations.push({
+      message: 'Add social media links (Facebook, Instagram, YouTube) to improve online presence and trust.',
+      category: 'trust',
+      severity: 'info',
+    });
   }
 
   // Trust recommendations
   if (!result.trust.has_privacy_policy) {
-    recommendations.push(
-      'Add Privacy Policy page and link to it from footer. Required for GDPR compliance and trust.',
-    );
+    recommendations.push({
+      message: 'Add Privacy Policy page and link to it from footer. Required for GDPR compliance and trust.',
+      category: 'trust',
+      severity: 'critical',
+    });
   }
 
   if (!result.trust.has_licenses) {
-    recommendations.push(
-      'Display medical licenses and certifications (e.g., "Ліцензія", "Наказ МОЗ") prominently on the site.',
-    );
+    recommendations.push({
+      message: 'Display medical licenses and certifications (e.g., "Ліцензія", "Наказ МОЗ") prominently on the site.',
+      category: 'trust',
+      severity: 'critical',
+    });
   }
 
   if (!result.trust.contact_page_found) {
-    recommendations.push(
-      'Add a dedicated Contact page with phone number (tel: link) for better accessibility.',
-    );
+    recommendations.push({
+      message: 'Add a dedicated Contact page with phone number (tel: link) for better accessibility.',
+      category: 'trust',
+      severity: 'warning',
+    });
   }
 
   if (!result.trust.nap_present) {
-    recommendations.push(
-      'Ensure NAP (Name, Address, Phone) data is complete: add tel: link and physical address (м. [City], вул.).',
-    );
+    recommendations.push({
+      message: 'Ensure NAP (Name, Address, Phone) data is complete: add tel: link and physical address (м. [City], вул.).',
+      category: 'trust',
+      severity: 'warning',
+    });
   }
 
   // Authority recommendations
   if (result.authority.scientific_sources_count === 0) {
-    recommendations.push(
-      'Add links to scientific sources (PubMed, WHO, Cochrane) to demonstrate evidence-based practice.',
-    );
+    recommendations.push({
+      message: 'Add links to scientific sources (PubMed, WHO, Cochrane) to demonstrate evidence-based practice.',
+      category: 'authority',
+      severity: 'warning',
+    });
   } else if (result.authority.scientific_sources_count < 3) {
-    recommendations.push(
-      `Only ${result.authority.scientific_sources_count} scientific source(s) linked. Consider adding more references to authoritative medical literature.`,
-    );
+    recommendations.push({
+      message: `Only ${result.authority.scientific_sources_count} scientific source(s) linked. Consider adding more references to authoritative medical literature.`,
+      category: 'authority',
+      severity: 'info',
+    });
   }
 
   if (!result.authority.has_community_mentions) {
-    recommendations.push(
-      'Add mentions of conferences, media appearances, or professional associations to demonstrate community involvement.',
-    );
+    recommendations.push({
+      message: 'Add mentions of conferences, media appearances, or professional associations to demonstrate community involvement.',
+      category: 'authority',
+      severity: 'info',
+    });
   }
 
   // Authorship recommendations
   if (!result.authorship.has_author_blocks) {
-    recommendations.push(
-      'Add links to Doctor/Team pages (/doctors/, /team/) to showcase medical expertise.',
-    );
+    recommendations.push({
+      message: 'Add links to Doctor/Team pages (/doctors/, /team/) to showcase medical expertise.',
+      category: 'expertise',
+      severity: 'warning',
+    });
   }
 
   if (!result.authorship.author_credentials_found) {
-    recommendations.push(
-      'Include author credentials (Dr., MD, к.м.н.) in content to demonstrate expertise.',
-    );
+    recommendations.push({
+      message: 'Include author credentials (Dr., MD, к.м.н.) in content to demonstrate expertise.',
+      category: 'expertise',
+      severity: 'info',
+    });
   }
 
   // Experience recommendations
   if (!result.experience.has_case_studies) {
-    recommendations.push(
-      'Add Case Studies or Before/After portfolio section to demonstrate real experience and results.',
-    );
+    recommendations.push({
+      message: 'Add Case Studies or Before/After portfolio section to demonstrate real experience and results.',
+      category: 'experience',
+      severity: 'warning',
+    });
   }
 
   if (!result.experience.experience_figures_found) {
-    recommendations.push(
-      'Add specific experience metrics (e.g., "10+ років досвіду", "5000+ пацієнтів") to build credibility.',
-    );
+    recommendations.push({
+      message: 'Add specific experience metrics (e.g., "10+ років досвіду", "5000+ пацієнтів") to build credibility.',
+      category: 'experience',
+      severity: 'info',
+    });
   }
 
   // Enhanced recommendations
   if (result.authorship.article_author?.is_article && !result.authorship.article_author.has_author_block) {
-    recommendations.push(
-      'Add author block to article pages with author name and link to profile.',
-    );
+    recommendations.push({
+      message: 'Add author block to article pages with author name and link to profile.',
+      category: 'expertise',
+      severity: 'warning',
+    });
   }
 
   if (result.trust.legal_entity && !result.trust.legal_entity.has_registration_number) {
-    recommendations.push(
-      'Display registration number (ЕДРПОУ) or tax ID for legal transparency.',
-    );
+    recommendations.push({
+      message: 'Display registration number (ЕДРПОУ) or tax ID for legal transparency.',
+      category: 'trust',
+      severity: 'info',
+    });
   }
 
   if (!result.trust.about_us?.has_about_us_link) {
-    recommendations.push(
-      'Add "About Us" page with clinic history, mission, and team information.',
-    );
+    recommendations.push({
+      message: 'Add "About Us" page with clinic history, mission, and team information.',
+      category: 'trust',
+      severity: 'warning',
+    });
   }
 
   if (result.trust.contact_block && !result.trust.contact_block.has_email) {
-    recommendations.push('Add email contact information for better accessibility.');
+    recommendations.push({
+      message: 'Add email contact information for better accessibility.',
+      category: 'trust',
+      severity: 'info',
+    });
   }
 
   if (result.trust.contact_block && !result.trust.contact_block.has_booking_form) {
-    recommendations.push('Add online booking form for patient convenience.');
+    recommendations.push({
+      message: 'Add online booking form for patient convenience.',
+      category: 'trust',
+      severity: 'info',
+    });
   }
 
   if (result.trust.contact_block && !result.trust.contact_block.has_map) {
-    recommendations.push('Add embedded map (Google Maps) to show clinic location.');
+    recommendations.push({
+      message: 'Add embedded map (Google Maps) to show clinic location.',
+      category: 'trust',
+      severity: 'info',
+    });
   }
 
   if (result.experience.case_study_structure && result.experience.case_study_structure.completeness_score < 70) {
-    recommendations.push(
-      `Case study structure completeness is ${result.experience.case_study_structure.completeness_score}%. Ensure all sections (complaint, diagnosis, treatment, result, timeline) are present.`,
-    );
+    recommendations.push({
+      message: `Case study structure completeness is ${result.experience.case_study_structure.completeness_score}%. Ensure all sections (complaint, diagnosis, treatment, result, timeline) are present.`,
+      category: 'experience',
+      severity: 'warning',
+    });
   }
 
   if (result.experience.pii_compliance && !result.experience.pii_compliance.is_compliant) {
-    recommendations.push(
-      'Ensure patient data is anonymized in case studies. Remove full names, addresses, and phone numbers of patients.',
-    );
+    recommendations.push({
+      message: 'Ensure patient data is anonymized in case studies. Remove full names, addresses, and phone numbers of patients.',
+      category: 'experience',
+      severity: 'critical',
+    });
   }
 
   if (result.authority.media_links && result.authority.media_links.length === 0) {
-    recommendations.push(
-      'Add links to media mentions or articles about the clinic/doctors to demonstrate authority.',
-    );
+    recommendations.push({
+      message: 'Add links to media mentions or articles about the clinic/doctors to demonstrate authority.',
+      category: 'authority',
+      severity: 'info',
+    });
   }
 
   if (result.authority.publications && result.authority.publications.length === 0) {
-    recommendations.push(
-      'Add links to journal publications or research papers to demonstrate expertise.',
-    );
+    recommendations.push({
+      message: 'Add links to journal publications or research papers to demonstrate expertise.',
+      category: 'authority',
+      severity: 'info',
+    });
   }
 
   return recommendations;
@@ -954,15 +1008,19 @@ export async function analyzeMultiplePages(
 
   // Add recommendations based on metrics
   if (aggregatedMetrics.authorMetrics.blog_pages_with_author_percent < 80) {
-    mergedResult.recommendations.push(
-      `Only ${aggregatedMetrics.authorMetrics.blog_pages_with_author_percent}% of blog pages have authors. Aim for 100% to meet E-E-A-T requirements.`,
-    );
+    mergedResult.recommendations.push({
+      message: `Only ${aggregatedMetrics.authorMetrics.blog_pages_with_author_percent}% of blog pages have authors. Aim for 100% to meet E-E-A-T requirements.`,
+      category: 'expertise',
+      severity: 'warning',
+    });
   }
 
   if (aggregatedMetrics.authorMetrics.authors_with_credentials_percent < 80) {
-    mergedResult.recommendations.push(
-      `Only ${aggregatedMetrics.authorMetrics.authors_with_credentials_percent}% of authors have verified credentials. Add qualifications (Dr., MD, к.м.н.) to all author profiles.`,
-    );
+    mergedResult.recommendations.push({
+      message: `Only ${aggregatedMetrics.authorMetrics.authors_with_credentials_percent}% of authors have verified credentials. Add qualifications (Dr., MD, к.м.н.) to all author profiles.`,
+      category: 'expertise',
+      severity: 'warning',
+    });
   }
 
   if (
@@ -970,9 +1028,11 @@ export async function analyzeMultiplePages(
     aggregatedMetrics.scientificMetrics.articles_with_sources_percent !== undefined &&
     aggregatedMetrics.scientificMetrics.articles_with_sources_percent < 70
   ) {
-    mergedResult.recommendations.push(
-      `Only ${aggregatedMetrics.scientificMetrics.articles_with_sources_percent}% of articles have scientific source links. Add references to PubMed, WHO, or Cochrane for evidence-based content.`,
-    );
+    mergedResult.recommendations.push({
+      message: `Only ${aggregatedMetrics.scientificMetrics.articles_with_sources_percent}% of articles have scientific source links. Add references to PubMed, WHO, or Cochrane for evidence-based content.`,
+      category: 'authority',
+      severity: 'warning',
+    });
   }
 
   // Validate and return

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import {
   AlertCircle,
@@ -16,6 +16,9 @@ import {
   TrendingUp,
   TrendingDown,
   Settings,
+  FileDown,
+  Printer,
+  Sparkles,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -29,6 +32,8 @@ import {
   YAxis,
 } from 'recharts';
 
+import { Checkbox } from '@kit/ui/checkbox';
+import { Label } from '@kit/ui/label';
 import { Badge } from '@kit/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@kit/ui/card';
 import {
@@ -39,6 +44,17 @@ import {
 import { cn } from '@kit/ui/utils';
 
 import type { EphemeralAuditResult } from '~/lib/modules/audit/ephemeral-audit';
+import { getPreviousTechAudit } from '~/lib/actions/audit-history';
+import {
+  getScoreStatus,
+  TITLE_THRESHOLDS,
+  DESCRIPTION_THRESHOLDS,
+  CORE_WEB_VITALS,
+  getCoreWebVitalStatus,
+  isOptimalTitleLength,
+  isOptimalDescriptionLength,
+  CATEGORY_WEIGHTS,
+} from '~/lib/modules/audit/ui-constants';
 
 // --- Horizon UI Design Tokens ---
 const HORIZON = {
@@ -161,6 +177,7 @@ function ProgressBar({ value, max = 100, size = 'sm' }: ProgressBarProps) {
 
 interface TechAuditSectionProps {
   data: EphemeralAuditResult;
+  url?: string;
 }
 
 /**
@@ -348,17 +365,20 @@ interface KpiCardProps {
   label: string;
   value: string;
   benchmark?: string;
-  trend?: string;
+  trend?: number | null;
+  isFirstAudit?: boolean;
   icon: React.ElementType;
   iconBg: string;
   iconColor: string;
 }
 
-function KpiCard({ label, value, benchmark, trend, icon: Icon, iconBg, iconColor }: KpiCardProps) {
-  const isPositive = trend?.startsWith('+') ?? true;
+function KpiCard({ label, value, benchmark, trend, isFirstAudit, icon: Icon, iconBg, iconColor }: KpiCardProps) {
+  const hasTrend = trend !== null && trend !== undefined;
+  const isPositive = hasTrend && trend >= 0;
+  const trendDisplay = hasTrend ? `${trend >= 0 ? '+' : ''}${trend}%` : null;
 
   return (
-    <HorizonCard 
+    <HorizonCard
       className="group hover:-translate-y-1 transition-all duration-300"
       style={{ boxShadow: HORIZON.shadowSm }}
     >
@@ -369,15 +389,20 @@ function KpiCard({ label, value, benchmark, trend, icon: Icon, iconBg, iconColor
         >
           <Icon className="w-6 h-6" style={{ color: iconColor }} />
         </div>
-        {trend && (
+        {hasTrend ? (
           <div className={cn(
             "flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold",
             isPositive ? "bg-[#01B57415] text-[#01B574]" : "bg-[#EE5D5015] text-[#EE5D50]"
           )}>
             {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-            {trend}
+            {trendDisplay}
           </div>
-        )}
+        ) : isFirstAudit ? (
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#4318FF15] text-[#4318FF]">
+            <Sparkles className="w-3 h-3" />
+            Перший
+          </div>
+        ) : null}
       </div>
       <div className="text-sm font-medium mb-1" style={{ color: HORIZON.textSecondary }}>
         {label}
@@ -469,29 +494,24 @@ function calculateOverallScore(data: EphemeralAuditResult): number {
  * Calculate Category Scores
  */
 function calculateCategoryScores(data: EphemeralAuditResult) {
-  // AI Optimization
-  const aiScores: number[] = [];
-  if (data.files.llmsTxt.present) aiScores.push(100);
-  aiScores.push(data.files.llmsTxt.score);
-  if (data.files.robots) aiScores.push(100);
-  if (data.files.sitemap) aiScores.push(100);
-  const aiScore =
-    aiScores.length > 0
-      ? Math.round(aiScores.reduce((a, b) => a + b, 0) / aiScores.length)
-      : 0;
+  // AI Optimization (Technical optimization)
+  // Weighted: llms.txt presence (30%), llms.txt quality (40%), robots.txt (15%), sitemap (15%)
+  let aiScore = 0;
+  if (data.files.llmsTxt.present) aiScore += 30;
+  if (data.files.llmsTxt.score > 0) aiScore += Math.round(data.files.llmsTxt.score * 0.4);
+  if (data.files.robots) aiScore += 15;
+  if (data.files.sitemap) aiScore += 15;
 
-  // Compliance
-  const complianceScores: number[] = [];
-  if (data.security.https) complianceScores.push(100);
-  if (data.security.mobileFriendly) complianceScores.push(100);
-  const complianceScore =
-    complianceScores.length > 0
-      ? Math.round(
-          complianceScores.reduce((a, b) => a + b, 0) / complianceScores.length,
-        )
-      : 0;
+  // Compliance (Basic Compliance)
+  // HTTPS (40%), Mobile Friendly (30%), robots.txt (15%), sitemap (15%)
+  let complianceScore = 0;
+  if (data.security.https) complianceScore += 40;
+  if (data.security.mobileFriendly) complianceScore += 30;
+  if (data.files.robots) complianceScore += 15;
+  if (data.files.sitemap) complianceScore += 15;
 
-  // Schema
+  // Schema (Structured data)
+  // Each schema type contributes equally (12.5% each, 8 types = 100%)
   const schemaCount = [
     data.schema.hasMedicalOrg,
     data.schema.hasLocalBusiness,
@@ -502,193 +522,580 @@ function calculateCategoryScores(data: EphemeralAuditResult) {
     data.schema.hasReview,
     data.schema.hasBreadcrumbList,
   ].filter(Boolean).length;
-  const schemaScore = (schemaCount / 8) * 100;
+  const schemaScore = Math.round((schemaCount / 8) * 100);
 
-  // SEO
-  const seoScores: number[] = [];
-  if (data.meta.lang) seoScores.push(100);
-  if (data.meta.canonical) seoScores.push(100);
-  if (
-    data.meta.titleLength &&
-    data.meta.titleLength >= 30 &&
-    data.meta.titleLength <= 65
-  )
-    seoScores.push(100);
-  if (
-    data.meta.descriptionLength &&
-    data.meta.descriptionLength >= 120 &&
-    data.meta.descriptionLength <= 165
-  )
-    seoScores.push(100);
-  if (!data.meta.robots?.includes('noindex')) seoScores.push(100);
-  if (data.externalLinks.broken === 0) seoScores.push(100);
-  if (data.externalLinks.trusted > 0)
-    seoScores.push(Math.min(100, data.externalLinks.trusted * 20));
-  const seoScore =
-    seoScores.length > 0
-      ? Math.round(seoScores.reduce((a, b) => a + b, 0) / seoScores.length)
-      : 0;
+  // SEO/GEO indexing
+  // lang (15%), canonical (20%), title quality (20%), description quality (20%), 
+  // noindex check (15%), external links (10%)
+  let seoScore = 0;
+  if (data.meta.lang) seoScore += 15;
+  if (data.meta.canonical) seoScore += 20;
+  
+  // Title quality based on titleAnalysis score if available
+  if (data.meta.titleAnalysis?.score) {
+    seoScore += Math.round(data.meta.titleAnalysis.score * 0.2);
+  } else if (data.meta.titleLength && data.meta.titleLength >= 30 && data.meta.titleLength <= 65) {
+    seoScore += 20;
+  }
+  
+  // Description quality based on descriptionAnalysis score if available
+  if (data.meta.descriptionAnalysis?.score) {
+    seoScore += Math.round(data.meta.descriptionAnalysis.score * 0.2);
+  } else if (data.meta.descriptionLength && data.meta.descriptionLength >= 120 && data.meta.descriptionLength <= 165) {
+    seoScore += 20;
+  }
+  
+  if (!data.meta.robots?.includes('noindex')) seoScore += 15;
+  if (data.externalLinks.broken === 0) seoScore += 10;
 
-  // Performance
-  const perfScores: number[] = [];
-  if (data.speed.desktop !== null) perfScores.push(data.speed.desktop);
-  if (data.speed.mobile !== null) perfScores.push(data.speed.mobile);
-  if (data.duplicates.wwwRedirect === 'ok') perfScores.push(100);
-  if (data.duplicates.trailingSlash === 'ok') perfScores.push(100);
-  if (data.duplicates.httpRedirect === 'ok') perfScores.push(100);
-  const perfScore =
-    perfScores.length > 0
-      ? Math.round(perfScores.reduce((a, b) => a + b, 0) / perfScores.length)
-      : 0;
+  // Performance (Speed & Content)
+  // Desktop speed (35%), Mobile speed (45%), redirects (20% total: 7% each)
+  let perfScore = 0;
+  if (data.speed.desktop !== null) {
+    perfScore += Math.round(data.speed.desktop * 0.35);
+  }
+  if (data.speed.mobile !== null) {
+    perfScore += Math.round(data.speed.mobile * 0.45);
+  }
+  if (data.duplicates.wwwRedirect === 'ok') perfScore += 7;
+  if (data.duplicates.trailingSlash === 'ok') perfScore += 7;
+  if (data.duplicates.httpRedirect === 'ok') perfScore += 6;
 
   return {
-    ai: aiScore,
-    compliance: complianceScore,
-    schema: schemaScore,
-    seo: seoScore,
-    performance: perfScore,
+    ai: Math.min(100, aiScore),
+    compliance: Math.min(100, complianceScore),
+    schema: Math.min(100, schemaScore),
+    seo: Math.min(100, seoScore),
+    performance: Math.min(100, perfScore),
   };
 }
 
 /**
- * Critical Task Interface
+ * Critical Task Interface with additional metadata
  */
 interface CriticalTask {
   message: string;
-  severity: 'critical' | 'warning';
+  severity: 'critical' | 'warning' | 'info';
+  category: 'security' | 'compliance' | 'performance' | 'seo' | 'schema' | 'metadata';
+  priority: number; // 1-10, higher = more important
 }
 
 /**
- * Generate Critical Tasks from Audit Data
- * Returns 3-8 critical issues and 3-5 warnings
+ * Generate ALL Critical Tasks from Audit Data
+ * Returns comprehensive list of ALL issues grouped by severity
  */
 function generateCriticalTasks(data: EphemeralAuditResult): CriticalTask[] {
-  const criticalTasks: CriticalTask[] = [];
-  const warningTasks: CriticalTask[] = [];
+  const tasks: CriticalTask[] = [];
 
-  // ===== CRITICAL ISSUES =====
-  
-  // Check for missing HREFLANG tags
-  if (!data.meta.lang) {
-    criticalTasks.push({ message: 'Додати теги HREFLANG', severity: 'critical' });
-  }
+  // ===== SECURITY ISSUES (CRITICAL) =====
 
-  // Check for HTTPS
+  // HTTPS check
   if (!data.security.https) {
-    criticalTasks.push({ message: 'Налаштувати HTTPS', severity: 'critical' });
+    tasks.push({
+      message: 'Налаштувати HTTPS для всіх сторінок',
+      severity: 'critical',
+      category: 'security',
+      priority: 10,
+    });
   }
 
-  // Check for mobile-friendliness
+  // Mobile Friendly check
   if (!data.security.mobileFriendly) {
-    criticalTasks.push({ message: 'Оптимізувати для мобільних пристроїв', severity: 'critical' });
+    tasks.push({
+      message: 'Додати meta viewport для оптимізації мобільних пристроїв',
+      severity: 'critical',
+      category: 'security',
+      priority: 9,
+    });
   }
 
-  // Check for robots.txt
+  // ===== COMPLIANCE ISSUES (CRITICAL) =====
+
+  // robots.txt check
   if (!data.files.robots) {
-    criticalTasks.push({ message: 'Додати файл robots.txt', severity: 'critical' });
+    tasks.push({
+      message: 'Додати файл robots.txt для контролю індексування',
+      severity: 'critical',
+      category: 'compliance',
+      priority: 9,
+    });
+  } else if (data.files.robotsTxt && data.files.robotsTxt.score < 50) {
+    tasks.push({
+      message: `Поліпшити robots.txt (поточна оцінка: ${data.files.robotsTxt.score}%)`,
+      severity: 'warning',
+      category: 'compliance',
+      priority: 6,
+    });
   }
 
-  // Check for sitemap
+  // sitemap.xml check
   if (!data.files.sitemap) {
-    criticalTasks.push({ message: 'Додати sitemap.xml', severity: 'critical' });
+    tasks.push({
+      message: 'Додати файл sitemap.xml для кращого індексування',
+      severity: 'critical',
+      category: 'compliance',
+      priority: 8,
+    });
   }
 
-  // Check for canonical
+  // canonical URL check
   if (!data.meta.canonical) {
-    criticalTasks.push({ message: 'Додати canonical URL', severity: 'critical' });
+    tasks.push({
+      message: 'Додати canonical URL тег для уникнення дублю контенту',
+      severity: 'critical',
+      category: 'compliance',
+      priority: 9,
+    });
+  } else if (data.meta.canonicalAnalysis && data.meta.canonicalAnalysis.score < 50) {
+    tasks.push({
+      message: `Перевірити canonical URL (поточна оцінка: ${data.meta.canonicalAnalysis.score}%)`,
+      severity: 'warning',
+      category: 'compliance',
+      priority: 6,
+    });
   }
 
-  // Check for noindex
+  // noindex check
   if (data.meta.robots?.includes('noindex')) {
-    criticalTasks.push({ message: 'Прибрати noindex директиву', severity: 'critical' });
+    tasks.push({
+      message: 'Прибрати noindex директиву з robots meta тегу',
+      severity: 'critical',
+      category: 'compliance',
+      priority: 10,
+    });
   }
 
-  // Check for Schema markup
+  // ===== SEO METADATA ISSUES (CRITICAL) =====
+
+  // Title check - detailed
+  if (!data.meta.title) {
+    tasks.push({
+      message: 'Додати title tag для сторінки',
+      severity: 'critical',
+      category: 'metadata',
+      priority: 10,
+    });
+  } else if (data.meta.titleLength !== null) {
+    if (data.meta.titleLength < TITLE_THRESHOLDS.MIN_LENGTH) {
+      tasks.push({
+        message: `Title занадто короткий (${data.meta.titleLength} символів, мінімум ${TITLE_THRESHOLDS.MIN_LENGTH})`,
+        severity: 'critical',
+        category: 'metadata',
+        priority: 9,
+      });
+    } else if (data.meta.titleLength > TITLE_THRESHOLDS.MAX_LENGTH) {
+      tasks.push({
+        message: `Title занадто довгий (${data.meta.titleLength} символів, максимум ${TITLE_THRESHOLDS.MAX_LENGTH})`,
+        severity: 'warning',
+        category: 'metadata',
+        priority: 7,
+      });
+    }
+  }
+
+  // Title analysis detailed issues
+  if (data.meta.titleAnalysis) {
+    if (data.meta.titleAnalysis.isGeneric) {
+      tasks.push({
+        message: 'Title має бути більш унікальним та специфічним для послуги',
+        severity: 'warning',
+        category: 'metadata',
+        priority: 6,
+      });
+    }
+    if (!data.meta.titleAnalysis.hasLocalKeyword) {
+      tasks.push({
+        message: 'Додати геолокацію в title для локального пошуку',
+        severity: 'warning',
+        category: 'metadata',
+        priority: 7,
+      });
+    }
+    if (!data.meta.titleAnalysis.startsWithKeyword) {
+      tasks.push({
+        message: 'Помістити ключове слово на початок title',
+        severity: 'info',
+        category: 'metadata',
+        priority: 4,
+      });
+    }
+    if (data.meta.titleAnalysis.issues && data.meta.titleAnalysis.issues.length > 0) {
+      data.meta.titleAnalysis.issues.forEach((issue) => {
+        tasks.push({
+          message: `Title: ${issue}`,
+          severity: 'warning',
+          category: 'metadata',
+          priority: 5,
+        });
+      });
+    }
+  }
+
+  // Description check - detailed
+  if (!data.meta.description) {
+    tasks.push({
+      message: 'Додати meta description для сторінки',
+      severity: 'critical',
+      category: 'metadata',
+      priority: 9,
+    });
+  } else if (data.meta.descriptionLength !== null) {
+    if (data.meta.descriptionLength < DESCRIPTION_THRESHOLDS.MIN_LENGTH) {
+      tasks.push({
+        message: `Description занадто короткий (${data.meta.descriptionLength} символів, мінімум ${DESCRIPTION_THRESHOLDS.MIN_LENGTH})`,
+        severity: 'critical',
+        category: 'metadata',
+        priority: 8,
+      });
+    } else if (data.meta.descriptionLength > DESCRIPTION_THRESHOLDS.MAX_LENGTH) {
+      tasks.push({
+        message: `Description занадто довгий (${data.meta.descriptionLength} символів, максимум ${DESCRIPTION_THRESHOLDS.MAX_LENGTH})`,
+        severity: 'warning',
+        category: 'metadata',
+        priority: 6,
+      });
+    }
+  }
+
+  // Description analysis detailed issues
+  if (data.meta.descriptionAnalysis) {
+    if (!data.meta.descriptionAnalysis.hasCallToAction) {
+      tasks.push({
+        message: 'Додати заклик до дії (CTA) в meta description',
+        severity: 'warning',
+        category: 'metadata',
+        priority: 6,
+      });
+    }
+    if (!data.meta.descriptionAnalysis.hasBenefits) {
+      tasks.push({
+        message: 'Додати переваги або цифри в meta description',
+        severity: 'info',
+        category: 'metadata',
+        priority: 4,
+      });
+    }
+    if (data.meta.descriptionAnalysis.isDifferentFromTitle === false) {
+      tasks.push({
+        message: 'Description дублює title - зробити унікальним',
+        severity: 'warning',
+        category: 'metadata',
+        priority: 7,
+      });
+    }
+    if (data.meta.descriptionAnalysis.issues && data.meta.descriptionAnalysis.issues.length > 0) {
+      data.meta.descriptionAnalysis.issues.forEach((issue) => {
+        tasks.push({
+          message: `Description: ${issue}`,
+          severity: 'warning',
+          category: 'metadata',
+          priority: 5,
+        });
+      });
+    }
+  }
+
+  // ===== SCHEMA MARKUP (CRITICAL) =====
+
+  // Main schema types
   if (!data.schema.hasMedicalOrg && !data.schema.hasLocalBusiness) {
-    criticalTasks.push({ message: 'Додати Schema MedicalOrganization або LocalBusiness', severity: 'critical' });
+    tasks.push({
+      message: 'Додати Schema MedicalOrganization або LocalBusiness markup',
+      severity: 'critical',
+      category: 'schema',
+      priority: 9,
+    });
   }
 
-  // Check for llms.txt
-  if (!data.files.llmsTxt.present) {
-    criticalTasks.push({ message: 'Додати файл llms.txt для AI-оптимізації', severity: 'critical' });
-  }
-
-  // Check for title issues
-  if (!data.meta.title || data.meta.titleLength === null || data.meta.titleLength < 30 || data.meta.titleLength > 65) {
-    criticalTasks.push({ message: 'Оптимізувати title сторінки (30-65 символів)', severity: 'critical' });
-  }
-
-  // Check for description issues
-  if (!data.meta.description || data.meta.descriptionLength === null || data.meta.descriptionLength < 120 || data.meta.descriptionLength > 165) {
-    criticalTasks.push({ message: 'Оптимізувати meta description (120-165 символів)', severity: 'critical' });
-  }
-
-  // ===== WARNINGS =====
-  
-  // Performance warnings
-  if (data.speed.desktop !== null && data.speed.desktop < 50) {
-    warningTasks.push({ message: 'Підвищити швидкість сайту (Desktop)', severity: 'warning' });
-  }
-
-  if (data.speed.mobile !== null && data.speed.mobile < 50) {
-    warningTasks.push({ message: 'Підвищити швидкість сайту (Mobile)', severity: 'warning' });
-  }
-
-  // Check for broken links
-  if (data.externalLinks.broken > 0) {
-    warningTasks.push({ message: `Виправити ${data.externalLinks.broken} битих посилань`, severity: 'warning' });
-  }
-
-  // Check for missing alt texts
-  if (data.images.missingAlt > 0) {
-    warningTasks.push({ message: `Додати alt-тексти до ${data.images.missingAlt} зображень`, severity: 'warning' });
-  }
-
-  // Check for duplicate issues
-  if (data.duplicates.wwwRedirect !== 'ok') {
-    warningTasks.push({ message: 'Налаштувати WWW редирект', severity: 'warning' });
-  }
-
-  if (data.duplicates.httpRedirect !== 'ok') {
-    warningTasks.push({ message: 'Налаштувати HTTP → HTTPS редирект', severity: 'warning' });
-  }
-
-  if (data.duplicates.trailingSlash !== 'ok') {
-    warningTasks.push({ message: 'Налаштувати редирект trailing slash', severity: 'warning' });
-  }
-
-  // Check for Schema completeness
+  // Extended schema types
   if (!data.schema.hasPhysician) {
-    warningTasks.push({ message: 'Додати Schema Physician для лікарів', severity: 'warning' });
+    tasks.push({
+      message: 'Додати Schema Physician для医 профілів лікарів',
+      severity: 'warning',
+      category: 'schema',
+      priority: 6,
+    });
+  }
+
+  if (!data.schema.hasMedicalProcedure) {
+    tasks.push({
+      message: 'Додати Schema MedicalProcedure для послуг',
+      severity: 'warning',
+      category: 'schema',
+      priority: 6,
+    });
   }
 
   if (!data.schema.hasFAQPage) {
-    warningTasks.push({ message: 'Додати Schema FAQPage для FAQ секції', severity: 'warning' });
+    tasks.push({
+      message: 'Додати Schema FAQPage для FAQ секції',
+      severity: 'info',
+      category: 'schema',
+      priority: 4,
+    });
   }
 
   if (!data.schema.hasBreadcrumbList) {
-    warningTasks.push({ message: 'Додати Schema BreadcrumbList', severity: 'warning' });
+    tasks.push({
+      message: 'Додати Schema BreadcrumbList для навігації',
+      severity: 'info',
+      category: 'schema',
+      priority: 4,
+    });
   }
 
-  // Limit: 3-8 critical, 3-5 warnings
-  const limitedCritical = criticalTasks.slice(0, 8);
-  const limitedWarnings = warningTasks.slice(0, 5);
+  if (!data.schema.hasReview) {
+    tasks.push({
+      message: 'Додати Schema Review/AggregateRating для відгуків',
+      severity: 'info',
+      category: 'schema',
+      priority: 3,
+    });
+  }
 
-  // Ensure minimum of 3 each (if available)
-  return [...limitedCritical, ...limitedWarnings];
+  // ===== AI OPTIMIZATION (llms.txt) =====
+
+  if (!data.files.llmsTxt.present) {
+    tasks.push({
+      message: 'Додати файл llms.txt для оптимізації AI видимості',
+      severity: 'warning',
+      category: 'seo',
+      priority: 7,
+    });
+  } else if (data.files.llmsTxt.score < 50) {
+    tasks.push({
+      message: `Поліпшити вміст llms.txt (поточна оцінка: ${data.files.llmsTxt.score}%)`,
+      severity: 'warning',
+      category: 'seo',
+      priority: 6,
+    });
+  }
+
+  // ===== LANGUAGE & HREFLANG =====
+
+  if (!data.meta.lang) {
+    tasks.push({
+      message: 'Додати мовний атрибут lang до <html> тегу',
+      severity: 'warning',
+      category: 'compliance',
+      priority: 5,
+    });
+  }
+
+  if (data.meta.hreflangs && data.meta.hreflangs.length > 0) {
+    // Site has hreflang tags - this is good for multilingual sites
+  } else if (!data.meta.hreflangs || data.meta.hreflangs.length === 0) {
+    // No hreflangs - only issue if site is multilingual (skip for single-language)
+  }
+
+  // ===== PERFORMANCE ISSUES =====
+
+  if (data.speed.desktop !== null && data.speed.desktop < 50) {
+    tasks.push({
+      message: `Критично низька швидкість Desktop (${data.speed.desktop}%). Оптимізувати зображення, скрипти та CSS`,
+      severity: 'critical',
+      category: 'performance',
+      priority: 9,
+    });
+  } else if (data.speed.desktop !== null && data.speed.desktop < 75) {
+    tasks.push({
+      message: `Слабка швидкість Desktop (${data.speed.desktop}%). Працювати над оптимізацією`,
+      severity: 'warning',
+      category: 'performance',
+      priority: 7,
+    });
+  }
+
+  if (data.speed.mobile !== null && data.speed.mobile < 50) {
+    tasks.push({
+      message: `Критично низька швидкість Mobile (${data.speed.mobile}%). Оптимізувати для мобільних пристроїв`,
+      severity: 'critical',
+      category: 'performance',
+      priority: 9,
+    });
+  } else if (data.speed.mobile !== null && data.speed.mobile < 75) {
+    tasks.push({
+      message: `Слабка швидкість Mobile (${data.speed.mobile}%). Необхідна оптимізація`,
+      severity: 'warning',
+      category: 'performance',
+      priority: 7,
+    });
+  }
+
+  // Core Web Vitals issues
+  if (data.speed.desktopDetails) {
+    if (data.speed.desktopDetails.lcp && data.speed.desktopDetails.lcp > CORE_WEB_VITALS.LCP.NEEDS_IMPROVEMENT) {
+      tasks.push({
+        message: `LCP (Desktop) повільний: ${Math.round(data.speed.desktopDetails.lcp)}ms (добре < ${CORE_WEB_VITALS.LCP.GOOD}ms)`,
+        severity: 'warning',
+        category: 'performance',
+        priority: 6,
+      });
+    }
+  }
+
+  if (data.speed.mobileDetails) {
+    if (data.speed.mobileDetails.lcp && data.speed.mobileDetails.lcp > CORE_WEB_VITALS.LCP.NEEDS_IMPROVEMENT) {
+      tasks.push({
+        message: `LCP (Mobile) повільний: ${Math.round(data.speed.mobileDetails.lcp)}ms (добре < ${CORE_WEB_VITALS.LCP.GOOD}ms)`,
+        severity: 'warning',
+        category: 'performance',
+        priority: 6,
+      });
+    }
+  }
+
+  // ===== EXTERNAL LINKS & IMAGES =====
+
+  if (data.externalLinks.broken > 0) {
+    tasks.push({
+      message: `Виправити ${data.externalLinks.broken} битих посилань${data.externalLinks.total > 0 ? ` (з ${data.externalLinks.total} всього)` : ''}`,
+      severity: 'warning',
+      category: 'compliance',
+      priority: 5,
+    });
+  }
+
+  if (data.images.missingAlt > 0) {
+    tasks.push({
+      message: `Додати alt-тексти до ${data.images.missingAlt} зображень${data.images.total > 0 ? ` (з ${data.images.total} всього)` : ''}`,
+      severity: 'warning',
+      category: 'seo',
+      priority: 6,
+    });
+  }
+
+  // ===== DUPLICATE CONTENT ISSUES =====
+
+  if (data.duplicates.wwwRedirect === 'duplicate') {
+    tasks.push({
+      message: 'Налаштувати редирект www ↔ non-www (дублювання контенту)',
+      severity: 'critical',
+      category: 'compliance',
+      priority: 9,
+    });
+  } else if (data.duplicates.wwwRedirect === 'error') {
+    tasks.push({
+      message: 'Перевірити редирект www (помилка при перевірці)',
+      severity: 'warning',
+      category: 'compliance',
+      priority: 4,
+    });
+  }
+
+  if (data.duplicates.httpRedirect === 'duplicate') {
+    tasks.push({
+      message: 'Налаштувати редирект HTTP → HTTPS (дублювання контенту)',
+      severity: 'critical',
+      category: 'security',
+      priority: 10,
+    });
+  } else if (data.duplicates.httpRedirect === 'error') {
+    tasks.push({
+      message: 'Перевірити редирект HTTP → HTTPS (помилка при перевірці)',
+      severity: 'warning',
+      category: 'security',
+      priority: 4,
+    });
+  }
+
+  if (data.duplicates.trailingSlash === 'duplicate') {
+    tasks.push({
+      message: 'Налаштувати редирект trailing slash (дублювання контенту)',
+      severity: 'critical',
+      category: 'compliance',
+      priority: 8,
+    });
+  } else if (data.duplicates.trailingSlash === 'error') {
+    tasks.push({
+      message: 'Перевірити редирект trailing slash (помилка при перевірці)',
+      severity: 'warning',
+      category: 'compliance',
+      priority: 4,
+    });
+  }
+
+  // ===== SORT BY PRIORITY (highest first) =====
+  tasks.sort((a, b) => b.priority - a.priority);
+
+  return tasks;
 }
 
 /**
  * Main TechAuditSection Component
  */
-export function TechAuditSection({ data }: TechAuditSectionProps) {
+export function TechAuditSection({ data, url }: TechAuditSectionProps) {
   const { t } = useTranslation('playground');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [isTasksOpen, setIsTasksOpen] = useState(false);
+
+  // State for trends from previous audit
+  const [trends, setTrends] = useState<Record<string, number | null>>({});
+  const [isFirstAudit, setIsFirstAudit] = useState(true);
+  const [trendsLoaded, setTrendsLoaded] = useState(false);
 
   // Helper to get status from boolean
   const fromBool = (val: boolean | null): 'good' | 'bad' =>
     val ? 'good' : 'bad';
 
   const categoryScores = calculateCategoryScores(data);
+
+  // Load previous audit to calculate trends
+  useEffect(() => {
+    if (!data || !url || trendsLoaded) return;
+
+    const loadPreviousAudit = async () => {
+      try {
+        const previous = await getPreviousTechAudit({ url });
+
+        if (previous && previous.result) {
+          // Calculate previous scores from partial data (handle missing fields gracefully)
+          const prevData = previous.result;
+          let prevAi = 0;
+          if (prevData.files?.llmsTxt?.present) prevAi += 30;
+          if (prevData.files?.llmsTxt?.score > 0) prevAi += Math.round(prevData.files.llmsTxt.score * 0.4);
+          if (prevData.files?.robots) prevAi += 15;
+          if (prevData.files?.sitemap) prevAi += 15;
+          
+          let prevCompliance = 0;
+          if (prevData.security?.https) prevCompliance += 40;
+          if (prevData.security?.mobileFriendly) prevCompliance += 30;
+          if (prevData.files?.robots) prevCompliance += 15;
+          if (prevData.files?.sitemap) prevCompliance += 15;
+          
+          const prevSchemaCount = prevData.schema ? Object.values(prevData.schema).filter(Boolean).length : 0;
+          const prevSchema = Math.round((prevSchemaCount / 8) * 100);
+          
+          const prevScores = {
+            ai: Math.min(100, prevAi),
+            compliance: Math.min(100, prevCompliance),
+            schema: Math.min(100, prevSchema),
+            seo: 50, // Fallback - not all fields available in history
+            performance: 50, // Fallback - not all fields available in history
+          };
+          
+          const currentScores = categoryScores;
+
+          setTrends({
+            ai: currentScores.ai - prevScores.ai,
+            compliance: currentScores.compliance - prevScores.compliance,
+            schema: Math.round(currentScores.schema - prevScores.schema),
+            seo: null, // Cannot calculate accurately from history
+            performance: null, // Cannot calculate accurately from history
+          });
+          setIsFirstAudit(false);
+        } else {
+          setIsFirstAudit(true);
+        }
+        setTrendsLoaded(true);
+      } catch (error) {
+        console.error('[TechAuditSection] Failed to load previous audit:', error);
+        setTrendsLoaded(true);
+      }
+    };
+
+    loadPreviousAudit();
+  }, [data, url, trendsLoaded]);
 
   // Format metric value to 2 decimal places
   const _formatMetric = (value: number | null): string => {
@@ -716,7 +1123,137 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
   const scoreDifference = overallScore - ukraineBenchmark;
 
   // Generate critical tasks from audit data
-  const criticalTasks = generateCriticalTasks(data);
+  const allCriticalTasks = generateCriticalTasks(data);
+
+  // Apply filtering
+  const criticalTasks = selectedCategories.length > 0
+    ? allCriticalTasks.filter(task => selectedCategories.includes(task.category))
+    : allCriticalTasks;
+
+  const toggleCategory = (category: string) => {
+    setSelectedCategories(prev =>
+      prev.includes(category)
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    );
+  };
+
+  const categories = Array.from(new Set(allCriticalTasks.map(t => t.category)));
+
+  // --- Export Functions ---
+  const downloadAsCSV = () => {
+    const headers = ['Message', 'Severity', 'Category', 'Priority'];
+    const rows = allCriticalTasks.map(t => [
+      `"${t.message.replace(/"/g, '""')}"`,
+      t.severity,
+      t.category,
+      t.priority
+    ]);
+    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `tech-audit-tasks-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const downloadAsPDF = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const _html = `
+      <html>
+        <head>
+          <title>Technical Audit Report</title>
+          <style>
+            body { font-family: sans-serif; padding: 40px; color: #1B2559; }
+            h1 { color: #4318FF; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #E2E8F0; padding: 12px; text-align: left; }
+            th { background-color: #F4F7FE; }
+            .severity-critical { color: #EE5D50; font-weight: bold; }
+            .severity-warning { color: #FFB547; font-weight: bold; }
+            .severity-info { color: #2B77E5; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <h1>Technical Audit Report</h1>
+          <p>Generated on: ${new Date().toLocaleString()}</p>
+          <p>Overall Score: ${overallScore}%</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Priority</th>
+                <th>Category</th>
+                <th>Task</th>
+                <th>Severity</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${allCriticalTasks.map(t => `
+                <tr>
+                  <td>${t.priority}</td>
+                  <td style="text-transform: capitalize;">${t.category}</td>
+                  <td>${t.message}</td>
+                  <td class="severity-${t.severity}">${t.severity.toUpperCase()}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          <script>
+            window.onload = function() { window.print(); window.close(); }
+          </script>
+        </body>
+      </html>
+    `;
+    printWindow.document.close();
+  };
+
+  // --- History Tracking ---
+  interface AuditHistoryEntry {
+    score: number;
+    criticalCount: number;
+    timestamp?: number;
+  }
+  const [history, setHistory] = useState<AuditHistoryEntry[]>([]);
+
+  useEffect(() => {
+    // Generate a unique key for this domain if possible
+    const domain = data.meta.canonical
+      ? new URL(data.meta.canonical).hostname
+      : 'current-site';
+    const storageKey = `tech-audit-history-${domain}`;
+
+    // Load history
+    const savedHistory = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    setHistory(savedHistory);
+
+    // Save current run if it's new (simple timestamp check)
+    const now = new Date().getTime();
+    const lastRun = savedHistory[0];
+
+    // Avoid double saving in dev mode
+    if (!lastRun || now - lastRun.timestamp > 60000) {
+      const newEntry = {
+        timestamp: now,
+        score: overallScore,
+        criticalCount: allCriticalTasks.filter(t => t.severity === 'critical').length,
+        warningCount: allCriticalTasks.filter(t => t.severity === 'warning').length,
+      };
+
+      const updatedHistory = [newEntry, ...savedHistory].slice(0, 5); // Keep last 5
+      localStorage.setItem(storageKey, JSON.stringify(updatedHistory));
+      // Update local state without trigger re-run
+    }
+  }, [overallScore, allCriticalTasks.length]);
+
+  const lastAudit = history.length > 1 ? history[1] : null;
+  const _scoreDelta = lastAudit ? overallScore - lastAudit.score : 0;
+  const _criticalDelta = lastAudit ? allCriticalTasks.filter(t => t.severity === 'critical').length - lastAudit.criticalCount : 0;
 
   return (
     <div className="space-y-6 pb-20 animate-in fade-in duration-700">
@@ -724,7 +1261,7 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
       <section className="space-y-6">
         {/* Two main metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <HorizonCard 
+          <HorizonCard
             className="group hover:-translate-y-1 transition-all duration-300"
             style={{ boxShadow: HORIZON.shadowSm }}
           >
@@ -738,7 +1275,7 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
               +3% за 30 днів
             </p>
           </HorizonCard>
-          <HorizonCard 
+          <HorizonCard
             className="group hover:-translate-y-1 transition-all duration-300"
             style={{ boxShadow: HORIZON.shadowSm }}
           >
@@ -769,7 +1306,8 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
             label="Technical optimization"
             value={`${categoryScores.ai}%`}
             benchmark="75%"
-            trend={categoryScores.ai >= 75 ? '+' + (categoryScores.ai - 75) + '%' : '-' + (75 - categoryScores.ai) + '%'}
+            trend={trendsLoaded ? trends.ai : null}
+            isFirstAudit={trendsLoaded && isFirstAudit}
             icon={Zap}
             iconBg={HORIZON.primaryLight}
             iconColor={HORIZON.primary}
@@ -778,7 +1316,8 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
             label="Basic Compliance"
             value={`${categoryScores.compliance}%`}
             benchmark="100%"
-            trend={categoryScores.compliance >= 100 ? '+0%' : '-' + (100 - categoryScores.compliance) + '%'}
+            trend={trendsLoaded ? trends.compliance : null}
+            isFirstAudit={trendsLoaded && isFirstAudit}
             icon={Shield}
             iconBg={HORIZON.successLight}
             iconColor={HORIZON.success}
@@ -787,7 +1326,8 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
             label="Structured data"
             value={`${Math.round(categoryScores.schema)}%`}
             benchmark="75%"
-            trend={categoryScores.schema >= 75 ? '+' + Math.round(categoryScores.schema - 75) + '%' : '-' + Math.round(75 - categoryScores.schema) + '%'}
+            trend={trendsLoaded ? trends.schema : null}
+            isFirstAudit={trendsLoaded && isFirstAudit}
             icon={FileText}
             iconBg={HORIZON.infoLight}
             iconColor={HORIZON.info}
@@ -796,7 +1336,8 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
             label="GEO indexing"
             value={`${categoryScores.seo}%`}
             benchmark="80%"
-            trend={categoryScores.seo >= 80 ? '+' + (categoryScores.seo - 80) + '%' : '-' + (80 - categoryScores.seo) + '%'}
+            trend={trendsLoaded ? trends.seo : null}
+            isFirstAudit={trendsLoaded && isFirstAudit}
             icon={Search}
             iconBg={HORIZON.warningLight}
             iconColor={HORIZON.warning}
@@ -805,7 +1346,8 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
             label="Speed & Content"
             value={`${categoryScores.performance}%`}
             benchmark="90%"
-            trend={categoryScores.performance >= 90 ? '+' + (categoryScores.performance - 90) + '%' : '-' + (90 - categoryScores.performance) + '%'}
+            trend={trendsLoaded ? trends.performance : null}
+            isFirstAudit={trendsLoaded && isFirstAudit}
             icon={Gauge}
             iconBg={HORIZON.errorLight}
             iconColor={HORIZON.error}
@@ -866,32 +1408,231 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
           </div>
         </HorizonCard>
 
-        {/* Critical Tasks */}
-        <HorizonCard title="Критичні задачі">
-          <div className="space-y-3">
-            {criticalTasks.length > 0 ? (
-              criticalTasks.map((task, index) => (
-                <div key={index} className="flex items-start gap-3">
-                  {task.severity === 'critical' ? (
-                    <XCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: HORIZON.error }} />
-                  ) : (
-                    <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: HORIZON.warning }} />
-                  )}
-                  <span className="text-sm font-medium" style={{ color: HORIZON.textPrimary }}>
-                    {task.message}
+        {/* Critical Tasks - Always visible critical, expandable rest */}
+        <Card
+          className="overflow-hidden rounded-[20px] border-none bg-white transition-all duration-300"
+          style={{ boxShadow: HORIZON.shadow }}
+        >
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3
+                  className="mb-1 text-sm font-bold tracking-widest uppercase"
+                  style={{ color: HORIZON.textSecondary }}
+                >
+                  Задачі з пріоритетом
+                </h3>
+                <p
+                  className="text-sm font-bold"
+                  style={{ color: HORIZON.textPrimary }}
+                >
+                  Список виправлень
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={downloadAsCSV}
+                  className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors text-slate-600 hover:text-primary border border-slate-200"
+                  title="Експорт у CSV"
+                >
+                  <FileDown className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={downloadAsPDF}
+                  className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors text-slate-600 hover:text-primary border border-slate-200"
+                  title="Друк / PDF"
+                >
+                  <Printer className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-2">
+            <div className="space-y-4">
+              {/* Summary stats - always visible */}
+              <div className="grid grid-cols-4 gap-2 pb-4 border-b border-slate-200">
+                <div className="text-center">
+                  <p className="text-2xl font-bold" style={{ color: HORIZON.error }}>
+                    {allCriticalTasks.filter(t => t.severity === 'critical').length}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">Критичних</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold" style={{ color: HORIZON.warning }}>
+                    {allCriticalTasks.filter(t => t.severity === 'warning').length}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">Попередження</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold" style={{ color: HORIZON.info }}>
+                    {allCriticalTasks.filter(t => t.severity === 'info').length}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">Інформація</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold" style={{ color: HORIZON.textSecondary }}>
+                    {allCriticalTasks.length}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">Всього</p>
+                </div>
+              </div>
+
+              {/* Critical issues - ALWAYS VISIBLE */}
+              {allCriticalTasks.filter(t => t.severity === 'critical').length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-semibold text-red-700 uppercase tracking-widest">🔴 Критичні проблеми</h4>
+                  <div className="space-y-2 pl-2 border-l-2 border-red-300">
+                    {allCriticalTasks.filter(t => t.severity === 'critical').map((task, index) => (
+                      <div key={`critical-${index}`} className="flex items-start gap-3">
+                        <XCircle className="w-4 h-4 flex-shrink-0 mt-1" style={{ color: HORIZON.error }} />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium" style={{ color: HORIZON.textPrimary }}>
+                            {task.message}
+                          </p>
+                          <p className="text-[11px] text-slate-400 mt-1">
+                            Категорія: {task.category} • Пріоритет: {task.priority}/10
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {allCriticalTasks.filter(t => t.severity === 'critical').length === 0 && (
+                <div className="flex items-center gap-3 py-4 justify-center">
+                  <CheckCircle2 className="w-5 h-5" style={{ color: HORIZON.success }} />
+                  <span className="text-sm font-medium" style={{ color: HORIZON.success }}>
+                    Критичних проблем не виявлено!
                   </span>
                 </div>
-              ))
-            ) : (
-              <div className="flex items-center gap-3 py-4">
-                <CheckCircle2 className="w-5 h-5" style={{ color: HORIZON.success }} />
-                <span className="text-sm font-medium" style={{ color: HORIZON.textPrimary }}>
-                  Критичних проблем не виявлено
-                </span>
-              </div>
-            )}
-          </div>
-        </HorizonCard>
+              )}
+
+              {/* Collapsible section for warnings, info, filters */}
+              {(allCriticalTasks.filter(t => t.severity === 'warning').length > 0 || 
+                allCriticalTasks.filter(t => t.severity === 'info').length > 0) && (
+                <Collapsible open={isTasksOpen} onOpenChange={setIsTasksOpen}>
+                  <CollapsibleTrigger asChild>
+                    <button className="w-full flex items-center justify-between py-3 px-4 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200">
+                      <span className="text-sm font-semibold text-slate-600">
+                        Показати попередження та рекомендації
+                      </span>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">
+                            {allCriticalTasks.filter(t => t.severity === 'warning').length}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700">
+                            {allCriticalTasks.filter(t => t.severity === 'info').length}
+                          </span>
+                        </div>
+                        <ChevronDown
+                          className={cn(
+                            'h-4 w-4 text-slate-400 transition-transform',
+                            isTasksOpen && 'rotate-180',
+                          )}
+                        />
+                      </div>
+                    </button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="pt-4 space-y-4">
+                      {/* Category Filters */}
+                      <div className="flex flex-wrap gap-x-4 gap-y-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        {categories.map(cat => (
+                          <div key={cat} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`filter-${cat}`}
+                              checked={selectedCategories.includes(cat)}
+                              onCheckedChange={() => toggleCategory(cat)}
+                            />
+                            <Label
+                              htmlFor={`filter-${cat}`}
+                              className="text-xs font-semibold capitalize cursor-pointer text-slate-600"
+                            >
+                              {cat}
+                            </Label>
+                          </div>
+                        ))}
+                        {selectedCategories.length > 0 && (
+                          <button
+                            onClick={() => setSelectedCategories([])}
+                            className="text-[10px] font-bold text-primary hover:underline ml-auto"
+                          >
+                            Очистити все
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Warnings */}
+                      {criticalTasks.filter(t => t.severity === 'warning').length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="text-xs font-semibold text-amber-700 uppercase tracking-widest">⚠️ Попередження</h4>
+                          <div className="space-y-2 pl-2 border-l-2 border-amber-300">
+                            {criticalTasks.filter(t => t.severity === 'warning').map((task, index) => (
+                              <div key={`warning-${index}`} className="flex items-start gap-3">
+                                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-1" style={{ color: HORIZON.warning }} />
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium text-slate-700">
+                                    {task.message}
+                                  </p>
+                                  <p className="text-[11px] text-slate-400 mt-1">
+                                    Категорія: {task.category} • Пріоритет: {task.priority}/10
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Info */}
+                      {criticalTasks.filter(t => t.severity === 'info').length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="text-xs font-semibold text-blue-700 uppercase tracking-widest">ℹ️ Рекомендації</h4>
+                          <div className="space-y-2 pl-2 border-l-2 border-blue-300">
+                            {criticalTasks.filter(t => t.severity === 'info').map((task, index) => (
+                              <div key={`info-${index}`} className="flex items-start gap-3">
+                                <Info className="w-4 h-4 flex-shrink-0 mt-1 text-blue-500" />
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium text-slate-700">
+                                    {task.message}
+                                  </p>
+                                  <p className="text-[11px] text-slate-400 mt-1">
+                                    Категорія: {task.category} • Пріоритет: {task.priority}/10
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Summary by category */}
+                      <div className="pt-4 border-t border-slate-200">
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3">Розподіл по категоріям</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {(Object.keys(CATEGORY_WEIGHTS) as Array<keyof typeof CATEGORY_WEIGHTS>).map((category) => {
+                            const catName = String(category);
+                            const count = allCriticalTasks.filter(t => t.category === category).length;
+                            return count > 0 ? (
+                              <div key={catName} className="p-2 rounded-lg bg-slate-50 border border-slate-200">
+                                <p className="text-[11px] font-medium text-slate-600 capitalize">{catName}</p>
+                                <p className="text-lg font-bold" style={{ color: HORIZON.colors[category as keyof typeof HORIZON.colors] || HORIZON.textPrimary }}>
+                                  {count}
+                                </p>
+                              </div>
+                            ) : null;
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Category 1: AI Optimization */}
@@ -928,13 +1669,7 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
           </MinimalMetricCard>
           <MinimalMetricCard
             title={t('techAudit.items.3_2.title')}
-            status={
-              data.files.llmsTxt.score >= 80
-                ? 'good'
-                : data.files.llmsTxt.score >= 50
-                  ? 'warning'
-                  : 'bad'
-            }
+            status={getScoreStatus(data.files.llmsTxt.score)}
             score={data.files.llmsTxt.score}
           >
             <div className="space-y-4">
@@ -987,12 +1722,36 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
                   </div>
                 </div>
               </div>
+              {/* Problems - missing sections or low score */}
+              {(data.files.llmsTxt.missingSections?.length > 0 || data.files.llmsTxt.score < 50) && (
+                <div className="pt-4 border-t border-border">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                    Проблеми
+                  </h4>
+                  <ul className="list-disc list-inside space-y-1 text-xs text-red-600">
+                    {!data.files.llmsTxt.present && (
+                      <li>Файл llms.txt не знайдено на сайті</li>
+                    )}
+                    {data.files.llmsTxt.present && data.files.llmsTxt.score === 0 && (
+                      <li>Файл llms.txt порожній або не містить корисної інформації</li>
+                    )}
+                    {data.files.llmsTxt.present && data.files.llmsTxt.score > 0 && data.files.llmsTxt.score < 50 && (
+                      <li>Файл llms.txt має низьку якість (оцінка: {data.files.llmsTxt.score}%)</li>
+                    )}
+                    {data.files.llmsTxt.missingSections?.map((issue, i) => (
+                      <li key={i}>Відсутній розділ: {issue}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Recommendations */}
               {data.files.llmsTxt.recommendations.length > 0 && (
                 <div className="pt-4 border-t border-border">
-                  <p className="text-xs font-black tracking-wider text-slate-400 uppercase mb-2">
-                    Рекомендації:
-                  </p>
-                  <ul className="list-inside list-disc space-y-1 text-xs text-slate-700">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                    Рекомендації
+                  </h4>
+                  <ul className="list-inside list-disc space-y-1 text-xs text-slate-600">
                     {data.files.llmsTxt.recommendations.map((rec, i) => (
                       <li key={i}>{rec}</li>
                     ))}
@@ -1027,13 +1786,7 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
           </MinimalMetricCard>
           <MinimalMetricCard
             title={t('techAudit.items.3_4.title')}
-            status={
-              data.files.robotsTxt?.score >= 80
-                ? 'good'
-                : data.files.robotsTxt?.score >= 50
-                  ? 'warning'
-                  : 'bad'
-            }
+            status={getScoreStatus(data.files.robotsTxt?.score)}
             score={data.files.robotsTxt?.score ?? (data.files.sitemap ? 50 : 0)}
             value={
               data.files.robotsTxt?.hasSitemap
@@ -1671,7 +2424,7 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
                   Перевіряємо наявність hreflang тегів (якщо сайт багатомовний).
                 </p>
               </div>
-              {data.meta.hreflangs?.length > 0 && (
+              {data.meta.hreflangs?.length > 0 ? (
                 <div className="pt-4 border-t border-border">
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                     Знайдені версії
@@ -1688,6 +2441,32 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
                         </span>
                       </div>
                     ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="pt-4 border-t border-border">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                    Статус
+                  </h4>
+                  <div className="p-3 bg-slate-50/50 rounded-lg border border-slate-200">
+                    <p className="text-sm text-muted-foreground mb-2">
+                      <strong>Це нормально!</strong> Hreflang теги не знайдені, тому що ваш сайт одномовний.
+                    </p>
+                    <div className="space-y-1 text-xs text-muted-foreground">
+                      <p>
+                        <strong>Коли потрібні hreflang теги:</strong>
+                      </p>
+                      <ul className="list-disc list-inside ml-1 space-y-0.5">
+                        <li>Сайт доступний на різних мовах (укр, англ, нім. тощо)</li>
+                        <li>Основний контент дублюється для різних географічних регіонів</li>
+                        <li>Потрібно явно вказати Google та LLM які версії показувати</li>
+                      </ul>
+                    </div>
+                    <div className="mt-3 p-2 bg-emerald-50 dark:bg-emerald-950/20 rounded border border-emerald-200 dark:border-emerald-900/30">
+                      <p className="text-xs text-emerald-700 dark:text-emerald-300">
+                        ✓ Ваш одномовний сайт — hreflang не потрібні. Проблеми немає.
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1753,15 +2532,9 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
           </MinimalMetricCard>
           <MinimalMetricCard
             title={t('techAudit.items.3_18.title')}
-            status={
-              data.meta.titleAnalysis?.score >= 80
-                ? 'good'
-                : data.meta.titleAnalysis?.score >= 50
-                  ? 'warning'
-                  : 'bad'
-            }
-            score={data.meta.titleAnalysis?.score ?? (data.meta.titleLength && data.meta.titleLength >= 30 && data.meta.titleLength <= 65 ? 70 : 30)}
-            value={`${data.meta.titleLength || 0} симв.`}
+            status={getScoreStatus(data.meta.titleAnalysis?.score)}
+            score={data.meta.titleAnalysis?.score ?? (isOptimalTitleLength(data.meta.titleLength) ? 70 : 30)}
+            value={isOptimalTitleLength(data.meta.titleLength) ? `${data.meta.titleLength} симв. ✓` : `${data.meta.titleLength || 0} симв. ✗`}
           >
             <div className="space-y-4">
               <div>
@@ -1782,7 +2555,7 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
                   <div className="space-y-2">
                     {/* Length check */}
                     <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/50 p-3">
-                      <span className="font-medium text-slate-700 text-xs">Оптимальна довжина (50-60)</span>
+                      <span className="font-medium text-slate-700 text-xs">Оптимальна довжина ({TITLE_THRESHOLDS.MIN_LENGTH}-{TITLE_THRESHOLDS.MAX_LENGTH})</span>
                       <Badge
                         variant={data.meta.titleAnalysis.isOptimalLength ? 'default' : 'destructive'}
                         className={data.meta.titleAnalysis.isOptimalLength ? 'bg-emerald-100 text-emerald-800' : ''}
@@ -1884,19 +2657,85 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
                   &quot;{data.meta.title}&quot;
                 </div>
               </div>
+
+              {/* Service Titles Analysis */}
+              {data.meta.titleAnalysis?.serviceTitles && data.meta.titleAnalysis.serviceTitles.length > 0 && (
+                <div className="pt-4 border-t border-border">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    Аналіз заголовків послуг ({data.meta.titleAnalysis.serviceTitles.length})
+                  </h4>
+                  <div className="space-y-3">
+                    {data.meta.titleAnalysis.serviceTitles.map((serviceTitle, index) => (
+                      <div key={index} className="rounded-lg border border-slate-200 bg-slate-50/50 p-3 space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-slate-700 italic break-words">
+                              &quot;{serviceTitle.title || 'N/A'}&quot;
+                            </p>
+                          </div>
+                          <Badge
+                            variant={
+                              serviceTitle.score >= 80
+                                ? 'default'
+                                : serviceTitle.score >= 50
+                                  ? 'secondary'
+                                  : 'destructive'
+                            }
+                            className={
+                              serviceTitle.score >= 80
+                                ? 'bg-emerald-100 text-emerald-800 flex-shrink-0'
+                                : serviceTitle.score >= 50
+                                  ? 'bg-amber-100 text-amber-800 flex-shrink-0'
+                                  : 'bg-red-100 text-red-800 flex-shrink-0'
+                            }
+                          >
+                            {serviceTitle.score ?? 'N/A'}%
+                          </Badge>
+                        </div>
+
+                        {/* Quick checks for this service title */}
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="flex items-center gap-1">
+                            <div className={`w-2 h-2 rounded-full ${serviceTitle.isOptimalLength ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                            <span className="text-slate-600">Довжина: {serviceTitle.isOptimalLength ? '✓' : '✗'}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className={`w-2 h-2 rounded-full ${serviceTitle.hasLocalKeyword ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                            <span className="text-slate-600">Місто: {serviceTitle.detectedCity || '—'}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className={`w-2 h-2 rounded-full ${!serviceTitle.isGeneric ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                            <span className="text-slate-600">Унікальний: {!serviceTitle.isGeneric ? '✓' : '✗'}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className={`w-2 h-2 rounded-full ${serviceTitle.startsWithKeyword ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                            <span className="text-slate-600">Ключ на початку: {serviceTitle.startsWithKeyword ? '✓' : '—'}</span>
+                          </div>
+                        </div>
+
+                        {/* Issues for this service title */}
+                        {serviceTitle.issues && serviceTitle.issues.length > 0 && (
+                          <div className="text-xs text-red-600 space-y-1">
+                            {serviceTitle.issues.map((issue, i) => (
+                              <div key={i} className="flex gap-2">
+                                <span className="text-red-500 flex-shrink-0">•</span>
+                                <span>{issue}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </MinimalMetricCard>
           <MinimalMetricCard
             title={t('techAudit.items.3_19.title')}
-            status={
-              data.meta.descriptionAnalysis?.score >= 80
-                ? 'good'
-                : data.meta.descriptionAnalysis?.score >= 50
-                  ? 'warning'
-                  : 'bad'
-            }
-            score={data.meta.descriptionAnalysis?.score ?? (data.meta.descriptionLength && data.meta.descriptionLength >= 120 && data.meta.descriptionLength <= 165 ? 70 : 30)}
-            value={`${data.meta.descriptionLength || 0} симв.`}
+            status={getScoreStatus(data.meta.descriptionAnalysis?.score)}
+            score={data.meta.descriptionAnalysis?.score ?? (isOptimalDescriptionLength(data.meta.descriptionLength) ? 70 : 30)}
+            value={isOptimalDescriptionLength(data.meta.descriptionLength) ? `${data.meta.descriptionLength} симв. ✓` : `${data.meta.descriptionLength || 0} симв. ✗`}
           >
             <div className="space-y-4">
               <div>
@@ -1917,7 +2756,7 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
                   <div className="space-y-2">
                     {/* Length check */}
                     <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/50 p-3">
-                      <span className="font-medium text-slate-700 text-xs">Оптимальна довжина (150-160)</span>
+                      <span className="font-medium text-slate-700 text-xs">Оптимальна довжина ({DESCRIPTION_THRESHOLDS.MIN_LENGTH}-{DESCRIPTION_THRESHOLDS.MAX_LENGTH})</span>
                       <Badge
                         variant={data.meta.descriptionAnalysis.isOptimalLength ? 'default' : 'destructive'}
                         className={data.meta.descriptionAnalysis.isOptimalLength ? 'bg-emerald-100 text-emerald-800' : ''}
@@ -2019,17 +2858,83 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
                   &quot;{data.meta.description}&quot;
                 </div>
               </div>
+
+              {/* Service Descriptions Analysis */}
+              {data.meta.descriptionAnalysis?.serviceDescriptions && data.meta.descriptionAnalysis.serviceDescriptions.length > 0 && (
+                <div className="pt-4 border-t border-border">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    Аналіз описів послуг ({data.meta.descriptionAnalysis.serviceDescriptions.length})
+                  </h4>
+                  <div className="space-y-3">
+                    {data.meta.descriptionAnalysis.serviceDescriptions.map((serviceDesc, index) => (
+                      <div key={index} className="rounded-lg border border-slate-200 bg-slate-50/50 p-3 space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-slate-700 italic break-words">
+                              &quot;{serviceDesc.description || 'N/A'}&quot;
+                            </p>
+                          </div>
+                          <Badge
+                            variant={
+                              serviceDesc.score >= 80
+                                ? 'default'
+                                : serviceDesc.score >= 50
+                                  ? 'secondary'
+                                  : 'destructive'
+                            }
+                            className={
+                              serviceDesc.score >= 80
+                                ? 'bg-emerald-100 text-emerald-800 flex-shrink-0'
+                                : serviceDesc.score >= 50
+                                  ? 'bg-amber-100 text-amber-800 flex-shrink-0'
+                                  : 'bg-red-100 text-red-800 flex-shrink-0'
+                            }
+                          >
+                            {serviceDesc.score ?? 'N/A'}%
+                          </Badge>
+                        </div>
+
+                        {/* Quick checks for this service description */}
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="flex items-center gap-1">
+                            <div className={`w-2 h-2 rounded-full ${serviceDesc.isOptimalLength ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                            <span className="text-slate-600">Довжина: {serviceDesc.isOptimalLength ? '✓' : '✗'}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className={`w-2 h-2 rounded-full ${serviceDesc.hasCallToAction ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                            <span className="text-slate-600">CTA: {serviceDesc.hasCallToAction ? '✓' : '—'}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className={`w-2 h-2 rounded-full ${serviceDesc.hasBenefits ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                            <span className="text-slate-600">Переваги: {serviceDesc.hasBenefits ? '✓' : '—'}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className={`w-2 h-2 rounded-full ${!serviceDesc.isGeneric ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                            <span className="text-slate-600">Унікальний: {!serviceDesc.isGeneric ? '✓' : '✗'}</span>
+                          </div>
+                        </div>
+
+                        {/* Issues for this service description */}
+                        {serviceDesc.issues && serviceDesc.issues.length > 0 && (
+                          <div className="text-xs text-red-600 space-y-1">
+                            {serviceDesc.issues.map((issue, i) => (
+                              <div key={i} className="flex gap-2">
+                                <span className="text-red-500 flex-shrink-0">•</span>
+                                <span>{issue}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </MinimalMetricCard>
           <MinimalMetricCard
             title={t('techAudit.items.3_20.title')}
-            status={
-              data.meta.canonicalAnalysis?.score >= 80
-                ? 'good'
-                : data.meta.canonicalAnalysis?.score >= 50
-                  ? 'warning'
-                  : 'bad'
-            }
+            status={getScoreStatus(data.meta.canonicalAnalysis?.score)}
             score={data.meta.canonicalAnalysis?.score ?? (data.meta.canonical ? 50 : 0)}
             value={
               data.meta.canonicalAnalysis?.hasCanonical
@@ -2213,12 +3118,12 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
                       <span className="text-xs font-medium text-orange-600">Nofollow: {data.externalLinks.nofollow}</span>
                     </div>
                     <div className="h-3 bg-slate-200 rounded-full overflow-hidden flex">
-                      <div 
-                        className="bg-emerald-500 transition-all duration-300" 
+                      <div
+                        className="bg-emerald-500 transition-all duration-300"
                         style={{ width: `${data.externalLinks.dofollowPercent}%` }}
                       />
-                      <div 
-                        className="bg-orange-400 transition-all duration-300" 
+                      <div
+                        className="bg-orange-400 transition-all duration-300"
                         style={{ width: `${100 - data.externalLinks.dofollowPercent}%` }}
                       />
                     </div>
@@ -2322,8 +3227,8 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
             title={t('techAudit.items.3_23.title')}
             status={
               data.duplicates.wwwRedirect === 'ok' &&
-              data.duplicates.trailingSlash === 'ok' &&
-              data.duplicates.httpRedirect === 'ok'
+                data.duplicates.trailingSlash === 'ok' &&
+                data.duplicates.httpRedirect === 'ok'
                 ? 'good'
                 : 'warning'
             }
@@ -2416,13 +3321,7 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
           </MinimalMetricCard>
           <MinimalMetricCard
             title={t('techAudit.items.3_24.title')}
-            status={
-              data.speed.desktop !== null && data.speed.desktop >= 90
-                ? 'good'
-                : data.speed.desktop !== null && data.speed.desktop >= 50
-                  ? 'warning'
-                  : 'bad'
-            }
+            status={getScoreStatus(data.speed.desktop)}
             score={data.speed.desktop}
           >
             <div className="space-y-4">
@@ -2442,6 +3341,176 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
                   Google PageSpeed Insights API.
                 </p>
               </div>
+
+              {/* Core Web Vitals */}
+              {data.speed.desktopDetails && (
+                <div className="pt-4 border-t border-border">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    Core Web Vitals (Desktop)
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* LCP */}
+                    <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+                      <p className="text-[10px] text-slate-500 mb-1">Largest Contentful Paint</p>
+                      <p className="text-sm font-bold text-slate-900">
+                        {data.speed.desktopDetails.lcp ? `${Math.round(data.speed.desktopDetails.lcp)}ms` : 'N/A'}
+                      </p>
+                      <p className="text-[9px] text-slate-400 mt-1">
+                        {data.speed.desktopDetails.lcp ? (() => {
+                          const status = getCoreWebVitalStatus('LCP', data.speed.desktopDetails.lcp);
+                          return status === 'good' ? '✓ Good' : status === 'warning' ? '⚠ Needs improvement' : '✗ Poor';
+                        })() : ''}
+                      </p>
+                    </div>
+
+                    {/* FCP */}
+                    <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+                      <p className="text-[10px] text-slate-500 mb-1">First Contentful Paint</p>
+                      <p className="text-sm font-bold text-slate-900">
+                        {data.speed.desktopDetails.fcp ? `${Math.round(data.speed.desktopDetails.fcp)}ms` : 'N/A'}
+                      </p>
+                      <p className="text-[9px] text-slate-400 mt-1">
+                        {data.speed.desktopDetails.fcp ? (() => {
+                          const status = getCoreWebVitalStatus('FCP', data.speed.desktopDetails.fcp);
+                          return status === 'good' ? '✓ Good' : status === 'warning' ? '⚠ Needs improvement' : '✗ Poor';
+                        })() : ''}
+                      </p>
+                    </div>
+
+                    {/* CLS */}
+                    <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+                      <p className="text-[10px] text-slate-500 mb-1">Cumulative Layout Shift</p>
+                      <p className="text-sm font-bold text-slate-900">
+                        {data.speed.desktopDetails.cls !== null ? data.speed.desktopDetails.cls.toFixed(3) : 'N/A'}
+                      </p>
+                      <p className="text-[9px] text-slate-400 mt-1">
+                        {data.speed.desktopDetails.cls !== null ? (() => {
+                          const status = getCoreWebVitalStatus('CLS', data.speed.desktopDetails.cls);
+                          return status === 'good' ? '✓ Good' : status === 'warning' ? '⚠ Needs improvement' : '✗ Poor';
+                        })() : ''}
+                      </p>
+                    </div>
+
+                    {/* TBT */}
+                    <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+                      <p className="text-[10px] text-slate-500 mb-1">Total Blocking Time</p>
+                      <p className="text-sm font-bold text-slate-900">
+                        {data.speed.desktopDetails.tbt ? `${Math.round(data.speed.desktopDetails.tbt)}ms` : 'N/A'}
+                      </p>
+                      <p className="text-[9px] text-slate-400 mt-1">
+                        {data.speed.desktopDetails.tbt ? (() => {
+                          const status = getCoreWebVitalStatus('TBT', data.speed.desktopDetails.tbt);
+                          return status === 'good' ? '✓ Good' : status === 'warning' ? '⚠ Needs improvement' : '✗ Poor';
+                        })() : ''}
+                      </p>
+                    </div>
+
+                    {/* TTFB */}
+                    <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+                      <p className="text-[10px] text-slate-500 mb-1">Time to First Byte</p>
+                      <p className="text-sm font-bold text-slate-900">
+                        {data.speed.desktopDetails.ttfb ? `${Math.round(data.speed.desktopDetails.ttfb)}ms` : 'N/A'}
+                      </p>
+                      <p className="text-[9px] text-slate-400 mt-1">
+                        {data.speed.desktopDetails.ttfb ? (() => {
+                          const status = getCoreWebVitalStatus('TTFB', data.speed.desktopDetails.ttfb);
+                          return status === 'good' ? '✓ Good' : status === 'warning' ? '⚠ Needs improvement' : '✗ Poor';
+                        })() : ''}
+                      </p>
+                    </div>
+
+                    {/* Speed Index */}
+                    <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+                      <p className="text-[10px] text-slate-500 mb-1">Speed Index</p>
+                      <p className="text-sm font-bold text-slate-900">
+                        {data.speed.desktopDetails.si ? `${Math.round(data.speed.desktopDetails.si)}ms` : 'N/A'}
+                      </p>
+                      <p className="text-[9px] text-slate-400 mt-1">
+                        {data.speed.desktopDetails.si ? (() => {
+                          const status = getCoreWebVitalStatus('SI', data.speed.desktopDetails.si);
+                          return status === 'good' ? '✓ Good' : status === 'warning' ? '⚠ Needs improvement' : '✗ Poor';
+                        })() : ''}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Categories Score */}
+              {data.speed.desktopDetails?.categories && (
+                <div className="pt-4 border-t border-border">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    Lighthouse Categories
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {data.speed.desktopDetails.categories.performance !== null && (
+                      <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+                        <p className="text-[10px] text-slate-500 mb-1">Performance</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-bold text-slate-900">{data.speed.desktopDetails.categories.performance}</p>
+                          <ProgressBar value={data.speed.desktopDetails.categories.performance} max={100} size="sm" />
+                        </div>
+                      </div>
+                    )}
+                    {data.speed.desktopDetails.categories.accessibility !== null && (
+                      <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+                        <p className="text-[10px] text-slate-500 mb-1">Accessibility</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-bold text-slate-900">{data.speed.desktopDetails.categories.accessibility}</p>
+                          <ProgressBar value={data.speed.desktopDetails.categories.accessibility} max={100} size="sm" />
+                        </div>
+                      </div>
+                    )}
+                    {data.speed.desktopDetails.categories.bestPractices !== null && (
+                      <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+                        <p className="text-[10px] text-slate-500 mb-1">Best Practices</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-bold text-slate-900">{data.speed.desktopDetails.categories.bestPractices}</p>
+                          <ProgressBar value={data.speed.desktopDetails.categories.bestPractices} max={100} size="sm" />
+                        </div>
+                      </div>
+                    )}
+                    {data.speed.desktopDetails.categories.seo !== null && (
+                      <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+                        <p className="text-[10px] text-slate-500 mb-1">SEO</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-bold text-slate-900">{data.speed.desktopDetails.categories.seo}</p>
+                          <ProgressBar value={data.speed.desktopDetails.categories.seo} max={100} size="sm" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Opportunities */}
+              {data.speed.desktopDetails?.opportunities && data.speed.desktopDetails.opportunities.length > 0 && (
+                <div className="pt-4 border-t border-border">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    Топ-5 Можливості для Оптимізації
+                  </h4>
+                  <div className="space-y-2">
+                    {data.speed.desktopDetails.opportunities.slice(0, 5).map((opp, i) => (
+                      <div key={i} className="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <p className="text-xs font-semibold text-slate-900">{opp.title}</p>
+                          {opp.score !== undefined && (
+                            <span className="text-[10px] font-bold px-2 py-1 bg-orange-100 text-orange-700 rounded">
+                              {opp.score}
+                            </span>
+                          )}
+                        </div>
+                        {opp.savings !== undefined && (
+                          <p className="text-[10px] text-slate-500">
+                            Potential savings: {opp.savings} {opp.savingsUnit || 'ms'}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="pt-4 border-t border-border">
                 <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                   Приклади
@@ -2469,13 +3538,7 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
           </MinimalMetricCard>
           <MinimalMetricCard
             title={t('techAudit.items.3_25.title')}
-            status={
-              data.speed.mobile !== null && data.speed.mobile >= 90
-                ? 'good'
-                : data.speed.mobile !== null && data.speed.mobile >= 50
-                  ? 'warning'
-                  : 'bad'
-            }
+            status={getScoreStatus(data.speed.mobile)}
             score={data.speed.mobile}
           >
             <div className="space-y-4">
@@ -2495,6 +3558,176 @@ export function TechAuditSection({ data }: TechAuditSectionProps) {
                   Google PageSpeed Insights API.
                 </p>
               </div>
+
+              {/* Core Web Vitals */}
+              {data.speed.mobileDetails && (
+                <div className="pt-4 border-t border-border">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    Core Web Vitals (Mobile)
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* LCP */}
+                    <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+                      <p className="text-[10px] text-slate-500 mb-1">Largest Contentful Paint</p>
+                      <p className="text-sm font-bold text-slate-900">
+                        {data.speed.mobileDetails.lcp ? `${Math.round(data.speed.mobileDetails.lcp)}ms` : 'N/A'}
+                      </p>
+                      <p className="text-[9px] text-slate-400 mt-1">
+                        {data.speed.mobileDetails.lcp ? (() => {
+                          const status = getCoreWebVitalStatus('LCP', data.speed.mobileDetails.lcp);
+                          return status === 'good' ? '✓ Good' : status === 'warning' ? '⚠ Needs improvement' : '✗ Poor';
+                        })() : ''}
+                      </p>
+                    </div>
+
+                    {/* FCP */}
+                    <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+                      <p className="text-[10px] text-slate-500 mb-1">First Contentful Paint</p>
+                      <p className="text-sm font-bold text-slate-900">
+                        {data.speed.mobileDetails.fcp ? `${Math.round(data.speed.mobileDetails.fcp)}ms` : 'N/A'}
+                      </p>
+                      <p className="text-[9px] text-slate-400 mt-1">
+                        {data.speed.mobileDetails.fcp ? (() => {
+                          const status = getCoreWebVitalStatus('FCP', data.speed.mobileDetails.fcp);
+                          return status === 'good' ? '✓ Good' : status === 'warning' ? '⚠ Needs improvement' : '✗ Poor';
+                        })() : ''}
+                      </p>
+                    </div>
+
+                    {/* CLS */}
+                    <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+                      <p className="text-[10px] text-slate-500 mb-1">Cumulative Layout Shift</p>
+                      <p className="text-sm font-bold text-slate-900">
+                        {data.speed.mobileDetails.cls !== null ? data.speed.mobileDetails.cls.toFixed(3) : 'N/A'}
+                      </p>
+                      <p className="text-[9px] text-slate-400 mt-1">
+                        {data.speed.mobileDetails.cls !== null ? (() => {
+                          const status = getCoreWebVitalStatus('CLS', data.speed.mobileDetails.cls);
+                          return status === 'good' ? '✓ Good' : status === 'warning' ? '⚠ Needs improvement' : '✗ Poor';
+                        })() : ''}
+                      </p>
+                    </div>
+
+                    {/* TBT */}
+                    <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+                      <p className="text-[10px] text-slate-500 mb-1">Total Blocking Time</p>
+                      <p className="text-sm font-bold text-slate-900">
+                        {data.speed.mobileDetails.tbt ? `${Math.round(data.speed.mobileDetails.tbt)}ms` : 'N/A'}
+                      </p>
+                      <p className="text-[9px] text-slate-400 mt-1">
+                        {data.speed.mobileDetails.tbt ? (() => {
+                          const status = getCoreWebVitalStatus('TBT', data.speed.mobileDetails.tbt);
+                          return status === 'good' ? '✓ Good' : status === 'warning' ? '⚠ Needs improvement' : '✗ Poor';
+                        })() : ''}
+                      </p>
+                    </div>
+
+                    {/* TTFB */}
+                    <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+                      <p className="text-[10px] text-slate-500 mb-1">Time to First Byte</p>
+                      <p className="text-sm font-bold text-slate-900">
+                        {data.speed.mobileDetails.ttfb ? `${Math.round(data.speed.mobileDetails.ttfb)}ms` : 'N/A'}
+                      </p>
+                      <p className="text-[9px] text-slate-400 mt-1">
+                        {data.speed.mobileDetails.ttfb ? (() => {
+                          const status = getCoreWebVitalStatus('TTFB', data.speed.mobileDetails.ttfb);
+                          return status === 'good' ? '✓ Good' : status === 'warning' ? '⚠ Needs improvement' : '✗ Poor';
+                        })() : ''}
+                      </p>
+                    </div>
+
+                    {/* Speed Index */}
+                    <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+                      <p className="text-[10px] text-slate-500 mb-1">Speed Index</p>
+                      <p className="text-sm font-bold text-slate-900">
+                        {data.speed.mobileDetails.si ? `${Math.round(data.speed.mobileDetails.si)}ms` : 'N/A'}
+                      </p>
+                      <p className="text-[9px] text-slate-400 mt-1">
+                        {data.speed.mobileDetails.si ? (() => {
+                          const status = getCoreWebVitalStatus('SI', data.speed.mobileDetails.si);
+                          return status === 'good' ? '✓ Good' : status === 'warning' ? '⚠ Needs improvement' : '✗ Poor';
+                        })() : ''}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Categories Score */}
+              {data.speed.mobileDetails?.categories && (
+                <div className="pt-4 border-t border-border">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    Lighthouse Categories
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {data.speed.mobileDetails.categories.performance !== null && (
+                      <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+                        <p className="text-[10px] text-slate-500 mb-1">Performance</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-bold text-slate-900">{data.speed.mobileDetails.categories.performance}</p>
+                          <ProgressBar value={data.speed.mobileDetails.categories.performance} max={100} size="sm" />
+                        </div>
+                      </div>
+                    )}
+                    {data.speed.mobileDetails.categories.accessibility !== null && (
+                      <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+                        <p className="text-[10px] text-slate-500 mb-1">Accessibility</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-bold text-slate-900">{data.speed.mobileDetails.categories.accessibility}</p>
+                          <ProgressBar value={data.speed.mobileDetails.categories.accessibility} max={100} size="sm" />
+                        </div>
+                      </div>
+                    )}
+                    {data.speed.mobileDetails.categories.bestPractices !== null && (
+                      <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+                        <p className="text-[10px] text-slate-500 mb-1">Best Practices</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-bold text-slate-900">{data.speed.mobileDetails.categories.bestPractices}</p>
+                          <ProgressBar value={data.speed.mobileDetails.categories.bestPractices} max={100} size="sm" />
+                        </div>
+                      </div>
+                    )}
+                    {data.speed.mobileDetails.categories.seo !== null && (
+                      <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+                        <p className="text-[10px] text-slate-500 mb-1">SEO</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-bold text-slate-900">{data.speed.mobileDetails.categories.seo}</p>
+                          <ProgressBar value={data.speed.mobileDetails.categories.seo} max={100} size="sm" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Opportunities */}
+              {data.speed.mobileDetails?.opportunities && data.speed.mobileDetails.opportunities.length > 0 && (
+                <div className="pt-4 border-t border-border">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    Топ-5 Можливості для Оптимізації
+                  </h4>
+                  <div className="space-y-2">
+                    {data.speed.mobileDetails.opportunities.slice(0, 5).map((opp, i) => (
+                      <div key={i} className="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <p className="text-xs font-semibold text-slate-900">{opp.title}</p>
+                          {opp.score !== undefined && (
+                            <span className="text-[10px] font-bold px-2 py-1 bg-orange-100 text-orange-700 rounded">
+                              {opp.score}
+                            </span>
+                          )}
+                        </div>
+                        {opp.savings !== undefined && (
+                          <p className="text-[10px] text-slate-500">
+                            Potential savings: {opp.savings} {opp.savingsUnit || 'ms'}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="pt-4 border-t border-border">
                 <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                   Приклади

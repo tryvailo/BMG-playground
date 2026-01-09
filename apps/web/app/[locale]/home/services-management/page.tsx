@@ -42,7 +42,7 @@ export default function ServicesManagementPage() {
 
   useEffect(() => {
     setIsMounted(true);
-    
+
     const loadSettings = async () => {
       try {
         const result = await getProjectSettings({});
@@ -53,9 +53,9 @@ export default function ServicesManagementPage() {
         console.error('[Services Management] Error loading project settings:', error);
       }
     };
-    
+
     loadSettings();
-    
+
     if (typeof window === 'undefined') return;
 
     const storedApiKeyOpenAI = getStoredValue(STORAGE_KEYS.API_KEY_OPENAI);
@@ -79,8 +79,8 @@ export default function ServicesManagementPage() {
 
   const domain = projectSettings?.domain || '';
 
-  const isReady = domain && apiKeyOpenAI && apiKeyPerplexity && 
-                  apiKeyOpenAI.startsWith('sk-') && apiKeyPerplexity.startsWith('pplx-');
+  const isReady = domain && apiKeyOpenAI && apiKeyPerplexity &&
+    apiKeyOpenAI.startsWith('sk-') && apiKeyPerplexity.startsWith('pplx-');
 
   const handleDeleteService = async (id: string) => {
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
@@ -112,6 +112,7 @@ export default function ServicesManagementPage() {
 
           {isMounted && isReady ? (
             <ServicesTable
+              projectId={projectSettings?.id || ''}
               domain={domain}
               apiKeyOpenAI={apiKeyOpenAI}
               apiKeyPerplexity={apiKeyPerplexity}

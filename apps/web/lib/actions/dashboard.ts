@@ -339,12 +339,19 @@ export const getDashboardMetrics = enhanceAction(
         });
       }
 
-      // Step 3: Fetch scans for competitor analysis (optional - not required for basic dashboard)
+      // Step 3: Fetch scans for competitor analysis
       // Note: Using type assertion because services table is not in the generated Supabase types yet
-      const { data: servicesData, error: servicesError } = await (supabase as unknown as { from: (table: string) => { select: (cols: string) => { eq: (col: string, val: string) => Promise<{ data: { id: string }[] | null; error: Error | null }> } } })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const serviceQuery = (supabase as any)
         .from('services')
         .select('id')
         .eq('project_id', actualProjectId);
+
+      if (filters.serviceId && filters.serviceId !== 'all') {
+        serviceQuery.eq('id', filters.serviceId);
+      }
+
+      const { data: servicesData, error: servicesError } = await serviceQuery;
 
       const serviceIds = servicesError ? [] : (servicesData || []).map((s: { id: string }) => s.id);
       const scans: Scan[] = [];
@@ -380,101 +387,63 @@ export const getDashboardMetrics = enhanceAction(
       let totalServices = 0;
       let serviceVisibility = 0;
       let avgPosition: number | null = null;
-
-      // If we have weekly_stats, use them as primary source
-      if (weeklyStats.length > 0) {
-        const latestStats = weeklyStats[weeklyStats.length - 1]!;
-        // Use values from weekly_stats - they should always be present
-        serviceVisibility = latestStats.visability_score ?? 0;
-        avgPosition = latestStats.avg_position ?? null;
-        // For totalServices, try to get from scans, otherwise use a default
-        totalServices = new Set(scans.map((s) => s.service_id)).size || serviceIds.length || 10; // Default to 10 if no services
-      } else if (scans.length > 0) {
-        // Fallback to scans if no weekly_stats
-        const uniqueServiceIds = new Set(scans.map((s) => s.service_id));
-        totalServices = uniqueServiceIds.size;
-        const visibleServices = countVisibleServices(scans);
-        serviceVisibility = calculateVisibilityRate(totalServices, visibleServices);
-        avgPosition = calculateAveragePosition(scans);
-      } else {
-        // No data available
-        totalServices = serviceIds.length;
-        serviceVisibility = 0;
-        avgPosition = null;
-      }
-
-      // Get latest weekly stats for all component scores
-      // If we have weekly stats, use the latest values
-      // Otherwise, calculate from available data
       let avgAivScore = 0;
       let techScore = 0;
       let contentScore = 0;
       let eeatScore = 0;
       let localScore = 0;
 
-      if (weeklyStats.length > 0) {
-        // Use the most recent weekly stats
+      const isServiceFilterActive = filters.serviceId && filters.serviceId !== 'all';
+
+      // If we have weekly_stats and NO service filter, use them as primary source
+      if (weeklyStats.length > 0 && !isServiceFilterActive) {
         const latestStats = weeklyStats[weeklyStats.length - 1]!;
+        serviceVisibility = latestStats.visability_score ?? 0;
+        avgPosition = latestStats.avg_position ?? null;
+        totalServices = new Set(scans.map((s) => s.service_id)).size || serviceIds.length || 10;
 
-        console.log('[Dashboard] Using latest weekly_stats from', latestStats.week_start, {
-          visibility: latestStats.visability_score,
-          tech: latestStats.tech_score,
-          content: latestStats.content_score,
-          eeat: latestStats.eeat_score,
-          local: latestStats.local_score,
-          clinic_ai_score: latestStats.clinic_ai_score,
-        });
-
-        // Get component scores from weekly_stats (use stored values, they should be non-null)
         techScore = latestStats.tech_score ?? 0;
         contentScore = latestStats.content_score ?? 0;
         eeatScore = latestStats.eeat_score ?? 0;
         localScore = latestStats.local_score ?? 0;
 
-        // Use visibility from weekly_stats (already set above, but ensure it's used)
-        serviceVisibility = latestStats.visability_score ?? serviceVisibility;
+        if (latestStats.clinic_ai_score !== null && latestStats.clinic_ai_score > 0) {
+          avgAivScore = latestStats.clinic_ai_score;
+        } else {
+          const visibilityScore = latestStats.visability_score ?? serviceVisibility;
+          const scoreComponents: ClinicAIScoreComponents = {
+            visibility: visibilityScore,
+            techOptimization: techScore,
+            contentOptimization: contentScore,
+            eeatSignals: eeatScore,
+            localSignals: localScore,
+          };
+          const scoreResult = calculateClinicAIScoreNew(scoreComponents);
+          avgAivScore = scoreResult.score;
+        }
+      } else if (scans.length > 0) {
+        // Fallback or Service-specific calculation from scans
+        const uniqueServiceIds = new Set(scans.map((s) => s.service_id));
+        totalServices = uniqueServiceIds.size;
+        const visibleServices = countVisibleServices(scans);
+        serviceVisibility = calculateVisibilityRate(totalServices, visibleServices);
+        avgPosition = calculateAveragePosition(scans);
 
-        // Use avg_position from weekly_stats (already set above, but ensure it's used)
-        avgPosition = latestStats.avg_position ?? avgPosition;
-
-        // Calculate ClinicAI Score using the full formula
-         // Formula: 0.25*Visibility + 0.2*Tech + 0.2*Content + 0.15*E-E-A-T + 0.1*Local
-         // Use the stored clinic_ai_score if available (calculated by trigger), otherwise calculate
-         if (latestStats.clinic_ai_score !== null && latestStats.clinic_ai_score > 0) {
-           // Use the pre-calculated score from database (more reliable)
-           avgAivScore = latestStats.clinic_ai_score;
-           console.log('[Dashboard] Using stored clinic_ai_score from DB:', avgAivScore);
-         } else {
-           // Calculate if not stored (shouldn't happen if trigger works)
-           const visibilityScore = latestStats.visability_score ?? serviceVisibility;
-
-           // Use the new metrics calculator with proper component scores
-           const scoreComponents: ClinicAIScoreComponents = {
-             visibility: visibilityScore,
-             techOptimization: techScore,
-             contentOptimization: contentScore,
-             eeatSignals: eeatScore,
-             localSignals: localScore,
-           };
-
-           const scoreResult = calculateClinicAIScoreNew(scoreComponents);
-           avgAivScore = scoreResult.score;
-           console.log('[Dashboard] Calculated ClinicAI Score:', avgAivScore, 'from components:', scoreComponents);
-         }
-
-      } else {
-        // Calculate from scans if no weekly stats available
-        // For now, use a simplified calculation based on visibility rate and position
-        const visibilityScore = serviceVisibility;
         const positionScore = avgPosition ? Math.max(0, 100 - avgPosition * 10) : 0;
-        avgAivScore = visibilityScore * 0.6 + positionScore * 0.4;
+        avgAivScore = serviceVisibility * 0.6 + positionScore * 0.4;
 
-        // Component scores default to 0 if no weekly stats
-        techScore = 0;
-        contentScore = 0;
-        eeatScore = 0;
-        localScore = 0;
+        if (weeklyStats.length > 0) {
+          const latestStats = weeklyStats[weeklyStats.length - 1]!;
+          techScore = latestStats.tech_score ?? 0;
+          contentScore = latestStats.content_score ?? 0;
+          eeatScore = latestStats.eeat_score ?? 0;
+          localScore = latestStats.local_score ?? 0;
+        }
       }
+
+      // Use calculated or stored KPIs
+
+      // History and other data building follows...
 
       // Step 5: Build history data from weekly stats
       const history: HistoryDataPoint[] = weeklyStats.map((stat) => ({
@@ -570,6 +539,9 @@ export const getDashboardMetrics = enhanceAction(
         y: point.aiScore,
         z: point.mentions || 0,
         isCurrentProject: point.isClient,
+        visibility: point.visibility || 0,
+        position: point.avgPosition || 0,
+        trend: point.trend || 0,
       }));
 
       // Step 7: Build response

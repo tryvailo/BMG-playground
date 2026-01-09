@@ -116,13 +116,13 @@ export function CompetitorsOverview() {
     ], []);
 
     const kpis = useMemo(() => [
-        { label: 'ClinicAI Score', value: '72.8', trend: '+12.5%', icon: BrainCircuit, color: 'text-indigo-500' },
-        { label: 'Visibility Score', value: '51.4%', trend: '+4.2%', icon: Target, color: 'text-emerald-500' },
-        { label: 'Avg Position', value: '4.2', trend: '-0.5', icon: Activity, color: 'text-rose-500' },
-        { label: 'Tech Health', value: '94.2%', trend: '+1.2%', icon: Zap, color: 'text-blue-500' },
-        { label: 'Content Auth', value: '88.5%', trend: '+3.4%', icon: LayoutGrid, color: 'text-violet-500' },
-        { label: 'E-E-A-T Signals', value: '92.0', trend: '+2.1%', icon: Sparkles, color: 'text-amber-500' },
-        { label: 'Local Trust', value: '85.6', trend: '+0.8%', icon: Globe, color: 'text-teal-500' },
+        { label: 'Clinic AI Score', value: '72.8', trend: '+12.5%', icon: BrainCircuit, color: 'text-indigo-500' },
+        { label: 'Видимість послуг', value: '51.4%', trend: '+4.2%', icon: Target, color: 'text-emerald-500' },
+        { label: 'Середня позиція', value: '4.2', trend: '-0.5', icon: Activity, color: 'text-rose-500' },
+        { label: 'Технічна оптимізація', value: '94.2%', trend: '+1.2%', icon: Zap, color: 'text-blue-500' },
+        { label: 'Оптимізація контенту', value: '88.5%', trend: '+3.4%', icon: LayoutGrid, color: 'text-violet-500' },
+        { label: 'E-E-A-T сигнали', value: '92.0', trend: '+2.1%', icon: Sparkles, color: 'text-amber-500' },
+        { label: 'Локальні показники', value: '85.6', trend: '+0.8%', icon: Globe, color: 'text-teal-500' },
     ], []);
 
     const mapData = useMemo(() => [

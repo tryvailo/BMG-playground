@@ -17,7 +17,16 @@ interface DashboardData {
     localSignal?: number;
   };
   history: Array<{ date: string; score: number }>;
-  competitors: Array<{ name: string; x: number; y: number; z: number; isCurrentProject: boolean }>;
+  competitors: Array<{
+    name: string;
+    x: number;
+    y: number;
+    z: number;
+    isCurrentProject: boolean;
+    visibility: number;
+    position: number;
+    trend: number;
+  }>;
 }
 
 
@@ -39,7 +48,7 @@ export function useDashboardData(params?: UseDashboardDataParams) {
           projectId,
           filters,
         });
-        
+
         if (!metrics) {
           throw new Error('No data returned from server');
         }
@@ -51,12 +60,15 @@ export function useDashboardData(params?: UseDashboardDataParams) {
         }));
 
         // Transform competitor data for scatter chart
-        const competitors = metrics.competitors.map((c: { name: string; x: number; y: number; z: number; isCurrentProject: boolean }) => ({
+        const competitors = metrics.competitors.map((c: { name: string; x: number; y: number; z: number; isCurrentProject: boolean; visibility: number; position: number; trend: number }) => ({
           name: c.name,
           x: c.x, // Average Position
           y: c.y, // ClinicAI Score
           z: c.z, // Size/Importance (number of appearances)
           isCurrentProject: c.isCurrentProject,
+          visibility: c.visibility,
+          position: c.position,
+          trend: c.trend,
         }));
 
         return {

@@ -272,47 +272,101 @@ export async function analyzeTechAudit(
 ): Promise<TechAuditAnalysis> {
   const client = createOpenAIClient(openaiKey);
 
-  const systemPrompt = `You are an expert technical SEO and web performance analyst specializing in medical/healthcare websites. Your task is to analyze comprehensive technical audit data and provide actionable insights.
+  const systemPrompt = `You are a professional SEO and GEO (Generative Engine Optimization) specialist for medical/healthcare websites. Your expertise includes:
+- Technical SEO fundamentals (site speed, structure, security)
+- GEO (content optimization for LLMs like ChatGPT, Perplexity, Claude)
+- Local SEO and geographic targeting
+- Medical content authority (E-E-A-T signals)
+- Schema markup for healthcare
 
-Analyze the technical audit data considering:
-1. Performance (PageSpeed scores, Core Web Vitals)
-2. Security (HTTPS, mobile-friendliness)
-3. Core files (robots.txt, sitemap.xml, llms.txt)
-4. Schema markup (Medical Organization, Physician, etc.)
-5. Meta tags and SEO elements
-6. Images accessibility
-7. External links health
-8. Duplicate prevention (URL duplicates)
-9. Deep content analysis (duplicate content across pages) - CRITICAL for SEO
-10. PageSpeed opportunities
+Your role: Analyze comprehensive technical audit data and provide actionable insights prioritized by GEO impact.
 
-IMPORTANT: If duplicate content is found, this is a critical SEO issue that must be addressed. Include specific recommendations about consolidating or rewriting duplicate content pages.
+CRITICAL FOR GEO ANALYSIS:
+1. LLM Indexation: Is the site discoverable by LLM crawlers? (llms.txt, robots.txt allowing GPTBot)
+2. Medical Authority Signals: Are EEAT signals strong? (Schema for doctors, procedures, certifications)
+3. Geographic Precision: Is local targeting clear? (schema with address, phone, service area)
+4. Content Freshness: Is there date metadata? (LLMs value recent medical info)
+5. Duplicate Content Risk: Are there duplicate pages confusing AI models? (critical issue)
 
-Provide a comprehensive analysis that helps improve the website's technical SEO and performance.`;
+Scoring Framework:
+- 80-100: Excellent GEO foundation, all critical elements present
+- 60-79: Good structure, 1-2 gaps (missing doctor schema or geographic precision)
+- 40-59: Multiple GEO issues (duplicate content, weak authority, no local schema)
+- 20-39: Severe problems (LLM crawlers blocked, no medical schema)
+- 0-19: Critical blockers preventing GEO visibility
+
+Prioritize recommendations by GEO business impact, not just technical scores.`;
 
   const auditData = formatAuditDataForAI(audit, duplicateAnalysis);
 
-  const userPrompt = `Analyze the following technical audit data and provide a JSON response with:
+  const userPrompt = `As a professional SEO/GEO specialist, analyze this technical audit data and provide strategic recommendations.
 
-- overallScore: A number from 0-100 representing the overall technical health of the website
-- summary: A concise 2-3 sentence verdict describing the website's technical status and main areas of concern
-- criticalIssues: An array of 3-5 critical problems that need immediate attention (e.g., "Mobile performance score is 45/100, indicating severe performance issues", "Found 12 duplicate content pairs - this can cause SEO penalties")
-- priorityRecommendations: An array of 5-7 actionable recommendations prioritized by impact. MUST include recommendations about duplicate content if found (e.g., "Optimize images to reduce LCP from 9642ms to under 2500ms", "Consolidate or rewrite 12 duplicate content pages to avoid SEO penalties")
-- strengths: An array of 3-5 things the website is doing well (e.g., "HTTPS is properly configured", "Schema markup includes Medical Organization", "No duplicate content detected across scanned pages")
-- quickWins: An array of 2-4 easy fixes that can improve the score quickly (e.g., "Add missing alt tags to 32 images", "Fix 3 broken external links", "Rewrite duplicate content on pages with >95% similarity")
+ANALYSIS CONTEXT:
+- Goal: Maximize visibility in LLM responses (ChatGPT, Perplexity, Claude) for medical queries
+- Audience: Medical professionals and patients seeking health information
+- Risk: Medical misinformation has high stakes
+
+Evaluate & Rate Each Category:
+
+1. LLM CRAWLABILITY (GEO Priority #1):
+   - Is llms.txt file present and optimized?
+   - Does robots.txt allow GPTBot, PerplexityBot, Claude crawlers?
+   - Are there any crawl directives blocking AI?
+   → Missing even one = GEO visibility penalty
+
+2. MEDICAL SCHEMA AUTHORITY (GEO Priority #2):
+   - Doctor schema: Are credentials, license numbers, specializations present?
+   - Medical procedures: Are conditions treated and outcomes documented?
+   - Organization schema: Is it Hospital/MedicalBusiness or generic Organization?
+   - Review/rating schema: Present and recent?
+   → Weak schema = LLMs cite competitors instead of you
+
+3. GEOGRAPHIC PRECISION (GEO Priority #3):
+   - LocalBusiness schema: Multiple locations? Full addresses with postal codes?
+   - Service area coverage: Is geographic scope defined?
+   - Language tags (hreflang): Correct for multilingual content?
+   → Missing local schema = 0 visibility in location-based queries
+
+4. DUPLICATE CONTENT RISK (GEO Priority #4):
+   - Duplicate content pairs found: Count and similarity %
+   - Is duplicate content on: service pages, procedure pages, or main site?
+   - Consolidation feasible or needs rewrite?
+   → Duplicate medical content = LLMs penalize as unreliable
+
+5. PERFORMANCE FOR LLMS (GEO Priority #5):
+   - Mobile speed: LLMs crawl on varied connection speeds
+   - LCP/FCP: Content availability timing
+   - Images with alt text: For medical/procedure images (trust signal)
+
+Provide recommendations that are:
+- Ranked by GEO impact (not just technical scores)
+- Specific with implementation details
+- Medical-context aware (not generic advice)
+- Quantified when possible (e.g., "3 duplicate pairs at 94% similarity")
+
+EXAMPLE STRONG RECOMMENDATIONS:
+✓ "Add llms.txt with clear Organization structure and 'Doctors' section with license numbers (builds medical authority)"
+✓ "Implement Hospital schema with 5+ doctor profiles including specializations - LLMs currently see you as generic clinic"
+✓ "Consolidate 3 procedure page duplicates (97% content overlap) on 'Knee Surgery' variants into geo-targeted versions (Kyiv/Lviv specific)"
+✓ "Deploy locality schema for 4 office locations with postal codes to dominate 'orthopedist near me' LLM queries"
+
+WEAK RECOMMENDATIONS (avoid):
+✗ "Improve mobile performance" 
+✗ "Add more content"
+✗ "Better SEO needed"
+
+Return JSON with:
+{
+  "overallScore": number (0-100, weighted toward GEO factors),
+  "summary": string (2-3 sentences, professional assessment),
+  "criticalIssues": string[] (blockers affecting GEO visibility, max 5),
+  "priorityRecommendations": string[] (ranked by GEO impact, 5-7 specific actions),
+  "strengths": string[] (what's working for GEO, 3-5),
+  "quickWins": string[] (easy GEO improvements, 2-4)
+}
 
 Technical Audit Data:
-${auditData}
-
-Return only valid JSON in this format:
-{
-  "overallScore": number,
-  "summary": string,
-  "criticalIssues": string[],
-  "priorityRecommendations": string[],
-  "strengths": string[],
-  "quickWins": string[]
-}`;
+${auditData}`;
 
   try {
     const response = await client.chat.completions.create({

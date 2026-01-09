@@ -406,13 +406,24 @@ export const DoctorExpertiseMetricsSchema = z.object({
   doctor_pages_with_credentials: z.number().int().nonnegative().optional(),
 });
 
+/**
+ * E-E-A-T Recommendation schema
+ */
+export const EEATRecommendationSchema = z.object({
+  message: z.string(),
+  category: z.enum(['experience', 'expertise', 'authority', 'trust', 'general']),
+  severity: z.enum(['critical', 'warning', 'info']),
+});
+
+export type EEATRecommendation = z.infer<typeof EEATRecommendationSchema>;
+
 export const EEATAuditResultSchema = z.object({
   authorship: AuthorshipSchema,
   trust: TrustSchema,
   authority: AuthoritySchema,
   reputation: ReputationSchema,
   experience: ExperienceSchema,
-  recommendations: z.array(z.string()),
+  recommendations: z.array(EEATRecommendationSchema),
   // Multi-page analysis metadata
   analyzed_pages_count: z.number().int().nonnegative().optional(),
   total_pages_discovered: z.number().int().nonnegative().optional(),

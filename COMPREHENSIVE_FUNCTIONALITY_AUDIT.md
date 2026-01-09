@@ -170,6 +170,16 @@ lib/modules/audit/
    - Crawl-delay
 
 ⚠️ Titles/Descriptions анализ
+  ### **Production Fix — llms.txt analysis (2026-01-09)**
+
+  - Что сделано: добавлен устойчивый fallback-анализ для `llms.txt`, чтобы при ошибках AI-запроса (отсутствует ключ OpenAI, таймаут, сетевая ошибка) UI и записи аудита всё равно получали понятные результаты с полями `summary`, `missing_sections` и `recommendations`.
+  - Где исправлено:
+    - `apps/web/lib/modules/audit/utils/llms-analyzer.ts` — добавлена функция `heuristicLlmsAnalysis`, экспортирована для тестов, добавлены поля `analysisMethod` и `fallbackReason`.
+    - `apps/web/lib/modules/audit/ephemeral-audit.ts` — `checkAndAnalyzeLlmsTxt` теперь возвращает богатый `data` объект (summary, missing_sections, recommendations, analysisMethod, fallbackReason) и использует эвристическую функцию при падении AI.
+    - `apps/web/components/dashboard/audit/TechAuditOverview.tsx` — UI: перевод заголовков в диалоге (`Missing Sections` → `ПРОБЛЕМИ`, `Recommendations` → `РЕКОМЕНДАЦІЇ`) и отображение бейджа `heuristic` / причины fallback.
+  - Почему важно: раньше при падении AI-анализ возвращал `score: 0` без пояснений — теперь пользователи видят конкретные «ПРОБЛЕМИ» и «РЕКОМЕНДАЦІЇ», даже если внешний AI недоступен.
+  - Тесты: добавлен юнит‑тест `apps/web/lib/modules/audit/utils/__tests__/llms-analyzer.test.ts` для проверки эвристики.
+
    - Функции написаны (meta-analyzer.ts)
    - Но не выводятся в UI
 

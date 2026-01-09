@@ -299,3 +299,4 @@ if (!user.email_confirmed_at && isPaying) {
 
 
 
+

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState, useTransition, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   Shield,
@@ -22,14 +22,19 @@ import {
   Share2,
   TrendingUp,
   TrendingDown,
+  Clock,
+  History,
+  FileDown,
+  Printer,
+  Sparkles,
 } from 'lucide-react';
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  Cell
-} from 'recharts';
+
 import { toast } from 'sonner';
 
 import { Badge } from '@kit/ui/badge';
+import { Button } from '@kit/ui/button';
+import { Checkbox } from '@kit/ui/checkbox';
+import { Label } from '@kit/ui/label';
 import {
   Card,
   CardContent,
@@ -46,7 +51,13 @@ import { Alert, AlertDescription, AlertTitle } from '@kit/ui/alert';
 import { cn } from '@kit/ui/utils';
 
 import { runEEATAudit } from '~/lib/actions/eeat-audit';
+import { getPreviousEEATAudit } from '~/lib/actions/audit-history';
 import type { EEATAuditResult } from '~/lib/server/services/eeat/types';
+
+interface HistoryEntry {
+  score: number;
+  timestamp: string | Date;
+}
 
 // --- Horizon UI Design Tokens ---
 const HORIZON = {
@@ -410,22 +421,28 @@ function _CategorySection({ title, icon, children }: CategorySectionProps) {
 
 /**
  * KPI Card Component (same style as CompetitorsHorizon)
+ * Now supports real trend from historical data
  */
 interface KpiCardProps {
   label: string;
   value: string;
   benchmark?: string;
-  trend?: string;
+  /** Real trend value (current - previous). Null means first audit */
+  trend?: number | null;
+  /** Whether this is the first audit (no historical data) */
+  isFirstAudit?: boolean;
   icon: React.ElementType;
   iconBg: string;
   iconColor: string;
 }
 
-function KpiCard({ label, value, benchmark, trend, icon: Icon, iconBg, iconColor }: KpiCardProps) {
-  const isPositive = trend?.startsWith('+') ?? true;
+function KpiCard({ label, value, benchmark, trend, isFirstAudit, icon: Icon, iconBg, iconColor }: KpiCardProps) {
+  const hasTrend = trend !== null && trend !== undefined;
+  const isPositive = hasTrend && trend >= 0;
+  const trendDisplay = hasTrend ? `${trend >= 0 ? '+' : ''}${trend}%` : null;
 
   return (
-    <HorizonCard 
+    <HorizonCard
       className="group hover:-translate-y-1 transition-all duration-300"
       style={{ boxShadow: HORIZON.shadowSm }}
     >
@@ -436,15 +453,21 @@ function KpiCard({ label, value, benchmark, trend, icon: Icon, iconBg, iconColor
         >
           <Icon className="w-6 h-6" style={{ color: iconColor }} />
         </div>
-        {trend && (
+        {/* Show trend badge or "First audit" badge */}
+        {hasTrend ? (
           <div className={cn(
             "flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold",
             isPositive ? "bg-[#01B57415] text-[#01B574]" : "bg-[#EE5D5015] text-[#EE5D50]"
           )}>
             {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-            {trend}
+            {trendDisplay}
           </div>
-        )}
+        ) : isFirstAudit ? (
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#4318FF15] text-[#4318FF]">
+            <Sparkles className="w-3 h-3" />
+            Перший
+          </div>
+        ) : null}
       </div>
       <div className="text-sm font-medium mb-1" style={{ color: HORIZON.textSecondary }}>
         {label}
@@ -574,12 +597,55 @@ export function EEATAuditSection({
   // Use external result if provided, otherwise use internal result
   const result = externalResult !== undefined ? externalResult : internalResult;
 
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+
   // Update URL when defaultUrl changes
   React.useEffect(() => {
     if (defaultUrl) {
       setUrl(defaultUrl);
     }
   }, [defaultUrl]);
+
+  // Load history from localStorage
+  React.useEffect(() => {
+    if (typeof window !== 'undefined' && result) {
+      try {
+        const hostname = new URL(url || window.location.href).hostname;
+        const historyKey = `eeat-audit-history-${hostname}`;
+        const savedHistory = localStorage.getItem(historyKey);
+        const historyData = savedHistory ? JSON.parse(savedHistory) : [];
+        setHistory(historyData);
+
+        // Save current audit if it's new
+        const currentScore = result ? (
+          (categoryScores.experience ?? 0) +
+          (categoryScores.expertise ?? 0) +
+          (categoryScores.authority ?? 0) +
+          (categoryScores.trust ?? 0)
+        ) / 4 : 0;
+
+        const historyEntry = {
+          timestamp: new Date().toISOString(),
+          score: Math.round(currentScore),
+          experience: categoryScores.experience,
+          expertise: categoryScores.expertise,
+          authority: categoryScores.authority,
+          trust: categoryScores.trust,
+          recommendationsCount: result.recommendations.length,
+        };
+
+        // Avoid duplicate saves for the same session/result
+        if (historyData.length === 0 || historyData[0].score !== historyEntry.score || Math.abs(new Date(historyData[0].timestamp).getTime() - new Date().getTime()) > 60000) {
+          const updatedHistory = [historyEntry, ...historyData].slice(0, 5);
+          localStorage.setItem(historyKey, JSON.stringify(updatedHistory));
+          setHistory(updatedHistory);
+        }
+      } catch (e) {
+        console.error('Failed to handle EEAT history:', e);
+      }
+    }
+  }, [result]);
 
   const _handleAnalyze = () => {
     if (!url.trim()) {
@@ -613,14 +679,76 @@ export function EEATAuditSection({
     });
   };
 
+  const downloadAsCSV = () => {
+    if (!result) return;
+    const headers = ['Message', 'Category', 'Severity'];
+    const rows = result.recommendations.map(r => [
+      `"${r.message.replace(/"/g, '""')}"`,
+      r.category,
+      r.severity
+    ]);
+    const csvContent = [headers, ...rows].map(e => e.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `eeat_audit_${new URL(url).hostname}.csv`;
+    link.click();
+  };
+
+  const downloadAsPDF = () => {
+    window.print();
+  };
+
+  // State for trends from previous audit
+  const [trends, setTrends] = useState<{
+    experience: number | null;
+    expertise: number | null;
+    authority: number | null;
+    trust: number | null;
+  }>({ experience: null, expertise: null, authority: null, trust: null });
+  const [isFirstAuditState, setIsFirstAuditState] = useState(true);
+  const [trendsLoaded, setTrendsLoaded] = useState(false);
+
+  // Calculate current scores
+  const categoryScores = result ? calculateCategoryScores(result) : { experience: null, expertise: null, authority: null, trust: null };
+
+  // Load previous audit to calculate trends
+  useEffect(() => {
+    if (!result || !url || trendsLoaded) return;
+    
+    const loadPreviousAudit = async () => {
+      try {
+        const previous = await getPreviousEEATAudit({ url });
+        
+        if (previous && previous.result) {
+          const prevScores = calculateCategoryScores(previous.result);
+          
+          setTrends({
+            experience: (categoryScores.experience ?? 0) - (prevScores.experience ?? 0),
+            expertise: (categoryScores.expertise ?? 0) - (prevScores.expertise ?? 0),
+            authority: (categoryScores.authority ?? 0) - (prevScores.authority ?? 0),
+            trust: (categoryScores.trust ?? 0) - (prevScores.trust ?? 0),
+          });
+          setIsFirstAuditState(false);
+        } else {
+          setIsFirstAuditState(true);
+        }
+        setTrendsLoaded(true);
+      } catch (error) {
+        console.error('[EEATAuditSection] Failed to load previous audit:', error);
+        setTrendsLoaded(true);
+      }
+    };
+    
+    loadPreviousAudit();
+  }, [result, url, trendsLoaded, categoryScores.experience, categoryScores.expertise, categoryScores.authority, categoryScores.trust]);
+
   if (!result) {
     return null;
   }
 
-  const categoryScores = calculateCategoryScores(result);
-
   // Prepare Trust Signals data for Bar Chart
-  const trustSignalsData = [
+  const _trustSignalsData = [
     {
       name: 'Privacy Policy',
       value: result.trust.has_privacy_policy ? 100 : 0,
@@ -753,7 +881,8 @@ export function EEATAuditSection({
                 label="Досвід"
                 value={`${categoryScores.experience ?? 0}%`}
                 benchmark="75%"
-                trend={(categoryScores.experience ?? 0) >= 75 ? '+' + ((categoryScores.experience ?? 0) - 75) + '%' : '-' + (75 - (categoryScores.experience ?? 0)) + '%'}
+                trend={trendsLoaded ? trends.experience : null}
+                isFirstAudit={trendsLoaded && isFirstAuditState}
                 icon={Briefcase}
                 iconBg={HORIZON.primaryLight}
                 iconColor={HORIZON.primary}
@@ -762,7 +891,8 @@ export function EEATAuditSection({
                 label="Експертність"
                 value={`${categoryScores.expertise ?? 0}%`}
                 benchmark="80%"
-                trend={(categoryScores.expertise ?? 0) >= 80 ? '+' + ((categoryScores.expertise ?? 0) - 80) + '%' : '-' + (80 - (categoryScores.expertise ?? 0)) + '%'}
+                trend={trendsLoaded ? trends.expertise : null}
+                isFirstAudit={trendsLoaded && isFirstAuditState}
                 icon={Award}
                 iconBg={HORIZON.successLight}
                 iconColor={HORIZON.success}
@@ -771,7 +901,8 @@ export function EEATAuditSection({
                 label="Авторитетність"
                 value={`${categoryScores.authority ?? 0}%`}
                 benchmark="70%"
-                trend={(categoryScores.authority ?? 0) >= 70 ? '+' + ((categoryScores.authority ?? 0) - 70) + '%' : '-' + (70 - (categoryScores.authority ?? 0)) + '%'}
+                trend={trendsLoaded ? trends.authority : null}
+                isFirstAudit={trendsLoaded && isFirstAuditState}
                 icon={Globe}
                 iconBg={HORIZON.infoLight}
                 iconColor={HORIZON.info}
@@ -780,7 +911,8 @@ export function EEATAuditSection({
                 label="Довіра"
                 value={`${categoryScores.trust ?? 0}%`}
                 benchmark="85%"
-                trend={(categoryScores.trust ?? 0) >= 85 ? '+' + ((categoryScores.trust ?? 0) - 85) + '%' : '-' + (85 - (categoryScores.trust ?? 0)) + '%'}
+                trend={trendsLoaded ? trends.trust : null}
+                isFirstAudit={trendsLoaded && isFirstAuditState}
                 icon={Shield}
                 iconBg={HORIZON.warningLight}
                 iconColor={HORIZON.warning}
@@ -788,89 +920,61 @@ export function EEATAuditSection({
             </div>
           </section>
 
-          {/* Trust Signals Breakdown Bar Chart */}
-          <HorizonCard title="Trust Signals Breakdown" subtitle="Key trust indicators and their status">
-            <div className="h-[350px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={trustSignalsData}
-                  margin={{ top: 20, right: 30, left: 40, bottom: 5 }}
-                  layout="vertical"
-                >
-                  <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#E2E8F0" />
-                  <XAxis
-                    type="number"
-                    domain={[0, 100]}
-                    tick={{ fill: HORIZON.textSecondary, fontSize: 11, fontWeight: 600 }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    tick={{ fill: HORIZON.textPrimary, fontSize: 12, fontWeight: 600 }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={100}
-                  />
-                  <Tooltip
-                    cursor={{ fill: '#F4F7FE' }}
-                    contentStyle={{
-                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                      border: 'none',
-                      borderRadius: '12px',
-                      boxShadow: HORIZON.shadow,
-                      padding: '12px',
-                    }}
-                    itemStyle={{ fontWeight: 'bold', color: HORIZON.textPrimary }}
-                    labelStyle={{ fontWeight: 'bold', color: HORIZON.textSecondary }}
-                    formatter={(value: number) => [`${value}%`, 'Status']}
-                  />
-                  <Bar dataKey="value" radius={[0, 10, 10, 0]} barSize={20}>
-                    {trustSignalsData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={
-                          entry.status === 'good' ? HORIZON.success :
-                            entry.status === 'warning' ? HORIZON.warning :
-                              HORIZON.error
-                        }
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {trustSignalsData.map((signal, idx) => (
-                <div key={idx} className="p-4 bg-[#F4F7FE] rounded-xl border border-[#E2E8F0]">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-bold" style={{ color: HORIZON.textSecondary }}>{signal.name}</span>
-                    {signal.status === 'good' ? (
-                      <CheckCircle2 className="h-4 w-4" style={{ color: HORIZON.success }} />
-                    ) : signal.status === 'warning' ? (
-                      <AlertCircle className="h-4 w-4" style={{ color: HORIZON.warning }} />
-                    ) : (
-                      <XCircle className="h-4 w-4" style={{ color: HORIZON.error }} />
-                    )}
+          {/* History / Delta Summary */}
+          {history.length > 1 && history[0] && history[1] && (
+            <HorizonCard className="mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <History className="w-5 h-5 text-[#4318FF]" />
+                <h3 className="text-sm font-bold uppercase tracking-widest text-[#1B2559]">
+                  Історія / Зведення дельти
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-[#A3AED0]">Зміна загального балу:</span>
+                    <div className="flex items-center gap-1">
+                      {history[0].score > history[1].score ? (
+                        <TrendingUp className="w-4 h-4 text-[#01B574]" />
+                      ) : history[0].score < history[1].score ? (
+                        <TrendingDown className="w-4 h-4 text-[#EE5D50]" />
+                      ) : null}
+                      <span className={cn(
+                        "font-bold",
+                        history[0].score > history[1].score ? "text-[#01B574]" :
+                          history[0].score < history[1].score ? "text-[#EE5D50]" : "text-[#1B2559]"
+                      )}>
+                        {history[0].score - history[1].score > 0 ? '+' : ''}
+                        {history[0].score - history[1].score}
+                      </span>
+                    </div>
                   </div>
-                  <div className="h-2 w-full bg-white rounded-full overflow-hidden">
+                  <div className="w-full h-1.5 bg-[#F4F7FE] rounded-full overflow-hidden">
                     <div
-                      className="h-full transition-all duration-500 ease-out rounded-full shadow-sm"
-                      style={{
-                        width: `${signal.value}%`,
-                        backgroundColor: signal.status === 'good' ? HORIZON.success :
-                          signal.status === 'warning' ? HORIZON.warning :
-                            HORIZON.error,
-                        minWidth: signal.value > 0 ? '4px' : '0'
-                      }}
+                      className="h-full bg-[#4318FF]"
+                      style={{ width: `${Math.abs((history[0].score - history[1].score) / 100) * 100}%` }}
                     />
                   </div>
-                  <div className="text-xs font-bold mt-2" style={{ color: HORIZON.textPrimary }}>{signal.value}%</div>
                 </div>
-              ))}
-            </div>
-          </HorizonCard>
+
+                <div className="space-y-3">
+                  <div className="text-xs font-bold text-[#A3AED0] uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <Clock className="w-3 h-3" /> Остання активність
+                  </div>
+                  {history.slice(0, 3).map((entry, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-xs p-2 rounded-lg bg-[#F4F7FE]">
+                      <span className="text-[#1B2559] font-medium">
+                        {new Date(entry.timestamp).toLocaleDateString()} {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <Badge variant="outline" className="text-[10px] font-bold border-[#E2E8F0]">
+                        Score: {entry.score}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </HorizonCard>
+          )}
 
           {/* 5.1. Content Authors */}
           <MinimalMetricCard
@@ -2489,20 +2593,94 @@ export function EEATAuditSection({
           {
             result.recommendations.length > 0 && (
               <HorizonCard className="border-2 border-orange-300 bg-orange-50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-orange-600 text-xl font-black italic">
-                    <AlertTriangle className="h-6 w-6 text-orange-600" />
-                    Recommendations ({result.recommendations.length})
-                  </CardTitle>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div className="space-y-1">
+                    <CardTitle className="flex items-center gap-2 text-orange-600 text-xl font-black italic">
+                      <AlertTriangle className="h-6 w-6 text-orange-600" />
+                      Recommendations ({result.recommendations.length})
+                    </CardTitle>
+                    <p className="text-xs text-orange-500 font-medium">
+                      Optimizing Experience, Expertise, Authority, and Trust
+                    </p>
+                  </div>
+                  <div className="flex gap-2 no-print">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={downloadAsCSV}
+                      className="bg-white hover:bg-orange-100 border-orange-200 text-orange-600 font-bold"
+                    >
+                      <FileDown className="w-4 h-4 mr-2" /> CSV
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={downloadAsPDF}
+                      className="bg-white hover:bg-orange-100 border-orange-200 text-orange-600 font-bold"
+                    >
+                      <Printer className="w-4 h-4 mr-2" /> PDF
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
+                  {/* Category Filters */}
+                  <div className="mb-6 p-4 bg-white/50 rounded-xl border border-orange-200/50 no-print">
+                    <div className="text-xs font-bold text-orange-600 uppercase tracking-widest mb-3">
+                      Filter by Category
+                    </div>
+                    <div className="flex flex-wrap gap-4">
+                      {['experience', 'expertise', 'authority', 'trust'].map((category) => (
+                        <div key={category} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`filter-${category}`}
+                            checked={selectedCategories.includes(category)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedCategories(prev => [...prev, category]);
+                              } else {
+                                setSelectedCategories(prev => prev.filter(c => c !== category));
+                              }
+                            }}
+                          />
+                          <Label
+                            htmlFor={`filter-${category}`}
+                            className="text-sm font-bold capitalize cursor-pointer text-slate-600"
+                          >
+                            {category}
+                          </Label>
+                        </div>
+                      ))}
+                      {selectedCategories.length > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedCategories([])}
+                          className="text-xs font-bold text-orange-600 hover:bg-orange-100"
+                        >
+                          Clear All
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
                   <ul className="space-y-2">
-                    {result.recommendations.map((rec, index) => (
-                      <li key={index} className="flex items-start gap-2 text-sm">
-                        <span className="text-orange-500 mt-0.5 flex-shrink-0">•</span>
-                        <span className="text-slate-700">{rec}</span>
-                      </li>
-                    ))}
+                    {result.recommendations
+                      .filter(rec => selectedCategories.length === 0 || selectedCategories.includes(rec.category))
+                      .map((rec, index) => (
+                        <li key={index} className="flex items-start gap-2 text-sm">
+                          <span className={cn(
+                            "mt-1 flex-shrink-0 w-2 h-2 rounded-full",
+                            rec.severity === 'critical' ? "bg-[#EE5D50]" :
+                              rec.severity === 'warning' ? "bg-[#FFB547]" : "bg-[#2B77E5]"
+                          )} />
+                          <div className="flex flex-col">
+                            <span className="text-slate-700 font-medium">{rec.message}</span>
+                            <span className="text-[10px] uppercase font-bold text-slate-400 mt-1">
+                              {rec.category} • {rec.severity}
+                            </span>
+                          </div>
+                        </li>
+                      ))}
                   </ul>
                 </CardContent>
               </HorizonCard>

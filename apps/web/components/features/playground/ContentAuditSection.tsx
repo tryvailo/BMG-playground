@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FileText,
   CheckCircle2,
@@ -22,6 +22,7 @@ import {
   TrendingUp,
   TrendingDown,
   Layers,
+  Sparkles,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -31,6 +32,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@kit/ui/col
 import { cn } from '@kit/ui/utils';
 
 import type { ContentAuditResult } from '~/lib/server/services/content/types';
+import { getPreviousContentAudit } from '~/lib/actions/audit-history';
 
 // --- Horizon UI Design Tokens ---
 const HORIZON = {
@@ -269,19 +271,25 @@ function MinimalMetricCard({
 
 /**
  * KPI Card Component (same style as CompetitorsHorizon)
+ * Now supports real trend from historical data
  */
 interface KpiCardProps {
   label: string;
   value: string;
   benchmark?: string;
-  trend?: string;
+  /** Real trend value (current - previous). Null means first audit */
+  trend?: number | null;
+  /** Whether this is the first audit (no historical data) */
+  isFirstAudit?: boolean;
   icon: React.ElementType;
   iconBg: string;
   iconColor: string;
 }
 
-function KpiCard({ label, value, benchmark, trend, icon: Icon, iconBg, iconColor }: KpiCardProps) {
-  const isPositive = trend?.startsWith('+') ?? true;
+function KpiCard({ label, value, benchmark, trend, isFirstAudit, icon: Icon, iconBg, iconColor }: KpiCardProps) {
+  const hasTrend = trend !== null && trend !== undefined;
+  const isPositive = hasTrend && trend >= 0;
+  const trendDisplay = hasTrend ? `${trend >= 0 ? '+' : ''}${trend}%` : null;
 
   return (
     <HorizonCard 
@@ -295,15 +303,21 @@ function KpiCard({ label, value, benchmark, trend, icon: Icon, iconBg, iconColor
         >
           <Icon className="w-6 h-6" style={{ color: iconColor }} />
         </div>
-        {trend && (
+        {/* Show trend badge or "First audit" badge */}
+        {hasTrend ? (
           <div className={cn(
             "flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold",
             isPositive ? "bg-[#01B57415] text-[#01B574]" : "bg-[#EE5D5015] text-[#EE5D50]"
           )}>
             {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-            {trend}
+            {trendDisplay}
           </div>
-        )}
+        ) : isFirstAudit ? (
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#4318FF15] text-[#4318FF]">
+            <Sparkles className="w-3 h-3" />
+            Перший
+          </div>
+        ) : null}
       </div>
       <div className="text-sm font-medium mb-1" style={{ color: HORIZON.textSecondary }}>
         {label}
@@ -321,27 +335,128 @@ function KpiCard({ label, value, benchmark, trend, icon: Icon, iconBg, iconColor
   );
 }
 
-export function ContentAuditSection({ result, className }: ContentAuditSectionProps) {
+/**
+ * Helper functions to calculate scores (for trend comparison)
+ */
+function calculateStructureScore(r: ContentAuditResult): number {
+  const s = r.structure;
+  const scores: { value: number; weight: number }[] = [];
+  
+  const directionScore = s.direction_pages_count && s.direction_pages_count > 0 
+    ? Math.min(100, s.direction_pages_count >= 5 ? 100 : s.direction_pages_count * 20) 
+    : 0;
+  scores.push({ value: directionScore, weight: 0.10 });
+  
+  const serviceScore = s.has_service_pages 
+    ? (s.service_pages_count && s.service_pages_count > 5 ? 100 : s.service_pages_count ? 60 : 50) 
+    : 0;
+  scores.push({ value: serviceScore, weight: 0.15 });
+  
+  let doctorScore = 0;
+  if (s.has_doctor_pages) {
+    doctorScore = 20;
+    if (s.doctor_details?.has_photos) doctorScore += 20;
+    if (s.doctor_details?.has_bio) doctorScore += 20;
+    if (s.doctor_details?.has_experience) doctorScore += 20;
+    if (s.doctor_details?.has_certificates) doctorScore += 20;
+  }
+  scores.push({ value: doctorScore, weight: 0.15 });
+  scores.push({ value: s.architecture_score, weight: 0.15 });
+  
+  let blogScore = 0;
+  if (s.has_blog && s.blog_details) {
+    blogScore = 30;
+    if (s.blog_details.posts_count >= 10) blogScore += 30;
+    else if (s.blog_details.posts_count > 0) blogScore += s.blog_details.posts_count * 3;
+    if (s.blog_details.is_regularly_updated) blogScore += 40;
+  }
+  scores.push({ value: Math.min(100, blogScore), weight: 0.10 });
+  
+  const totalWeight = scores.reduce((sum, sc) => sum + sc.weight, 0);
+  const weightedSum = scores.reduce((sum, sc) => sum + (sc.value * sc.weight), 0);
+  return Math.round(weightedSum / totalWeight);
+}
+
+function calculateTextQualityScore(r: ContentAuditResult): number {
+  const uniquenessWeight = 0.15 / 0.20;
+  const waterinessWeight = 0.05 / 0.20;
+  return Math.round(r.text_quality.uniqueness_score * uniquenessWeight + (100 - r.text_quality.wateriness_score) * waterinessWeight);
+}
+
+function calculateAuthorityScore(r: ContentAuditResult): number {
+  const a = r.authority;
+  const scores: { value: number; weight: number }[] = [];
+  
+  const linkScore = a.authority_links_count > 0 ? Math.min(100, a.authority_links_count * 20) : 0;
+  scores.push({ value: linkScore, weight: 0.05 });
+  
+  const faqScore = a.faq_count >= 10 ? 100 : a.faq_count >= 3 ? 70 : a.faq_count > 0 ? 30 : 0;
+  scores.push({ value: faqScore, weight: 0.05 });
+  
+  const contactScore = ((a.has_valid_phone ? 50 : 0) + (a.has_valid_address ? 50 : 0));
+  scores.push({ value: contactScore, weight: 0.05 });
+  
+  const totalWeight = scores.reduce((sum, sc) => sum + sc.weight, 0);
+  const weightedSum = scores.reduce((sum, sc) => sum + (sc.value * sc.weight), 0);
+  return Math.round(weightedSum / totalWeight);
+}
+
+export function ContentAuditSection({ defaultUrl, result, className }: ContentAuditSectionProps) {
   const t = useTranslations('Playground.contentAudit');
+  
+  // State for trends from previous audit
+  const [trends, setTrends] = useState<{
+    structure: number | null;
+    textQuality: number | null;
+    authority: number | null;
+  }>({ structure: null, textQuality: null, authority: null });
+  const [isFirstAudit, setIsFirstAudit] = useState(true);
+  const [trendsLoaded, setTrendsLoaded] = useState(false);
+
+  // Calculate current scores
+  const categoryScores = result ? {
+    structure: calculateStructureScore(result),
+    textQuality: calculateTextQualityScore(result),
+    authority: calculateAuthorityScore(result),
+  } : { structure: 0, textQuality: 0, authority: 0 };
+
+  // Load previous audit to calculate trends
+  useEffect(() => {
+    if (!result || !defaultUrl || trendsLoaded) return;
+    
+    const loadPreviousAudit = async () => {
+      try {
+        const previous = await getPreviousContentAudit({ url: defaultUrl });
+        
+        if (previous && previous.result) {
+          // Calculate previous scores
+          const prevStructure = calculateStructureScore(previous.result);
+          const prevTextQuality = calculateTextQualityScore(previous.result);
+          const prevAuthority = calculateAuthorityScore(previous.result);
+          
+          // Calculate trends (current - previous)
+          setTrends({
+            structure: categoryScores.structure - prevStructure,
+            textQuality: categoryScores.textQuality - prevTextQuality,
+            authority: categoryScores.authority - prevAuthority,
+          });
+          setIsFirstAudit(false);
+        } else {
+          setIsFirstAudit(true);
+        }
+        setTrendsLoaded(true);
+      } catch (error) {
+        console.error('[ContentAuditSection] Failed to load previous audit:', error);
+        setTrendsLoaded(true);
+      }
+    };
+    
+    loadPreviousAudit();
+  }, [result, defaultUrl, categoryScores.structure, categoryScores.textQuality, categoryScores.authority, trendsLoaded]);
 
   if (!result) {
     return null;
   }
-
-  // Calculate category scores
-  const categoryScores = {
-    structure: result.structure.architecture_score,
-    textQuality: (result.text_quality.uniqueness_score + (100 - result.text_quality.wateriness_score)) / 2,
-    authority: (() => {
-      const scores: number[] = [];
-      if (result.authority.has_valid_phone) scores.push(100);
-      if (result.authority.has_valid_address) scores.push(100);
-      if (result.authority.authority_links_count > 0) scores.push(Math.min(100, result.authority.authority_links_count * 20));
-      if (result.authority.faq_count >= 3) scores.push(100);
-      else if (result.authority.faq_count > 0) scores.push(50);
-      return scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
-    })(),
-  };
 
   const s = result.structure;
   const q = result.text_quality;
@@ -362,16 +477,18 @@ export function ContentAuditSection({ result, className }: ContentAuditSectionPr
             label="Структура сайту"
             value={`${categoryScores.structure}%`}
             benchmark="80%"
-            trend={categoryScores.structure >= 80 ? '+' + (categoryScores.structure - 80) + '%' : '-' + (80 - categoryScores.structure) + '%'}
+            trend={trendsLoaded ? trends.structure : null}
+            isFirstAudit={trendsLoaded && isFirstAudit}
             icon={Layout}
             iconBg={HORIZON.primaryLight}
             iconColor={HORIZON.primary}
           />
           <KpiCard
             label="Якість тексту"
-            value={`${Math.round(categoryScores.textQuality)}%`}
+            value={`${categoryScores.textQuality}%`}
             benchmark="75%"
-            trend={Math.round(categoryScores.textQuality) >= 75 ? '+' + (Math.round(categoryScores.textQuality) - 75) + '%' : '-' + (75 - Math.round(categoryScores.textQuality)) + '%'}
+            trend={trendsLoaded ? trends.textQuality : null}
+            isFirstAudit={trendsLoaded && isFirstAudit}
             icon={FileText}
             iconBg={HORIZON.successLight}
             iconColor={HORIZON.success}
@@ -380,7 +497,8 @@ export function ContentAuditSection({ result, className }: ContentAuditSectionPr
             label="Авторитетність"
             value={`${categoryScores.authority}%`}
             benchmark="70%"
-            trend={categoryScores.authority >= 70 ? '+' + (categoryScores.authority - 70) + '%' : '-' + (70 - categoryScores.authority) + '%'}
+            trend={trendsLoaded ? trends.authority : null}
+            isFirstAudit={trendsLoaded && isFirstAudit}
             icon={Shield}
             iconBg={HORIZON.warningLight}
             iconColor={HORIZON.warning}

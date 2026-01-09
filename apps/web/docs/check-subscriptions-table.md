@@ -64,3 +64,4 @@ Service role key можно найти в Supabase Dashboard → Settings → AP
 
 
 
+

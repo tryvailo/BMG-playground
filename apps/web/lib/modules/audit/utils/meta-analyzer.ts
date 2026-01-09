@@ -24,7 +24,17 @@ export interface TitleAnalysis {
   issues: string[];
   recommendations: string[];
   score: number; // 0-100
+  serviceTitles?: TitleAnalysis[]; // Analysis of page title tags found in content (H1, service titles)
 }
+
+export interface PageTitleTagAnalysis {
+  location: string; // Where found (e.g., "Service: МРТ")
+  text: string;
+  level?: number; // H1, H2, etc.
+  score: number;
+  isOptimal: boolean;
+}
+
 
 export interface DescriptionAnalysis {
   description: string;
@@ -39,6 +49,7 @@ export interface DescriptionAnalysis {
   issues: string[];
   recommendations: string[];
   score: number; // 0-100
+  serviceDescriptions?: DescriptionAnalysis[]; // Service-level descriptions
 }
 
 export interface CanonicalAnalysis {
@@ -65,28 +76,28 @@ export interface CanonicalAnalysis {
 /**
  * Ukrainian cities for local keyword detection
  */
-const UKRAINIAN_CITIES = [
-  'київ', 'kyiv', 'kiev',
-  'львів', 'lviv',
-  'харків', 'kharkiv',
-  'одеса', 'odesa', 'odessa',
-  'дніпро', 'dnipro',
-  'запоріжжя', 'zaporizhzhia',
-  'вінниця', 'vinnytsia',
-  'полтава', 'poltava',
-  'чернігів', 'chernihiv',
-  'черкаси', 'cherkasy',
-  'суми', 'sumy',
-  'житомир', 'zhytomyr',
-  'миколаїв', 'mykolaiv',
-  'херсон', 'kherson',
-  'рівне', 'rivne',
-  'тернопіль', 'ternopil',
-  'івано-франківськ', 'ivano-frankivsk',
-  'луцьк', 'lutsk',
-  'ужгород', 'uzhhorod',
-  'хмельницький', 'khmelnytskyi',
-  'кропивницький', 'kropyvnytskyi',
+const UKRAINIAN_CITIES: { lower: string; proper: string }[] = [
+  { lower: 'київ', proper: 'Київ' }, { lower: 'kyiv', proper: 'Київ' }, { lower: 'kiev', proper: 'Київ' },
+  { lower: 'львів', proper: 'Львів' }, { lower: 'lviv', proper: 'Львів' },
+  { lower: 'харків', proper: 'Харків' }, { lower: 'kharkiv', proper: 'Харків' },
+  { lower: 'одеса', proper: 'Одеса' }, { lower: 'odesa', proper: 'Одеса' }, { lower: 'odessa', proper: 'Одеса' },
+  { lower: 'дніпро', proper: 'Дніпро' }, { lower: 'dnipro', proper: 'Дніпро' },
+  { lower: 'запоріжжя', proper: 'Запоріжжя' }, { lower: 'zaporizhzhia', proper: 'Запоріжжя' },
+  { lower: 'вінниця', proper: 'Вінниця' }, { lower: 'vinnytsia', proper: 'Вінниця' },
+  { lower: 'полтава', proper: 'Полтава' }, { lower: 'poltava', proper: 'Полтава' },
+  { lower: 'чернігів', proper: 'Чернігів' }, { lower: 'chernihiv', proper: 'Чернігів' },
+  { lower: 'черкаси', proper: 'Черкаси' }, { lower: 'cherkasy', proper: 'Черкаси' },
+  { lower: 'суми', proper: 'Суми' }, { lower: 'sumy', proper: 'Суми' },
+  { lower: 'житомир', proper: 'Житомир' }, { lower: 'zhytomyr', proper: 'Житомир' },
+  { lower: 'миколаїв', proper: 'Миколаїв' }, { lower: 'mykolaiv', proper: 'Миколаїв' },
+  { lower: 'херсон', proper: 'Херсон' }, { lower: 'kherson', proper: 'Херсон' },
+  { lower: 'рівне', proper: 'Рівне' }, { lower: 'rivne', proper: 'Рівне' },
+  { lower: 'тернопіль', proper: 'Тернопіль' }, { lower: 'ternopil', proper: 'Тернопіль' },
+  { lower: 'івано-франківськ', proper: 'Івано-Франківськ' }, { lower: 'ivano-frankivsk', proper: 'Івано-Франківськ' },
+  { lower: 'луцьк', proper: 'Луцьк' }, { lower: 'lutsk', proper: 'Луцьк' },
+  { lower: 'ужгород', proper: 'Ужгород' }, { lower: 'uzhhorod', proper: 'Ужгород' },
+  { lower: 'хмельницький', proper: 'Хмельницький' }, { lower: 'khmelnytskyi', proper: 'Хмельницький' },
+  { lower: 'кропивницький', proper: 'Кропивницький' }, { lower: 'kropyvnytskyi', proper: 'Кропивницький' },
 ];
 
 /**
@@ -173,10 +184,9 @@ const BENEFIT_PATTERNS = [
 function detectCity(text: string): string | null {
   const lowerText = text.toLowerCase();
   
-  for (const city of UKRAINIAN_CITIES) {
-    if (lowerText.includes(city)) {
-      // Return properly capitalized city name
-      return city.charAt(0).toUpperCase() + city.slice(1);
+  for (const cityEntry of UKRAINIAN_CITIES) {
+    if (lowerText.includes(cityEntry.lower)) {
+      return cityEntry.proper;
     }
   }
   

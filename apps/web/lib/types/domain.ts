@@ -131,6 +131,8 @@ export interface CompetitorPoint {
   aiScore: number; // Calculated AI visibility score
   isClient: boolean; // Whether this is the client's own domain
   mentions?: number; // Number of mentions in AI responses
+  visibility?: number; // Visibility percentage (0-100)
+  trend?: number; // Percentage change compared to previous period
 }
 
 /*

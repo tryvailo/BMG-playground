@@ -98,7 +98,17 @@ async function createSubscriptionIfNeeded(
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      console.error('[CreateProject] Error parsing request body:', parseError);
+      return NextResponse.json(
+        { error: 'Invalid request body', message: 'Failed to parse JSON' },
+        { status: 400 }
+      );
+    }
+    
     const { userId: providedUserId, domain, clinicName, region, city, language, planId, interval } = body;
     
     // Log all received data for debugging
@@ -116,7 +126,19 @@ export async function POST(request: NextRequest) {
 
     // Try to get auth token from Authorization header (for immediate post-signup requests)
     const authHeader = request.headers.get('authorization');
-    let client = await getSupabaseServerClient();
+    let client;
+    try {
+      client = await getSupabaseServerClient();
+    } catch (clientError) {
+      console.error('[CreateProject] Error creating server client:', clientError);
+      return NextResponse.json(
+        { 
+          error: 'Failed to initialize database client',
+          message: clientError instanceof Error ? clientError.message : 'Unknown error',
+        },
+        { status: 500 }
+      );
+    }
     let userId: string;
     let useAdminClient = false;
     
@@ -124,8 +146,19 @@ export async function POST(request: NextRequest) {
     if (providedUserId) {
       userId = providedUserId;
       useAdminClient = true; // Use admin client to bypass RLS
-      client = await getSupabaseServerAdminClient();
-      console.log('[CreateProject] Using admin client with provided userId:', userId);
+      try {
+        client = await getSupabaseServerAdminClient();
+        console.log('[CreateProject] Using admin client with provided userId:', userId);
+      } catch (adminClientError) {
+        console.error('[CreateProject] Error creating admin client:', adminClientError);
+        return NextResponse.json(
+          { 
+            error: 'Failed to initialize database client',
+            message: adminClientError instanceof Error ? adminClientError.message : 'Unknown error',
+          },
+          { status: 500 }
+        );
+      }
     }
     // Priority 2: If Authorization header is provided, extract user ID from token
     else if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -411,15 +444,29 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('[CreateProject] Unexpected error:', error);
+    console.error('[CreateProject] Error type:', error?.constructor?.name);
+    console.error('[CreateProject] Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined,
+    });
+    
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    // Always return JSON, never HTML
     return NextResponse.json(
       { 
         error: 'Internal server error',
         message: errorMessage,
         stack: process.env.NODE_ENV === 'development' ? errorStack : undefined,
       },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
     );
   }
 }

@@ -35,7 +35,7 @@
       "ai": "3. Technical Optimization (AI & Search)",
       "compliance": "Basic Compliance",
       "schema": "Structured Data (Schema.org)",
-      "seo": "SEO & Indexing",
+      "seo": "GEO & Indexing",
       "performance": "Speed & Content"
     },
     "items": {
@@ -150,6 +150,7 @@
     "keywordQueryRequired": "Keyword/Query is required"
   }
 }
+
 
 
 

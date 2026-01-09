@@ -2,9 +2,11 @@
 
 import { extractCanonical } from './utils/html-parser';
 import { analyzeLlmsTxt } from './utils/llms-analyzer';
+import { heuristicLlmsAnalysis } from './utils/llms-heuristic';
 import { analyzeTechAudit } from './utils/tech-audit-analyzer';
 import type { TechAuditAnalysis } from './utils/tech-audit-analyzer';
 import { fetchAndAnalyzeRobotsTxt, type RobotsTxtAnalysis } from './utils/robots-parser';
+import { analyzeSitemap, type SitemapAnalysis } from './utils/sitemap-analyzer';
 import { analyzeTitle, analyzeDescription, analyzeCanonical, type TitleAnalysis, type DescriptionAnalysis, type CanonicalAnalysis } from './utils/meta-analyzer';
 
 /*
@@ -110,10 +112,12 @@ export interface EphemeralAuditResult {
     robots: boolean;
     sitemap: boolean;
     robotsTxt: RobotsTxtAnalysis; // Detailed robots.txt analysis
+    sitemapAnalysis: SitemapAnalysis; // Detailed sitemap analysis
     llmsTxt: {
       present: boolean;
       score: number;
       recommendations: string[];
+      missingSections: string[];
     };
   };
   schema: {
@@ -185,6 +189,7 @@ function normalizeUrl(url: string): string {
  * Parse HTML and extract meta, schema, and image data for audit
  */
 interface ParsedHTMLForAudit {
+  rawHtml?: string; // Store raw HTML for further analysis
   meta: {
     title: string;
     titleLength: number;
@@ -211,6 +216,50 @@ interface ParsedHTMLForAudit {
     total: number;
     missingAlt: number;
   };
+}
+
+/**
+ * Scan all heading tags (H1, H2, H3) to find service titles
+ */
+function extractAllHeadings(html: string): Array<{ level: number; text: string }> {
+  const headings: Array<{ level: number; text: string }> = [];
+  
+  // Find all h1, h2, h3 tags
+  for (let level = 1; level <= 3; level++) {
+    const regex = new RegExp(`<h${level}[^>]*>([^<]+)</h${level}>`, 'gi');
+    let match;
+    while ((match = regex.exec(html)) !== null) {
+      const text = match[1]?.trim();
+      if (text && text.length > 0) {
+        headings.push({ level, text });
+      }
+    }
+  }
+  
+  return headings;
+}
+
+/**
+ * Extract descriptions that follow service headings (H2/H3)
+ * Looks for text in <p> tags immediately after headings
+ */
+function extractServiceDescriptions(html: string): Array<{ heading: string; description: string }> {
+  const descriptions: Array<{ heading: string; description: string }> = [];
+  
+  // Match H2/H3 followed by paragraph tag
+  const regex = /<h[23][^>]*>([^<]+)<\/h[23]>[\s\n]*<p[^>]*>([^<]+)<\/p>/gi;
+  let match;
+  
+  while ((match = regex.exec(html)) !== null) {
+    const heading = match[1]?.trim();
+    const description = match[2]?.trim();
+    
+    if (heading && description && heading.length > 0 && description.length > 0) {
+      descriptions.push({ heading, description });
+    }
+  }
+  
+  return descriptions;
 }
 
 function parseHTMLForAudit(html: string, _pageUrl: string): ParsedHTMLForAudit {
@@ -311,6 +360,7 @@ function parseHTMLForAudit(html: string, _pageUrl: string): ParsedHTMLForAudit {
   const missingAlt = imgMatches.filter(img => !img.match(/alt=["'][^"']+["']/i)).length;
 
   return {
+    rawHtml: html,
     meta: {
       title,
       titleLength: title.length,
@@ -459,7 +509,7 @@ async function fetchPageSpeedScore(
 /**
  * Check if a file exists at a given URL
  */
-async function checkFileExists(fileUrl: string): Promise<boolean> {
+async function _checkFileExists(fileUrl: string): Promise<boolean> {
   try {
     const response = await fetch(fileUrl, {
       method: 'HEAD',
@@ -633,6 +683,7 @@ async function checkAndAnalyzeLlmsTxt(
   score: number;
   recommendations: string[];
 }> {
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   try {
     // Normalize baseUrl - ensure it doesn't have trailing slash
     const normalizedBaseUrl = baseUrl.replace(/\/$/, '');
@@ -657,7 +708,14 @@ async function checkAndAnalyzeLlmsTxt(
         present: false,
         score: 0,
         recommendations: ['Add an llms.txt file to help AI systems understand your content structure.'],
-      };
+        data: {
+          score: 0,
+          summary: 'llms.txt not found',
+          missing_sections: ['llms.txt missing'],
+          recommendations: ['Add an llms.txt file to help AI systems understand your content structure.'],
+          analysisMethod: 'none',
+        },
+      } as any;
     }
 
     const content = await response.text();
@@ -669,7 +727,14 @@ async function checkAndAnalyzeLlmsTxt(
         present: false,
         score: 0,
         recommendations: ['llms.txt file exists but is empty. Add content to help AI systems understand your content structure.'],
-      };
+        data: {
+          score: 0,
+          summary: 'llms.txt file is empty',
+          missing_sections: ['llms.txt is empty'],
+          recommendations: ['Add content to llms.txt to improve AI visibility.'],
+          analysisMethod: 'none',
+        },
+      } as any;
     }
 
     // Analyze with AI if key is provided
@@ -683,24 +748,51 @@ async function checkAndAnalyzeLlmsTxt(
           present: true,
           score: analysis.score,
           recommendations: analysis.recommendations,
-        };
+          data: analysis as any,
+        } as any;
       } catch (aiError) {
         console.error('[EphemeralAudit] Error during AI analysis of llms.txt:', aiError);
-        // File exists but analysis failed - still mark as present
-        return {
-          present: true,
-          score: 0,
-          recommendations: ['llms.txt file exists but AI analysis failed. Check OpenAI API key.'],
-        };
+        // If AI analysis throws, attempt a local heuristic fallback so UI gets useful info
+        try {
+          const fallback = heuristicLlmsAnalysis(content, aiError instanceof Error ? aiError.message : String(aiError));
+          console.warn('[EphemeralAudit] Using heuristic fallback for llms.txt analysis');
+          return {
+            present: true,
+            score: fallback.score,
+            recommendations: fallback.recommendations,
+            data: fallback as any,
+          } as any;
+        } catch (fallbackError) {
+          console.error('[EphemeralAudit] Heuristic fallback failed:', fallbackError);
+          return {
+            present: true,
+            score: 0,
+            recommendations: ['llms.txt file exists but AI analysis failed. Check OpenAI API key.'],
+            data: {
+              score: 0,
+              summary: 'AI analysis failed and heuristic fallback unavailable',
+              missing_sections: ['Unable to analyze llms.txt'],
+              recommendations: ['Ensure OpenAI API key is valid and try again'],
+              analysisMethod: 'none',
+            },
+          } as any;
+        }
       }
     } else {
       console.warn('[EphemeralAudit] No OpenAI key provided, skipping AI analysis of llms.txt');
-      // File exists but no AI analysis
+      // File exists but no AI analysis - provide lightweight data object so UI can show messages
       return {
         present: true,
         score: 0,
         recommendations: ['llms.txt file exists. Provide OpenAI API key for quality analysis.'],
-      };
+        data: {
+          score: 0,
+          summary: 'No OpenAI key provided - analysis skipped',
+          missing_sections: [],
+          recommendations: ['Provide OpenAI API key to enable detailed llms.txt analysis.'],
+          analysisMethod: 'none',
+        },
+      } as any;
     }
   } catch (error) {
     console.error('[EphemeralAudit] Error checking llms.txt:', error);
@@ -714,8 +806,16 @@ async function checkAndAnalyzeLlmsTxt(
       present: false,
       score: 0,
       recommendations: ['Add an llms.txt file to help AI systems understand your content structure.'],
-    };
+      data: {
+        score: 0,
+        summary: 'Error checking llms.txt',
+        missing_sections: ['Unable to fetch or parse llms.txt'],
+        recommendations: ['Add an llms.txt file to help AI systems understand your content structure.'],
+        analysisMethod: 'none',
+      },
+    } as any;
   }
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 }
 
 /*
@@ -791,8 +891,8 @@ export async function performEphemeralTechAudit(
     // robots.txt detailed analysis (replaces simple checkFileExists)
     fetchAndAnalyzeRobotsTxt(baseUrl),
 
-    // sitemap.xml check
-    checkFileExists(new URL('/sitemap.xml', normalizedUrl).toString()),
+    // sitemap.xml detailed analysis (replaces simple checkFileExists)
+    analyzeSitemap(normalizedUrl),
 
     // llms.txt check and analysis
     checkAndAnalyzeLlmsTxt(baseUrl, finalOpenaiKey),
@@ -870,9 +970,23 @@ export async function performEphemeralTechAudit(
 
   const robotsPresent = robotsTxtAnalysis.present;
 
-  const sitemapPresent = sitemapResult.status === 'fulfilled'
+  // Extract sitemap analysis results
+  const sitemapAnalysis: SitemapAnalysis = sitemapResult.status === 'fulfilled'
     ? sitemapResult.value
-    : robotsTxtAnalysis.hasSitemap; // Fallback to robots.txt sitemap info
+    : {
+      present: false,
+      valid: false,
+      urlCount: 0,
+      hasLastMod: 0,
+      hasPriority: 0,
+      hasChangefreq: 0,
+      hasImages: 0,
+      issues: ['Помилка при аналізі sitemap'],
+      recommendations: [],
+      score: 0,
+    };
+
+  const sitemapPresent = sitemapAnalysis.present;
 
   // Extract llms.txt results
   const llmsTxtData = llmsTxtResult.status === 'fulfilled'
@@ -960,10 +1074,12 @@ export async function performEphemeralTechAudit(
       robots: robotsPresent,
       sitemap: sitemapPresent,
       robotsTxt: robotsTxtAnalysis,
+      sitemapAnalysis: sitemapAnalysis,
       llmsTxt: {
         present: llmsTxtData.present,
         score: llmsTxtData.score,
         recommendations: llmsTxtData.recommendations,
+        missingSections: (llmsTxtData as unknown as { data?: { missing_sections?: string[] } }).data?.missing_sections || [],
       },
     },
     schema: {
@@ -979,10 +1095,51 @@ export async function performEphemeralTechAudit(
     meta: {
       title,
       titleLength: htmlData?.meta?.titleLength ?? null,
-      titleAnalysis: analyzeTitle(title),
+      titleAnalysis: (() => {
+        const mainAnalysis = analyzeTitle(title);
+        
+        // Analyze service titles from headings if HTML data available
+        if (htmlData?.rawHtml) {
+          const allHeadings = extractAllHeadings(htmlData.rawHtml);
+          
+          // Filter for service-related headings (exclude main H1 which is usually the page title)
+          // Focus on H2 and H3 as service names/titles, but also include H1 variations
+          const serviceHeadings = allHeadings.filter(heading => {
+            // Exclude if it's the main page title
+            if (heading.text === title) return false;
+            // Include all H2 and H3
+            if (heading.level >= 2) return true;
+            // Include H1 only if different from main title
+            return heading.level === 1 && heading.text !== title;
+          });
+          
+          if (serviceHeadings.length > 0) {
+            const serviceTitles = serviceHeadings.map(heading => analyzeTitle(heading.text));
+            mainAnalysis.serviceTitles = serviceTitles;
+          }
+        }
+        
+        return mainAnalysis;
+      })(),
       description,
       descriptionLength: htmlData?.meta?.descriptionLength ?? null,
-      descriptionAnalysis: analyzeDescription(description, title),
+      descriptionAnalysis: (() => {
+        const mainAnalysis = analyzeDescription(description, title);
+        
+        // Analyze service descriptions if HTML data available
+        if (htmlData?.rawHtml) {
+          const serviceDescs = extractServiceDescriptions(htmlData.rawHtml);
+          
+          if (serviceDescs.length > 0) {
+            const serviceAnalyses = serviceDescs.map(item => 
+              analyzeDescription(item.description, item.heading)
+            );
+            mainAnalysis.serviceDescriptions = serviceAnalyses;
+          }
+        }
+        
+        return mainAnalysis;
+      })(),
       h1,
       canonical,
       canonicalAnalysis: analyzeCanonical(canonical, normalizedUrl),

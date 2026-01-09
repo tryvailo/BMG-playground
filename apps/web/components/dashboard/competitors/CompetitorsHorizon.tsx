@@ -136,9 +136,17 @@ const KpiCard = ({ label, value, benchmark, trend, icon: Icon, iconBg, iconColor
                 {label}
             </div>
             <div className="text-lg font-bold" style={{ color: HORIZON.textPrimary }}>
-                <span>{value}</span>
-                <span className="text-sm font-medium mx-1" style={{ color: HORIZON.textSecondary }}>vs</span>
-                <span style={{ color: HORIZON.textSecondary }}>{benchmark}</span>
+                <div className="flex items-baseline gap-1">
+                    <div className="flex flex-col">
+                        <span>{value}</span>
+                        <span className="text-xs font-normal" style={{ color: HORIZON.textSecondary }}>Ваш</span>
+                    </div>
+                    <span className="text-sm font-medium mx-1" style={{ color: HORIZON.textSecondary }}>vs</span>
+                    <div className="flex flex-col">
+                        <span style={{ color: HORIZON.textSecondary }}>{benchmark}</span>
+                        <span className="text-xs font-normal" style={{ color: HORIZON.textSecondary }}>Середній top-10 конкурентів</span>
+                    </div>
+                </div>
             </div>
         </HorizonCard>
     );
@@ -275,61 +283,89 @@ const ScatterLabel = (props: ScatterLabelProps) => {
 };
 
 // ============ MAIN COMPONENT ============
+import { useDashboardData } from '~/[locale]/home/_components/hooks/use-dashboard-data';
+import { useProjectSettings } from '~/[locale]/home/_components/hooks/use-project-settings';
+import { useServices } from '~/[locale]/home/_components/hooks/use-services';
+import { Skeleton } from '@kit/ui/skeleton';
+
 export function CompetitorsHorizon() {
+    const { data: projectSettings, isLoading: projectLoading } = useProjectSettings();
+    const projectId = projectSettings?.id || '';
+
     const [selectedCompetitor, setSelectedCompetitor] = useState<string | null>(null);
-    const [selectedService, setSelectedService] = useState('gynecology');
+    const [selectedServiceId, setSelectedServiceId] = useState<string>('all');
     const [timeRange, setTimeRange] = useState('6m');
     const [searchQuery, setSearchQuery] = useState('');
 
-    // --- Services List ---
-    const services = useMemo(() => [
-        "УЗД Сердця", "УЗД Голови", "Консультація дерматолога",
-        "Консультація хірурга", "Консультація ЛОР", "Мамографія",
-        "УЗД Черевної порожнини", "Консультація офтальмолога"
-    ], []);
+    const { data: dashboardData, isLoading: dataLoading } = useDashboardData({
+        projectId: projectId || 'demo',
+    });
 
-    // --- Competitors Data ---
-    const competitors = useMemo(() => [
-        { id: 'c1', name: 'Кл. Чудайкіна', color: HORIZON.c1, url: 'chudaikina.com', score: 75, serviceScore: 68, visibility: 55, position: 3.8, trend: 2.4 },
-        { id: 'c2', name: 'Sobco Clinic', color: HORIZON.c2, url: 'sobco.ua', score: 88, serviceScore: 82, visibility: 77, position: 2.1, trend: 1.8 },
-        { id: 'c3', name: 'Planeta Zdorovya', color: HORIZON.c3, url: 'planeta.dp.ua', score: 51, serviceScore: 45, visibility: 42, position: 5.5, trend: -0.5 },
-        { id: 'c4', name: 'Dopelclinic', color: HORIZON.c4, url: 'dopel.dp.ua', score: 30, serviceScore: 28, visibility: 25, position: 8.2, trend: -2.1 },
-        { id: 'c5', name: 'Oxford Med', color: HORIZON.c5, url: 'oxford-med.ua', score: 15, serviceScore: 12, visibility: 18, position: 12.5, trend: 0.3 },
-        { id: 'c6', name: 'JMC Center', color: HORIZON.c6, url: 'jmc.org.ua', score: 62, serviceScore: 58, visibility: 48, position: 4.5, trend: 3.2 },
-        { id: 'c7', name: 'Garvis Med', color: HORIZON.c7, url: 'garvis.com.ua', score: 45, serviceScore: 40, visibility: 38, position: 6.8, trend: 1.1 },
-        { id: 'c8', name: 'Medical Star', color: HORIZON.c8, url: 'medstar.ua', score: 20, serviceScore: 18, visibility: 12, position: 15.2, trend: -1.5 },
-        { id: 'c9', name: 'Daily Med', color: HORIZON.c9, url: 'dailymed.dp.ua', score: 92, serviceScore: 88, visibility: 85, position: 1.5, trend: 4.2 },
-        { id: 'c10', name: 'Zdorovya Plus', color: HORIZON.c10, url: 'zdorovya.ua', score: 55, serviceScore: 50, visibility: 51, position: 5.2, trend: 0.8 },
-    ], []);
+    const { data: dbServices } = useServices(projectId);
 
-    const currentClinic = useMemo(() => ({
-        id: 'you',
-        name: 'Ваша Клініка',
-        color: HORIZON.you,
-        url: 'your-clinic.ua',
-        score: 72.8,
-        serviceScore: 65,
-        visibility: 61,
-        position: 3.2,
-        trend: 5.2
-    }), []);
+    // --- Colors for competitors ---
+    const competitorColors = [
+        HORIZON.c1, HORIZON.c2, HORIZON.c3, HORIZON.c4, HORIZON.c5,
+        HORIZON.c6, HORIZON.c7, HORIZON.c8, HORIZON.c9, HORIZON.c10
+    ];
 
-    // --- 7 KPI Cards (Analysis opportunity) ---
-    const kpis = useMemo(() => [
-        { label: 'ClinicAI Score', value: '51%', benchmark: '70%', trend: '+15%', icon: BrainCircuit, iconBg: HORIZON.primaryLight, iconColor: HORIZON.primary },
-        { label: 'Показник видимості', value: '31%', benchmark: '74%', trend: '+22%', icon: Target, iconBg: HORIZON.successLight, iconColor: HORIZON.success },
-        { label: 'Середня позиція', value: '3/14', benchmark: '7/10', trend: '+1.5', icon: Activity, iconBg: HORIZON.errorLight, iconColor: HORIZON.error },
-        { label: 'Кількість сервісів', value: '95%', benchmark: '75%', trend: '+20%', icon: Zap, iconBg: HORIZON.infoLight, iconColor: HORIZON.info },
-        { label: 'Оптимізація контенту', value: '91%', benchmark: '70%', trend: '+21%', icon: LayoutGrid, iconBg: HORIZON.primaryLight, iconColor: HORIZON.c2 },
-        { label: 'E-E-A-T сигнали', value: '93%', benchmark: '75%', trend: '+18%', icon: Sparkles, iconBg: HORIZON.warningLight, iconColor: HORIZON.warning },
-        { label: 'Локальні показники', value: '59%', benchmark: '74%', trend: '-15%', icon: Globe, iconBg: HORIZON.successLight, iconColor: HORIZON.c3 },
-    ], []);
+    // --- Processed Competitors Data ---
+    const competitors = useMemo(() => {
+        if (!dashboardData) return [];
+        return dashboardData.competitors
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .filter((c: any) => !c.isCurrentProject)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .map((c: any, i: number) => ({
+                id: c.name,
+                name: c.name.split('.')[0] || c.name,
+                color: competitorColors[i % competitorColors.length] || HORIZON.secondary,
+                url: c.name,
+                score: c.y,
+                serviceScore: c.y * 0.9, // Default logic for now
+                visibility: c.visibility,
+                position: c.position,
+                trend: c.trend
+            }));
+    }, [dashboardData]);
+
+    const currentClinic = useMemo(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const you = dashboardData?.competitors.find((c: any) => c.isCurrentProject);
+        return {
+            id: 'you',
+            name: projectSettings?.clinicName || 'Ваша Клініка',
+            color: HORIZON.you,
+            url: projectSettings?.domain || 'your-clinic.ua',
+            score: you?.y || dashboardData?.kpis.avgAivScore || 0,
+            serviceScore: (you?.y || dashboardData?.kpis.avgAivScore || 0) * 0.9,
+            visibility: you?.visibility || dashboardData?.kpis.serviceVisibility || 0,
+            position: you?.position || dashboardData?.kpis.avgPosition || 1,
+            trend: you?.trend || 0
+        };
+    }, [dashboardData, projectSettings]);
+
+    // --- KPI Cards ---
+    const kpis = useMemo(() => {
+        if (!dashboardData) return [];
+        return [
+            { label: 'ClinicAI Score', value: `${dashboardData.kpis.avgAivScore.toFixed(0)}%`, benchmark: '70%', trend: '+0%', icon: BrainCircuit, iconBg: HORIZON.primaryLight, iconColor: HORIZON.primary },
+            { label: 'Показник видимості', value: `${dashboardData.kpis.serviceVisibility.toFixed(0)}%`, benchmark: '74%', trend: '+0%', icon: Target, iconBg: HORIZON.successLight, iconColor: HORIZON.success },
+            { label: 'Середня позиція', value: `${(dashboardData.kpis.avgPosition || 0).toFixed(1)}/10`, benchmark: '7/10', trend: '+0', icon: Activity, iconBg: HORIZON.errorLight, iconColor: HORIZON.error },
+            { label: 'Кількість сервісів', value: `${dashboardData.kpis.totalServices}`, benchmark: '75%', trend: '+0%', icon: Zap, iconBg: HORIZON.infoLight, iconColor: HORIZON.info },
+            { label: 'Оптимізація контенту', value: `${(dashboardData.kpis.contentOptimization || 0).toFixed(0)}%`, benchmark: '70%', trend: '+0%', icon: LayoutGrid, iconBg: HORIZON.primaryLight, iconColor: HORIZON.c2 },
+            { label: 'E-E-A-T сигнали', value: `${(dashboardData.kpis.eeatSignal || 0).toFixed(0)}%`, benchmark: '75%', trend: '+0%', icon: Sparkles, iconBg: HORIZON.warningLight, iconColor: HORIZON.warning },
+            { label: 'Локальні показники', value: `${(dashboardData.kpis.localSignal || 0).toFixed(0)}%`, benchmark: '74%', trend: '+0%', icon: Globe, iconBg: HORIZON.successLight, iconColor: HORIZON.c3 },
+        ];
+    }, [dashboardData]);
+
+    const isLoading = projectLoading || dataLoading;
 
     // --- Map Data ---
     const mapData = useMemo(() => [
-        { x: currentClinic.position, y: currentClinic.score, name: 'you', isCurrent: true, color: HORIZON.you, url: 'your-clinic.ua' },
-        ...competitors.map((c, i) => ({
-            x: [2.1, 4.2, 1.5, 6.5, 8.2, 3.8, 5.5, 7.1, 1.8, 4.9][i],
+        { x: currentClinic.position, y: currentClinic.score, name: 'you', isCurrent: true, color: HORIZON.you, url: currentClinic.url },
+        ...competitors.map((c) => ({
+            x: c.position,
             y: c.score,
             name: c.name,
             isCurrent: false,
@@ -340,38 +376,49 @@ export function CompetitorsHorizon() {
 
     // --- Dynamics Data ---
     const dynamics = useMemo(() => {
+        if (!dashboardData) return [];
         const months = ['Бер', 'Кві', 'Тра', 'Чер', 'Лип', 'Сер', 'Вер'];
         return months.map((m, mi) => {
             const row: Record<string, number | string> = { period: m };
-            row.you = 60 + Math.sin(mi) * 10 + (selectedService === 'gynecology' ? 5 : 0);
-            competitors.forEach((c, ci) => {
-                row[c.id] = 50 + Math.cos(mi + ci) * 15;
+            row.you = currentClinic.score + Math.sin(mi) * 5;
+            competitors.forEach((c) => {
+                row[c.id] = c.score + Math.cos(mi + 1) * 5;
             });
             row.market = 55 + Math.sin(mi * 0.5) * 5;
             return row;
         });
-    }, [selectedService, competitors]);
+    }, [dashboardData, currentClinic, competitors]);
 
     // --- Service Gap Data ---
+    const defaultServices = [
+        { id: 'implantation', name: 'Імплантація' },
+        { id: 'orthodontics', name: 'Ортодонтія' },
+        { id: 'therapy', name: 'Терапія' },
+        { id: 'surgery', name: 'Хірургія' },
+        { id: 'whitening', name: 'Відбілювання' },
+        { id: 'prosthetics', name: 'Протезування' },
+    ];
+    const services = (dbServices && dbServices.length > 0) ? dbServices : defaultServices;
     const gapData = useMemo(() => services.map((s, i) => ({
-        service: s,
-        diff: [22, -15, 10, -25, 18, -12, 8, -5][i % 8]
+        service: s.name,
+        diff: [22, -15, 10, -25, 18, -12, 8, -5][i % 8] || 0
     })), [services]);
 
     // --- Distribution Data ---
     const distributionData = useMemo(() => services.map((s, i) => {
-        const row: Record<string, number | string> = { service: s };
-        row.you = [45, 52, 68, 35, 72, 58, 44, 61][i % 8] ?? 0;
-        row.c1 = [60, 48, 75, 42, 65, 50, 55, 48][i % 8] ?? 0;
-        row.c2 = [30, 85, 40, 92, 25, 70, 68, 35][i % 8] ?? 0;
+        const row: Record<string, number | string> = { service: s.name };
+        row.you = (currentClinic.score || 50) + Math.sin(i) * 10;
+        competitors.slice(0, 2).forEach((c, ci) => {
+            row[`c${ci + 1}`] = (c.score || 50) + Math.cos(i + ci) * 10;
+        });
         return row;
-    }), [services]);
+    }), [services, currentClinic, competitors]);
 
     // --- Signals Data ---
     const signals = useMemo(() => [
-        ...competitors.slice(0, 10).map(c => ({ name: c.name.split(' ')[0], v: 50 + Math.random() * 40, f: c.color })),
-        { name: 'Ви', v: 90, f: HORIZON.you },
-    ], [competitors]);
+        ...competitors.slice(0, 10).map((c) => ({ name: c.name.split(' ')[0], v: c.score, f: c.color })),
+        { name: 'Ви', v: currentClinic.score, f: HORIZON.you },
+    ], [competitors, currentClinic]);
 
     // --- Sorted list ---
     const allSorted = useMemo(() => {
@@ -379,8 +426,21 @@ export function CompetitorsHorizon() {
             ? competitors.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
             : competitors;
         const all = [{ ...currentClinic, isCurrent: true }, ...filtered.map(c => ({ ...c, isCurrent: false }))];
-        return all.sort((a, b) => b.score - a.score);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (all as any[]).sort((a: any, b: any) => b.score - a.score);
     }, [currentClinic, competitors, searchQuery]);
+
+    if (isLoading) {
+        return (
+            <div className="space-y-6 pb-20 p-8" style={{ backgroundColor: HORIZON.background, minHeight: '100vh' }}>
+                <Skeleton className="h-12 w-64" />
+                <div className="grid grid-cols-7 gap-4">
+                    {[...Array(7)].map((_, i) => <Skeleton key={i} className="h-32 rounded-[20px]" />)}
+                </div>
+                <Skeleton className="h-[450px] rounded-[20px]" />
+            </div>
+        );
+    }
 
 
 
@@ -585,13 +645,15 @@ export function CompetitorsHorizon() {
                 {/* Sector Intensity (with Select) */}
                 <HorizonCard title="Динаміка AIV Score по послугах" subtitle="Порівняння за секторами"
                     action={
-                        <Select value={selectedService} onValueChange={setSelectedService}>
+                        <Select value={selectedServiceId} onValueChange={setSelectedServiceId}>
                             <SelectTrigger className="w-44 rounded-xl border-none h-9 text-xs font-medium" style={{ backgroundColor: HORIZON.background }}>
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="rounded-xl">
-                                <SelectItem value="gynecology">Гінекологія</SelectItem>
-                                <SelectItem value="ultrasound">УЗД Серця</SelectItem>
+                                <SelectItem value="all">Всі послуги</SelectItem>
+                                {services && services.length > 0 ? services.map((s, index) => (
+                                    <SelectItem key={s.id || `service-${index}`} value={s.id || `service-${index}`}>{s.name || `Service ${index + 1}`}</SelectItem>
+                                )) : null}
                             </SelectContent>
                         </Select>
                     }>

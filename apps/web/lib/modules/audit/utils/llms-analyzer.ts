@@ -1,5 +1,7 @@
 'use server';
 
+import { heuristicLlmsAnalysis } from './llms-heuristic';
+
 /*
  * -------------------------------------------------------
  * Type Definitions
@@ -160,43 +162,108 @@ export async function analyzeLlmsTxt(
 ): Promise<LlmsTxtAnalysis> {
   const client = createOpenAIClient(openaiKey);
 
-  const systemPrompt = `You are an expert in Generative Engine Optimization (GEO). Analyze the provided llms.txt file content against these 'Ideal Variant' criteria:
+  const systemPrompt = `You are a professional SEO and GEO (Generative Engine Optimization) specialist with expertise in:
+- Schema markup and structured data optimization
+- Local SEO and geographic targeting
+- AI visibility (AIV) and LLM indexation
+- Technical content optimization for LLMs
 
-- Markdown structure (proper formatting with headers, lists, etc.)
-- Presence of key information (can be in various formats):
-  * About/Description: Information about the organization, mission, values, or background
-  * Services: List or description of services offered (can be in "Основні напрямки", "Services", or similar sections)
-  * Doctors/Staff: Information about medical staff, specialists, or doctors (can be mentioned in descriptions, examples, or dedicated sections)
-  * Contact Information: Addresses, phone numbers, email, or instructions on how to contact (can be in addresses, "телефоном", or contact sections)
-- Clear descriptions and unique selling points
-- Up-to-date contact info (addresses, phone numbers, or clear instructions on how to find contact details)
-- No noise/ads
+When analyzing llms.txt files for medical/healthcare organizations, evaluate:
 
-Important: Information can be presented in various formats:
-- Explicit sections with headers (## About, ## Services, etc.)
-- Embedded in descriptions and examples
-- In metadata fields (addresses, contact info)
-- In language-specific sections
-- In query examples or instructions
+CRITICAL SECTIONS (must-have for GEO):
+1. Organization Identity:
+   - Clear legal entity name and aliases
+   - Geographic focus (specific cities, regions, countries)
+   - Medical specialization/categories with specific procedures listed
+   - Hierarchy: Organization → Specializations → Procedures
 
-Be flexible in recognizing information even if it's not in a standard format.`;
+2. Local Service Information (GEO crucial):
+   - Multiple office locations with explicit addresses (street, city, postal code)
+   - Phone numbers in local format (e.g., +38 for Ukraine)
+   - Service areas covered (e.g., "Serving 5 districts of Kyiv")
+   - Hours of operation (especially for emergency services)
 
-  const userPrompt = `Analyze the following llms.txt content and provide a JSON response with:
-- score: A number from 0-100 indicating how well the file meets the ideal variant criteria. Consider that information can be present in various formats, not just explicit sections.
-- summary: A short verdict (1-2 sentences) describing the overall quality and what information is present
-- missing_sections: An array of strings listing what's genuinely missing or could be improved (e.g., "No explicit About section" only if there's truly no information about the organization, "Could add direct phone number" if only addresses are present)
-- recommendations: An array of actionable advice strings for improvement (e.g., "Consider adding an explicit Services section header", "Include direct phone number for easier contact")
+3. Medical Expertise & Authority (EEAT signals):
+   - Doctor/specialist names with credentials (degree, specialization, years of experience)
+   - Qualifications and certifications (licenses, board certifications)
+   - Published articles or case studies
+   - Professional affiliations and memberships
+
+4. Service Definitions:
+   - Each service should include: procedure name, description, conditions treated, expected outcomes
+   - Links to authoritative medical resources (WHO, PubMed, national health ministries)
+   - Contraindications and risk information (builds trust)
+
+5. SEO/GEO Technical Requirements:
+   - Clean Markdown with proper hierarchy (H1, H2, H3)
+   - No keyword stuffing or AI-spam patterns
+   - Updated dates for freshness signals
+   - Structured data-ready format
+
+SCORING CRITERIA:
+- 80-100: Complete information in all critical sections, perfectly formatted, authority signals strong
+- 60-79: Missing 1 critical section or weak on authority signals
+- 40-59: Missing 2-3 sections or significant formatting issues
+- 20-39: Incomplete medical information or poor structure
+- 0-19: Minimal useful content or too generic`;
+
+  const userPrompt = `You are evaluating this llms.txt for a medical organization as a professional SEO/GEO specialist.
+
+CONTEXT:
+- Target audience: LLM systems (ChatGPT, Perplexity, Claude) that rely on accurate medical information
+- Primary goal: Maximize visibility in LLM responses for local medical queries
+- Risk level: High (medical content must be accurate and trustworthy)
+
+ANALYSIS TASK:
+Score each critical section:
+
+1. ORGANIZATION IDENTITY (0-20 points):
+   - Is the legal name and aliases clearly stated? (medical organization name must be unambiguous)
+   - Are geographic locations explicit (cities, regions)? (critical for local AI results)
+   - Is medical specialization clearly categorized? (e.g., "Cardiology", "Orthopedic Surgery")
+
+2. LOCAL SERVICE INFO (0-25 points):
+   - How many office locations are listed with full addresses? (0 = 0pts, 1-2 = 10pts, 3+ = 15pts)
+   - Are phone numbers in local format? Missing = huge GEO penalty
+   - Is service area coverage defined? (e.g., "serves Kyiv and Lviv regions")
+   - Are hours of operation provided?
+
+3. MEDICAL AUTHORITY (0-25 points):
+   - Doctor credentials quality (names + degree level = 10pts, with specialization = 15pts, with years exp = 25pts)
+   - Are licenses/certifications mentioned?
+   - Any published articles or case studies? (adds 10 bonus points)
+
+4. SERVICE DEFINITIONS (0-20 points):
+   - Each service includes description + conditions treated? (10 pts)
+   - Links to authoritative medical sources? (5 pts)
+   - Contraindications/risks mentioned? (5 pts)
+
+5. TECHNICAL QUALITY (0-10 points):
+   - Markdown properly formatted
+   - No AI-spam patterns
+   - Fresh/updated dates present
+
+After scoring, provide recommendations that are:
+- Specific and actionable (not generic advice)
+- Prioritized by GEO impact (what helps most in LLM results)
+- Technically precise (use SEO/GEO terminology)
+
+Return JSON:
+{
+  "score": number (0-100),
+  "summary": string (concise professional assessment),
+  "missing_sections": string[] (specific gaps, only if genuinely missing),
+  "recommendations": string[] (prioritized by GEO impact, max 6)
+}
+
+EXAMPLE RECOMMENDATIONS (your style):
+✓ "Add 3+ office addresses with postal codes in Ukrainian local format (+38-XX-XXX-XXXX)"
+✓ "List each doctor's license number and specialization registry to strengthen medical authority signals"
+✓ "Create a 'Conditions Treated' section mapping procedures to ICD-10 codes for medical AI precision"
+✗ "Make content better" ❌ TOO VAGUE
 
 llms.txt content:
-${content}
-
-Return only valid JSON in this format:
-{
-  "score": number,
-  "summary": string,
-  "missing_sections": string[],
-  "recommendations": string[]
-}`;
+${content}`;
 
   try {
     const response = await client.chat.completions.create({
@@ -221,17 +288,31 @@ Return only valid JSON in this format:
       throw new Error('No response content from OpenAI');
     }
 
-    return parseJsonResponse(responseContent);
+    const parsed = parseJsonResponse(responseContent);
+    // Mark that this result came from AI analysis
+    return { ...parsed, analysisMethod: 'ai' } as unknown as LlmsTxtAnalysis;
   } catch (error) {
     console.error('[LlmsAnalyzer] Error analyzing llms.txt:', error);
     
-    // Return a default error response
-    return {
-      score: 0,
-      summary: `Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      missing_sections: ['Unable to complete analysis'],
-      recommendations: ['Ensure OpenAI API key is valid and try again'],
-    };
+    // If AI analysis fails (network/API key/etc.), fall back to a deterministic
+    // heuristic analyzer so the UI can still show meaningful PROBLEMS and
+    // RECOMMENDATIONS instead of a generic score=0.
+    try {
+      return heuristicLlmsAnalysis(content, error instanceof Error ? String(error.message) : 'AI error');
+    } catch (heuristicError) {
+      console.error('[LlmsAnalyzer] Heuristic analysis also failed:', heuristicError);
+      return {
+        score: 0,
+        summary: `Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        missing_sections: ['Unable to complete analysis'],
+        recommendations: ['Ensure OpenAI API key is valid and try again'],
+        analysisMethod: 'heuristic',
+        fallbackReason: error instanceof Error ? error.message : String(error),
+      } as unknown as LlmsTxtAnalysis;
+    }
   }
 }
+
+// Heuristic function moved to llms-heuristic.ts to avoid 'use server' requirement
+// Import it directly from './llms-heuristic' instead of re-exporting
 
